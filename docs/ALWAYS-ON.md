@@ -17,6 +17,8 @@ No ports are published on the server. Only an SSH port needs to be reachable (pr
 
 ## Server
 
+Run `deployment/docker/server-setup.sh` once on a fresh server to install Docker, automatic updates and an SSH-only firewall.
+
 Ubuntu 24.04 LTS, 2 vCPU, 4 GB RAM, 40 GB disk, with automatic security updates and NTP on (the ACS depends on correct time). Any reputable VPS works. Pick the region closest to your routers. Install Docker Engine and the compose plugin from Docker's official apt repository.
 
 ## What a server cannot do
