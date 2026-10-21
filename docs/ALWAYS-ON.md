@@ -50,10 +50,21 @@ Rollback: stop the `tunnel` container, run `scripts\install-online-startup.ps1 -
 
 ## Backups (required for always-on)
 
-Nightly: stop-free SQLite copy with `sqlite3 data/network.sqlite ".backup ..."` (or a brief `docker compose stop hub`), `mongodump`, `master.key` and `cpes.json`, encrypted, stored off the server. Test a restore before relying on it. `master.key` and the database must always be restored together.
+`deployment/docker/backup.sh` makes one encrypted archive per run (consistent SQLite copy, `master.key`, `cpes.json`, GenieACS database) and uploads it off the server, keeping 30 days. Only the encrypted file leaves the server.
+
+One-time setup on the server:
+
+1. `sudo apt-get install -y age rclone`
+2. On your **own computer** (not the server) run `age-keygen -o network-hub-backup.key`. Keep that file offline in two places (it is the only way to restore). Copy only the printed public key (`age1...`).
+3. Create a free Cloudflare R2 bucket (10 GB free; check current terms) and an R2 API token limited to that bucket. Enter it with `rclone config` (type S3, provider Cloudflare) on the server, remote name `offsite`. Never paste the token anywhere else.
+4. `cp deployment/docker/backup.env.example deployment/docker/backup.env`, fill in the public key and bucket path.
+5. Test: `./deployment/docker/backup.sh`, then restore it on another machine with `age -d -i network-hub-backup.key file.tar.age | tar -x` before trusting it.
+6. Schedule: `crontab -e` and add `17 2 * * * cd ~/network-hub && ./deployment/docker/backup.sh >> ~/backup.log 2>&1`.
+
+`master.key` and the database must always be restored together.
 
 ## Not done yet
 
 - A real-server test of these images.
-- Off-server backup automation and uptime alerts.
+- A tested restore of a real backup, and uptime alerts.
 - Management VPN for direct polling (needs explicit approval before touching any router).

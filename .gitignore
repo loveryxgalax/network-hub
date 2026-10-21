@@ -12,3 +12,4 @@ deployment/*.local.*
 deployment/docker/cloudflared/config.yml
 deployment/docker/cloudflared/*.json
 !.env.docker.example
+deployment/docker/backup.env
