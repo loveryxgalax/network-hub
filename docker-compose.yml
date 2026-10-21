@@ -1,0 +1,55 @@
+# Always-on Network Hub for a Linux server. No ports are published: the only way in is the Cloudflare Tunnel.
+# Setup: docs/ALWAYS-ON.md
+services:
+  hub:
+    build: .
+    restart: unless-stopped
+    environment:
+      NETWORK_PUBLIC_ORIGIN: https://netops.kadenetworks.com
+      NETWORK_POLL_MS: ${NETWORK_POLL_MS:-30000}
+    volumes:
+      - hub-data:/data
+    networks: [internal]
+
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    command: ["mongod", "--auth", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?set in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set in .env}
+    volumes:
+      - mongo-data:/data/db
+    networks: [internal]
+
+  acs:
+    build:
+      context: .
+      dockerfile: deployment/docker/acs/Dockerfile
+    restart: unless-stopped
+    depends_on: [mongo]
+    environment:
+      MONGO_ROOT_USER: ${MONGO_ROOT_USER:?set in .env}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set in .env}
+      MONGO_APP_USER: ${MONGO_APP_USER:-networkhub-acs}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?set in .env}
+    volumes:
+      - acs-private:/private
+    networks: [internal]
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on: [hub, acs]
+    command: ["tunnel", "--no-autoupdate", "--config", "/etc/cloudflared/config.yml", "run"]
+    volumes:
+      - ./deployment/docker/cloudflared:/etc/cloudflared:ro
+    networks: [internal]
+
+volumes:
+  hub-data:
+  mongo-data:
+  acs-private:
+
+networks:
+  internal:
