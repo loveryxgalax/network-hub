@@ -1,0 +1,10 @@
+# Generate your real local file with scripts/configure-cloudflare.ps1.
+# Keep credentials outside the project. This example contains no working tunnel.
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: 'C:\Users\YOUR_USER\.cloudflared\REPLACE_WITH_TUNNEL_UUID.json'
+ingress:
+  - hostname: network.YOUR_DOMAIN
+    service: http://127.0.0.1:4317
+    originRequest:
+      httpHostHeader: network.YOUR_DOMAIN
+  - service: http_status:404

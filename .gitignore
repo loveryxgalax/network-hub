@@ -1,0 +1,11 @@
+.openai/*.local.*
+node_modules/
+*.log
+screenshots/
+data/
+.env
+.env.*
+!.env.example
+*.sqlite*
+coverage/
+deployment/*.local.*

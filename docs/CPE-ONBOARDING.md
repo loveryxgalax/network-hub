@@ -1,0 +1,11 @@
+# Customer CPE onboarding
+
+Use **Customer discovery** on the MikroTik to review read-only DHCP, ARP, PPP, Hotspot and neighbor observations. Classify likely customer routers, ONTs/ONUs, access points or radios, then choose **Add to CPE onboarding** to create a linked inventory record. The record preserves the observing MikroTik and reported identifiers, and begins as **Observed** with identity, location and management checks incomplete. You can record the customer/account name and associate an ONU only by selecting an existing serial-identified OLT inventory record after confirming that relationship.
+
+The **Customer CPEs** page also supports direct inventory entry. Confirm the label, model, serial/MAC, firmware, subscriber and installation location with the customer or a field technician. **Assign field checklist** creates an installation or TR-069 work order with the standard handoff steps. The assigned installer can record progress and finish the checklist without the dashboard attempting a connection to that CPE.
+
+Customer discovery details keep a bounded history of first-seen, returned, not-observed, address/MAC changes, and PPP/Hotspot session start/end events. “Not observed” is recorded only when every discovery table returned a complete, non-truncated report. Same-session PPP/Hotspot counter deltas create traffic samples about every ten minutes, retained for up to seven days; a chart needs repeated successful reports before it appears.
+
+Choose TR-069 / GenieACS or a vendor controller only when that service is available for the device. Mark enrollment verified after the controller shows an authenticated check-in. The ACS page continues to list devices it actually observes; an inventory entry alone does not enroll a device. Do not store device passwords in CPE or work-order notes. Give credentials to an authorized operator through the organization's private credential-transfer method.
+
+Customer CPE inventory uses the existing `devices` collection with `type: cpe` and remains inventory-only (`driver: none`). It never executes a MikroTik command, updates RouterOS, or reboots equipment. Completion records for an inventory-only CPE work order explicitly retain that remote management is unverified.
