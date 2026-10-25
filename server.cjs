@@ -14,6 +14,7 @@ const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
 const c2b=require('./lib/c2b.cjs');
+const overview=require('./lib/overview.cjs');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const error=(status,message)=>Object.assign(new Error(message),{status});
 const publicUser=u=>({id:u.id,email:u.email,name:u.name,role:u.role,active:!!u.active});
@@ -24,7 +25,7 @@ function createApp(options={}){
  const publicOrigin=options.publicOrigin??process.env.NETWORK_PUBLIC_ORIGIN;
  const publicUrl=publicOrigin?new URL(publicOrigin):null;
  if(publicUrl&&(publicUrl.protocol!=='https:'||publicUrl.username||publicUrl.password||publicUrl.pathname!=='/'||publicUrl.search||publicUrl.hash))throw new Error('NETWORK_PUBLIC_ORIGIN must be an HTTPS origin');
- const root=path.join(__dirname,'dist'),busy=new Set(),attempts=new Map(),agentAccepted=new Map(),customerUploads=new Map();let timer,closing=false,collecting=false,lastPrune=0,lastReminders=0;
+ const root=path.join(__dirname,'dist'),busy=new Set(),attempts=new Map(),agentAccepted=new Map(),customerUploads=new Map(),overviewCache=new Map();let timer,closing=false,collecting=false,lastPrune=0,lastReminders=0;
  const pollMs=Number(options.pollMs||process.env.NETWORK_POLL_MS||30000);if(!Number.isFinite(pollMs)||pollMs<1000)throw new Error('Polling interval must be at least 1000ms');
  const users=()=>store.db.prepare('SELECT * FROM users ORDER BY created').all();
  const text=(value,label,max=250)=>{if(typeof value!=='string'||!value.trim()||value.length>max)throw error(400,'Invalid '+label);return value.trim();};
@@ -91,6 +92,7 @@ function createApp(options={}){
   const user=auth(req);if(!user)throw error(401,'Sign in to continue');if(mutating.has(method)&&req.headers['x-csrf-token']!==user.csrf)throw error(403,'Session verification failed. Reload the page.');
   if(route==='/api/customers'&&method==='GET'){if(user.role==='installer')throw error(403,'Customer discovery is not available to field installers');return json(res,200,customers.list(store,url.searchParams));}
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
+  if(route==='/api/overview'&&method==='GET'){if(user.role==='installer')throw error(403,'The overview is not available to field installers');const range=url.searchParams.get('range')||'24h',key=range+(user.role==='admin'?'a':'n'),hit=overviewCache.get(key);if(hit&&Date.now()-hit.at<15000)return json(res,200,hit.value);const value=overview.build(store,range);if(user.role!=='admin')value.revenue={today:null,week:null,month:null,days:[],byMethod:{},recent:[]};overviewCache.set(key,{at:Date.now(),value});return json(res,200,value);}
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
   if(route==='/api/mpesa'){
    if(user.role==='installer')throw error(403,'Billing is not available to field installers');
