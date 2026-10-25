@@ -139,3 +139,4 @@ dialog.modal::backdrop{background:#0b1a24a6;backdrop-filter:blur(2px)}
 .radius-form .button{justify-self:start}
 .radius-message{max-width:420px;white-space:normal;font-size:12.5px}
 .radius-steps .sites-setup{margin:8px 0;white-space:pre-wrap;word-break:break-all}
+.radius-advanced summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0 8px}

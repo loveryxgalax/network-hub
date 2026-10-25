@@ -43,3 +43,20 @@ test('reminders go out once per expiry from the server, respecting quiet hours',
   const failed=await billing.sendSms(store,'0712345678','x','test',async()=>{throw new Error('network down');});assert.equal(failed.status,'failed');assert.match(failed.detail,/network down/);
  }finally{done();}
 });
+test('custom SMS gateways (e.g. BlessedTexts) get JSON with adjustable field names and an honest result',async()=>{
+ const {store,done}=fixture();try{
+  assert.throws(()=>billing.setSmsConfig(store,{provider:'custom',url:'http://sms.example/api',apiKey:'k'}),/https/);
+  const cfg=billing.setSmsConfig(store,{provider:'custom',url:'https://sms.blessedtexts.com/api/sms/v1/sendsms',apiKey:'secret-key',senderId:'KADENET'});
+  assert.equal(cfg.provider,'custom');assert.equal(cfg.apiKey,undefined,'the key is never returned');
+  const calls=[];let reply={status:201,body:'[{"status_code":"1000","status_desc":"Success","message_id":"m1"}]'};
+  const gw=async(url,o)=>{calls.push({url,o});return {ok:reply.status<300,status:reply.status,text:async()=>reply.body};};
+  let r=await billing.sendSms(store,'0712345678','Hello','test',gw);
+  assert.equal(r.status,'sent');assert.equal(calls[0].url,'https://sms.blessedtexts.com/api/sms/v1/sendsms');
+  assert.deepEqual(JSON.parse(calls[0].o.body),{api_key:'secret-key',sender_id:'KADENET',phone:'254712345678',message:'Hello'});assert.match(r.detail,/Success/);
+  reply={status:200,body:'{"status":"error","message":"Invalid API key"}'};r=await billing.sendSms(store,'0712345678','Hello','test',gw);assert.equal(r.status,'failed');assert.match(r.detail,/Invalid API key/);
+  reply={status:401,body:'Unauthorized'};assert.equal((await billing.sendSms(store,'0712345678','x','test',gw)).status,'failed');
+  billing.setSmsConfig(store,{provider:'custom',url:'https://sms.blessedtexts.com/api/sms/v1/sendsms',senderId:'KADENET',format:'form',phoneFormat:'07',field_phone:'mobile',field_apiKey:'apikey'});
+  reply={status:200,body:'{"success":true}'};r=await billing.sendSms(store,'+254712345678','Hi','test',gw);assert.equal(r.status,'sent');
+  assert.deepEqual(Object.fromEntries(calls.at(-1).o.body),{apikey:'secret-key',sender_id:'KADENET',mobile:'0712345678',message:'Hi'},'the saved key is kept when left empty');
+ }finally{done();}
+});
