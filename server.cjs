@@ -93,8 +93,9 @@ function createApp(options={}){
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
   if(route==='/api/mpesa'){
    if(user.role==='installer')throw error(403,'Billing is not available to field installers');
-   if(method==='GET')return json(res,200,{config:mpesa.publicConfig(store),portalUrl:(publicUrl?.origin||'http://'+req.headers.host)+'/portal/',payments:store.list('portalPayments').slice(0,300).map(({tokenHash,checkoutRequestId,...p})=>p)});
-   role(user,['admin']);if(method==='PUT'){const saved=mpesa.setConfig(store,await body(req));store.audit(user,'Updated M-Pesa settings','mpesa');return json(res,200,saved);}
+   if(method==='GET')return json(res,200,{config:mpesa.publicConfig(store),portal:portal.settings(store),portalUrl:(publicUrl?.origin||'http://'+req.headers.host)+'/portal/',payments:store.list('portalPayments').slice(0,300).map(({tokenHash,checkoutRequestId,...p})=>p)});
+   role(user,['admin']);if(method==='PUT'&&url.searchParams.get('section')==='portal'){const saved=portal.updateSettings(store,await body(req));store.audit(user,'Updated portal settings','portal');return json(res,200,saved);}
+   if(method==='PUT'){const saved=mpesa.setConfig(store,await body(req));store.audit(user,'Updated M-Pesa settings','mpesa');return json(res,200,saved);}
   }
   if(route==='/api/portal/hotspot-login.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="login.html"'});return res.end(portal.hotspotLoginPage(publicUrl?.origin||'https://netops.kadenetworks.com'));}
   if(route.startsWith('/api/billing/')||route==='/api/billing'){

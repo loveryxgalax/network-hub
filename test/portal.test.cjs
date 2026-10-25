@@ -66,3 +66,10 @@ test('portal pages and API are public; M-Pesa settings are admin-only',async()=>
   const login=await fetch(origin+'/portal/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'x',password:'y'})});assert.equal(login.status,401);
  }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
 });
+test('the portal shows its own name and help contact, falling back to the workspace name',()=>{
+ const {store,done}=fixture();try{
+  assert.equal(portal.info(store).name,'Kade Networks');store.setting('workspace',{name:'network operations'});assert.equal(portal.info(store).name,'network operations');
+  portal.updateSettings(store,{name:'Kade Networks Wi-Fi',support:'0712 345 678'});assert.deepEqual([portal.info(store).name,portal.info(store).support],['Kade Networks Wi-Fi','0712 345 678']);
+  assert.throws(()=>portal.updateSettings(store,{name:'<script>'}),/Portal name/);assert.throws(()=>portal.updateSettings(store,{name:'x'.repeat(41)}),/40/);
+ }finally{done();}
+});
