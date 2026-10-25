@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Runs CWMP, NBI and the isolation proxy together; if any exits the container exits and Docker restarts it.
 set -eu
 node /opt/acs/init.cjs
