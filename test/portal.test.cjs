@@ -86,3 +86,22 @@ test('portal limits are per phone, payment and login name, so customers behind o
   assert.equal((await post('login',{username:'someone-else',password:'x'})).status,401,'other customers are unaffected');
  }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
 });
+test('"still under processing" (4999) keeps waiting; a wrongly failed payment is credited by the callback or an admin recheck',async()=>{
+ const {store,daily,secret,done}=fixture(),d=daraja();
+ const queryFetch=answers=>async(url,options)=>{if(url.endsWith('/query')){const id=JSON.parse(options.body).CheckoutRequestID,a=answers.get(id);if(a==='4999')return {ok:true,status:200,text:async()=>JSON.stringify({ResponseCode:'0',ResultCode:'4999',ResultDesc:'The transaction is still under processing'})};}return d.fetchImpl(url,options);};
+ try{
+  const answers=new Map(),f=queryFetch(answers),t0=Date.now();
+  const a=await portal.start(store,{kind:'hotspot',planId:daily.id,phone:'0712345678'},'https://n',f,t0);answers.set(d.pushes[0].id,'4999');
+  let s=await portal.status(store,a.id,a.token,f,t0+35000);assert.equal(s.status,'pending','4999 is not a failure');
+  s=await portal.status(store,a.id,a.token,f,t0+55000);assert.equal(s.status,'pending');
+  // The customer pays; the callback arrives while the status query still says processing: the callback is confirmed by Safaricom first.
+  answers.set(d.pushes[0].id,'0');d.answers.set(d.pushes[0].id,'0');await portal.callback(store,secret,callbackBody(d.pushes[0].id,0,'TJK5REAL01'),f);s=await portal.status(store,a.id,a.token,f);assert.equal(s.status,'paid');assert.equal(store.list('subscriberPayments').length,1);
+  // A payment already marked failed by an older version is recovered by the admin recheck once Safaricom says it was paid.
+  const b=await portal.start(store,{kind:'hotspot',planId:daily.id,phone:'0722000000'},'https://n',f,t0+120000);const rec=store.get('portalPayments',b.id);store.put('portalPayments',{...rec,status:'failed',reason:'The transaction is still under processing'},rec);
+  answers.set(d.pushes[1].id,'4999');assert.equal((await portal.recheck(store,b.id,f)).status,'failed','still processing: nothing changes');
+  answers.set(d.pushes[1].id,'0');d.answers.set(d.pushes[1].id,'0');const r=await portal.recheck(store,b.id,f);assert.equal(r.status,'paid');assert.equal(store.list('subscriberPayments').length,2);
+  assert.equal((await portal.recheck(store,b.id,f)).message,'Already credited');
+  // ...and a late real callback for a payment credited from a query only records the receipt.
+  await portal.callback(store,secret,callbackBody(d.pushes[1].id,0,'TJK5REAL02'),f);assert.equal(store.get('portalPayments',b.id).mpesaReceipt,'TJK5REAL02');assert.equal(store.list('subscriberPayments').length,2);
+ }finally{done();}
+});

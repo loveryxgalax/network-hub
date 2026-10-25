@@ -97,6 +97,8 @@ function createApp(options={}){
    role(user,['admin']);if(method==='PUT'&&url.searchParams.get('section')==='portal'){const saved=portal.updateSettings(store,await body(req));store.audit(user,'Updated portal settings','portal');return json(res,200,saved);}
    if(method==='PUT'){const saved=mpesa.setConfig(store,await body(req));store.audit(user,'Updated M-Pesa settings','mpesa');return json(res,200,saved);}
   }
+  const recheckRoute=route.match(/^\/api\/mpesa\/payments\/([a-f0-9]{32})\/recheck$/);
+  if(recheckRoute&&method==='POST'){role(user,['admin']);const r=await portal.recheck(store,recheckRoute[1]);store.audit(user,'Rechecked portal payment',recheckRoute[1]);return json(res,200,r);}
   if(route==='/api/portal/hotspot-login.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="login.html"'});return res.end(portal.hotspotLoginPage(publicUrl?.origin||'https://netops.kadenetworks.com'));}
   if(route.startsWith('/api/billing/')||route==='/api/billing'){
    if(user.role==='installer')throw error(403,'Billing is not available to field installers');
