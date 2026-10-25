@@ -122,7 +122,7 @@ function createApp(options={}){
    throw error(404,'API endpoint not found');
   }
   if(route==='/api/reports'&&method==='GET'){if(user.role==='installer')throw error(403,'Reports are not available to field installers');return json(res,200,reports.build(store,url.searchParams.get('days')));}
-  if(route==='/api/nav-counts'&&method==='GET'){const o=user.role==='installer'?null:radius.overview(store);return json(res,200,o?{customers:o.counts.subscribers,hotspot:o.subscribers.filter(x=>x.service==='hotspot').length,pppoe:o.subscribers.filter(x=>x.service==='pppoe').length,inactive:o.counts.expired,online:o.counts.online,requests:store.list('portalPayments').filter(x=>x.status==='pending').length}:{});}
+  if(route==='/api/nav-counts'&&method==='GET'){const o=user.role==='installer'?null:radius.overview(store);return json(res,200,o?{customers:o.counts.subscribers,hotspot:o.subscribers.filter(x=>x.service==='hotspot').length,pppoe:o.subscribers.filter(x=>x.service==='pppoe').length,inactive:o.counts.expired,online:o.counts.online,onlineHotspot:o.sessions.filter(x=>x.service==='hotspot').length,onlinePppoe:o.sessions.filter(x=>x.service==='pppoe').length,requests:store.list('portalPayments').filter(x=>x.status==='pending').length}:{});}
   if(route.startsWith('/api/radius')){
    if(user.role==='installer')throw error(403,'Subscribers are not available to field installers');
    const write=()=>role(user,['admin','operator','manager']);
