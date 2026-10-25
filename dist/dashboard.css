@@ -118,3 +118,13 @@
 .brand-mark{background:#fff url(/img/kade-mark.png) center/78% no-repeat!important;color:transparent!important;font-size:0!important;box-shadow:0 6px 18px -6px #0a3cffaa!important;border-radius:12px!important}
 .brand-mark *{display:none}
 @media (max-width:760px){.kd-main>.kd-wide>header>div:first-child{flex-basis:100%}.kd-tools{width:100%;justify-content:space-between}}
+/* PPPoE customers */
+.kd-ppp-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:26px}
+.kd-ppp h3{margin:0 0 8px;font-size:12px;letter-spacing:.9px;text-transform:uppercase;color:var(--muted)}
+.kd-ppp-tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.kd-ppp-tile{padding:12px 12px 10px;border-radius:14px;border:1px solid var(--border);background:color-mix(in srgb,var(--c) 7%,var(--card));border-top:3px solid var(--c);--c:var(--muted)}
+.kd-ppp-tile.good{--c:var(--kd-good)}.kd-ppp-tile.warn{--c:var(--kd-warn)}.kd-ppp-tile.bad{--c:var(--kd-bad)}.kd-ppp-tile.violet{--c:var(--kd-violet)}
+.kd-ppp-tile small{display:block;min-height:26px;font-size:10.5px;line-height:1.25;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700}.kd-ppp-tile strong{display:block;font-size:26px;font-weight:800;letter-spacing:-.6px;margin-top:4px}.kd-ppp-tile span{font-size:12px;color:var(--c);font-weight:700}
+.kd-stack{display:flex;gap:3px;height:12px;margin-top:14px;border-radius:99px;overflow:hidden}.kd-stack i{display:block;border-radius:99px;background:var(--muted)}.kd-stack .good{background:var(--kd-good)}.kd-stack .warn{background:var(--kd-warn)}.kd-stack .bad{background:var(--kd-bad)}.kd-stack .violet{background:var(--kd-violet)}.kd-stack .muted{background:color-mix(in srgb,var(--muted) 55%,transparent)}
+.kd-ppp-note{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--kd-cyan) 10%,var(--card));font-size:12.5px;color:var(--muted)}.kd-ppp-note b{color:var(--ink)}
+@media (max-width:1180px){.kd-ppp-grid{grid-template-columns:1fr}.kd-ppp-tiles{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}}
