@@ -248,14 +248,15 @@ function createApp(options={}){
  });
  // Public captive portal (no login). Limits per client address keep the M-Pesa prompt and code checks from abuse.
  const portalRoot=path.join(__dirname,'portal'),portalHits=new Map();
- const limit=(req,bucket,max,windowMs)=>{const ip=String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||''),key=bucket+'|'+ip,now=Date.now(),hit=portalHits.get(key);if(!hit||now>hit.until){portalHits.set(key,{n:1,until:now+windowMs});if(portalHits.size>20000)portalHits.clear();return;}if(++hit.n>max)throw error(429,'Too many attempts. Wait a few minutes and try again.');};
+ // Customers on one hotspot share a public IP, so per-IP limits are generous; the tight limits are per phone, per payment and per login name.
+ const limit=(req,bucket,max,windowMs,who)=>{const ip=String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||''),key=bucket+'|'+(who??ip),now=Date.now(),hit=portalHits.get(key);if(!hit||now>hit.until){portalHits.set(key,{n:1,until:now+windowMs});if(portalHits.size>50000)portalHits.clear();return;}if(++hit.n>max)throw error(429,'Too many attempts. Wait a few minutes and try again.');};
  async function portalApi(req,res,url){
   const route=url.pathname,method=req.method,origin=publicUrl?.origin||'http://'+req.headers.host;
   if(route==='/portal/api/info'&&method==='GET')return json(res,200,portal.info(store));
-  if(route==='/portal/api/pay'&&method==='POST'){limit(req,'pay',6,600000);return json(res,201,await portal.start(store,await body(req,4096),origin));}
+  if(route==='/portal/api/pay'&&method==='POST'){limit(req,'pay',120,600000);const input=await body(req,4096);limit(req,'pay-phone',5,600000,billing.phone(input.phone)||'invalid');return json(res,201,await portal.start(store,input,origin));}
   const st=route.match(/^\/portal\/api\/pay\/([a-f0-9]{32})$/);
-  if(st&&method==='GET'){limit(req,'status',400,600000);return json(res,200,await portal.status(store,st[1],url.searchParams.get('t')));}
-  if(route==='/portal/api/login'&&method==='POST'){limit(req,'login',20,600000);return json(res,200,portal.login(store,await body(req,4096)));}
+  if(st&&method==='GET'){limit(req,'status',3000,600000);limit(req,'status-id',300,600000,st[1]);return json(res,200,await portal.status(store,st[1],url.searchParams.get('t')));}
+  if(route==='/portal/api/login'&&method==='POST'){limit(req,'login',600,600000);const input=await body(req,4096);limit(req,'login-user',10,600000,String(input.username||'').trim().toLowerCase().slice(0,64));return json(res,200,portal.login(store,input));}
   const cb=route.match(/^\/portal\/api\/mpesa\/([A-Za-z0-9_-]{20,64})$/);
   // Always answer Safaricom with success so it does not retry forever; errors are logged instead.
   if(cb&&method==='POST'){try{await portal.callback(store,cb[1],await body(req,65536));}catch(cause){if(cause.status!==404)console.warn('M-Pesa callback not applied: '+cause.message);else throw cause;}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}

@@ -73,3 +73,16 @@ test('the portal shows its own name and help contact, falling back to the worksp
   assert.throws(()=>portal.updateSettings(store,{name:'<script>'}),/Portal name/);assert.throws(()=>portal.updateSettings(store,{name:'x'.repeat(41)}),/40/);
  }finally{done();}
 });
+test('portal limits are per phone, payment and login name, so customers behind one hotspot IP are not blocked together',async()=>{
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-portal-limit-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test'});
+ await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+app.server.address().port;
+ const post=(route,body)=>fetch(origin+'/portal/api/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ try{
+  // Ten different phones from one address are all handled (they fail on "not available", not on rate limiting).
+  for(let i=0;i<10;i++)assert.notEqual((await post('pay',{kind:'hotspot',planId:'x',phone:'0712'+String(100000+i)})).status,429);
+  // One phone is limited after five tries; one username after ten.
+  const statuses=[];for(let i=0;i<7;i++)statuses.push((await post('pay',{kind:'hotspot',planId:'x',phone:'0722000000'})).status);assert.equal(statuses[5],429);assert.notEqual(statuses[0],429);
+  const logins=[];for(let i=0;i<12;i++)logins.push((await post('login',{username:'wabc123',password:'000000'})).status);assert.equal(logins[0],401);assert.equal(logins[11],429);
+  assert.equal((await post('login',{username:'someone-else',password:'x'})).status,401,'other customers are unaffected');
+ }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
+});
