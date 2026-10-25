@@ -13,6 +13,7 @@ const radius=require('./lib/radius.cjs');
 const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
+const c2b=require('./lib/c2b.cjs');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const error=(status,message)=>Object.assign(new Error(message),{status});
 const publicUser=u=>({id:u.id,email:u.email,name:u.name,role:u.role,active:!!u.active});
@@ -93,10 +94,13 @@ function createApp(options={}){
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
   if(route==='/api/mpesa'){
    if(user.role==='installer')throw error(403,'Billing is not available to field installers');
-   if(method==='GET')return json(res,200,{config:mpesa.publicConfig(store),portal:portal.settings(store),portalUrl:(publicUrl?.origin||'http://'+req.headers.host)+'/portal/',payments:store.list('portalPayments').slice(0,300).map(({tokenHash,checkoutRequestId,...p})=>p)});
+   if(method==='GET')return json(res,200,{config:mpesa.publicConfig(store),c2b:mpesa.config(store)?c2b.overview(store,publicUrl?.origin||'http://'+req.headers.host):null,portal:portal.settings(store),portalUrl:(publicUrl?.origin||'http://'+req.headers.host)+'/portal/',payments:store.list('portalPayments').slice(0,300).map(({tokenHash,checkoutRequestId,...p})=>p)});
    role(user,['admin']);if(method==='PUT'&&url.searchParams.get('section')==='portal'){const saved=portal.updateSettings(store,await body(req));store.audit(user,'Updated portal settings','portal');return json(res,200,saved);}
    if(method==='PUT'){const saved=mpesa.setConfig(store,await body(req));store.audit(user,'Updated M-Pesa settings','mpesa');return json(res,200,saved);}
   }
+  if(route==='/api/mpesa/c2b/register'&&method==='POST'){role(user,['admin']);const r=await c2b.register(store,publicUrl?.origin||'http://'+req.headers.host);store.audit(user,'Registered paybill URLs',r.ok?'ok':'failed');return json(res,200,r);}
+  const assignRoute=route.match(/^\/api\/mpesa\/c2b\/([a-f0-9-]{36})\/assign$/);
+  if(assignRoute&&method==='POST'){role(user,['admin','manager']);const r=c2b.assign(store,assignRoute[1],(await body(req)).subscriberId);store.audit(user,'Assigned paybill payment',assignRoute[1]);return json(res,200,r);}
   const recheckRoute=route.match(/^\/api\/mpesa\/payments\/([a-f0-9]{32})\/recheck$/);
   if(recheckRoute&&method==='POST'){role(user,['admin']);const r=await portal.recheck(store,recheckRoute[1]);store.audit(user,'Rechecked portal payment',recheckRoute[1]);return json(res,200,r);}
   if(route==='/api/portal/hotspot-login.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="login.html"'});return res.end(portal.hotspotLoginPage(publicUrl?.origin||'https://netops.kadenetworks.com'));}
@@ -259,6 +263,11 @@ function createApp(options={}){
   const st=route.match(/^\/portal\/api\/pay\/([a-f0-9]{32})$/);
   if(st&&method==='GET'){limit(req,'status',3000,600000);limit(req,'status-id',300,600000,st[1]);return json(res,200,await portal.status(store,st[1],url.searchParams.get('t')));}
   if(route==='/portal/api/login'&&method==='POST'){limit(req,'login',600,600000);const input=await body(req,4096);limit(req,'login-user',10,600000,String(input.username||'').trim().toLowerCase().slice(0,64));return json(res,200,portal.login(store,input));}
+  const pay=route.match(/^\/portal\/api\/c2b\/([0-9a-f]{32})\/(confirmation|validation)$/);
+  // Safaricom paybill notifications. Always answer "Accepted" (it retries otherwise); problems are logged instead.
+  if(pay&&method==='POST'){if(!c2b.validSecret(store,pay[1]))throw error(404,'Not found');const input=await body(req,16384);
+   if(pay[2]==='validation')return json(res,200,c2b.validate(store,input));
+   try{c2b.confirm(store,input);}catch(cause){console.warn('Paybill payment not applied: '+cause.message);}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
   const cb=route.match(/^\/portal\/api\/mpesa\/([A-Za-z0-9_-]{20,64})$/);
   // Always answer Safaricom with success so it does not retry forever; errors are logged instead.
   if(cb&&method==='POST'){try{await portal.callback(store,cb[1],await body(req,65536));}catch(cause){if(cause.status!==404)console.warn('M-Pesa callback not applied: '+cause.message);else throw cause;}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}

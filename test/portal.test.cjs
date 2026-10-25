@@ -105,3 +105,38 @@ test('"still under processing" (4999) keeps waiting; a wrongly failed payment is
   await portal.callback(store,secret,callbackBody(d.pushes[1].id,0,'TJK5REAL02'),f);assert.equal(store.get('portalPayments',b.id).mpesaReceipt,'TJK5REAL02');assert.equal(store.list('subscriberPayments').length,2);
  }finally{done();}
 });
+test('paybill (C2B) payments credit the matching username once, keep unmatched ones for a person, and are not forgeable without the secret',async()=>{
+ const c2b=require('../lib/c2b.cjs'),billing=require('../lib/billing.cjs');
+ const {store,home,done}=fixture();try{
+  const jane=store.put('subscribers',radius.subscriber(store,{name:'Jane Wanjiru',username:'jane',service:'pppoe',planId:home.id,phone:'0712345678'}));radius.setPassword(store,jane.id,'pass1234');
+  const note=(over={})=>({TransactionType:'Pay Bill',TransID:'UJPATBBZMU',TransTime:'20261025150000',TransAmount:'2500.00',BusinessShortCode:'174379',BillRefNumber:'Jane',InvoiceNumber:'',OrgAccountBalance:'',ThirdPartyTransID:'',MSISDN:'2ed4886eaccd40f3dfb06e0ec1db9da1',FirstName:'YVONNE',MiddleName:'',LastName:'',...over});
+  const u=c2b.urls(store,'https://n');assert.match(u.confirmation,/^https:\/\/n\/portal\/api\/c2b\/[0-9a-f]{32}\/confirmation$/);assert.doesNotMatch(u.confirmation+u.validation,/mpesa|safaricom|sql|exec|cmd|query/i,'Safaricom rejects URLs containing these words');
+  assert.equal(c2b.validate(store,note()).ResultCode,0);assert.equal(c2b.validate(store,note({BillRefNumber:'nobody'})).ResultCode,'C2B00012');
+  const r=c2b.confirm(store,note());assert.equal(r.status,'credited');assert.equal(r.username,'jane');assert.ok(store.get('subscribers',jane.id).expiresAt>Date.now()+29*86400000);
+  assert.equal(store.list('subscriberPayments')[0].reference,'UJPATBBZMU');assert.equal(c2b.confirm(store,note()).duplicate,true);assert.equal(store.list('subscriberPayments').length,1,'a repeated notification credits once');
+  // Account typed with a realm, spaces or a phone number still matches; unknown accounts wait for a person.
+  assert.equal(c2b.confirm(store,note({TransID:'UJPATBBZM2',BillRefNumber:' JANE@kade '})).status,'credited');
+  assert.equal(c2b.confirm(store,note({TransID:'UJPATBBZM3',BillRefNumber:'0712 345 678'})).status,'credited');
+  const lost=c2b.confirm(store,note({TransID:'UJPATBBZM4',BillRefNumber:'jnae',TransAmount:'1000'}));assert.equal(lost.status,'unallocated');assert.equal(store.list('subscriberPayments').length,3);
+  assert.equal(c2b.confirm(store,note({TransID:'UJPATBBZM5',BusinessShortCode:'999999'})).ignored,true,'another shortcode is not ours');
+  assert.throws(()=>c2b.confirm(store,note({TransID:'x'})),/Not a payment/);
+  const assigned=c2b.assign(store,lost.id,jane.id);assert.equal(assigned.status,'credited');assert.equal(store.list('subscriberPayments').length,4);assert.throws(()=>c2b.assign(store,lost.id,jane.id),/already credited/);
+  assert.equal(c2b.overview(store,'https://n').payments.length,4);
+  // Registration sends both URLs and records the answer; Safaricom's refusal is shown, not hidden.
+  const sent=[];const fetchImpl=async(url,o)=>{sent.push({url,body:o.body&&JSON.parse(o.body)});if(url.includes('/oauth/'))return {ok:true,status:200,text:async()=>JSON.stringify({access_token:'t',expires_in:'3599'})};return {ok:true,status:200,text:async()=>JSON.stringify({ResponseCode:'0',ResponseDescription:'Success'})};};
+  mpesa._reset();let reg=await c2b.register(store,'https://n',fetchImpl);assert.equal(reg.ok,true);const call=sent.find(x=>x.url.endsWith('/c2b/v2/registerurl'));assert.equal(call.body.ShortCode,'174379');assert.equal(call.body.ResponseType,'Completed');assert.equal(call.body.ConfirmationURL,u.confirmation);
+  const refuse=async(url,o)=>url.includes('/oauth/')?fetchImpl(url,o):{ok:false,status:400,text:async()=>JSON.stringify({errorCode:'500.003.1001',errorMessage:'Duplicate notification info'})};
+  reg=await c2b.register(store,'https://n',refuse);assert.equal(reg.ok,false);assert.match(reg.message,/Duplicate notification info/);
+ }finally{done();}
+});
+test('paybill endpoints are public only with the secret path',async()=>{
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-c2b-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test'});
+ await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+app.server.address().port;
+ try{mpesa.setConfig(app.store,{env:'production',type:'paybill',shortcode:'174379',consumerKey:'a',consumerSecret:'b',passkey:'c'});
+  const secret=mpesa.config(app.store).c2bSecret,post=(p,b)=>fetch(origin+'/portal/api/c2b/'+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+  assert.equal((await post('0'.repeat(32)+'/confirmation',{})).status,404);
+  const ok=await post(secret+'/confirmation',{TransID:'UJPATBBZMU',TransAmount:'10',BusinessShortCode:'174379',BillRefNumber:'nobody'});assert.equal(ok.status,200);assert.equal((await ok.json()).ResultCode,0);
+  assert.equal(app.store.list('c2bPayments')[0].status,'unallocated');
+  const v=await (await post(secret+'/validation',{BusinessShortCode:'174379',BillRefNumber:'nobody'})).json();assert.equal(v.ResultCode,'C2B00012');
+ }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
+});
