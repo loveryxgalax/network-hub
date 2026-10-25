@@ -98,7 +98,7 @@ function createApp(options={}){
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
   if(route==='/api/portal/status'){if(method==='GET')return json(res,200,{config:statusPage.get(store),designs:statusPage.DESIGNS});role(user,['admin']);if(method==='PUT'){const saved=statusPage.save(store,await body(req));store.audit(user,'Updated hotspot status page','portal');return json(res,200,saved);}}
   if(route==='/api/portal/status.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);const q=url.searchParams,preview=q.get('preview')==='1';let cfg=statusPage.get(store);if(preview){try{cfg=statusPage.validate({...cfg,...JSON.parse(q.get('cfg')||'{}')});}catch{}}
-   const head={'Content-Type':'text/html; charset=utf-8'};if(!preview)head['Content-Disposition']='attachment; filename="status.html"';res.writeHead(200,head);return res.end(statusPage.page(cfg,publicUrl?.origin||'https://netops.kadenetworks.com',preview));}
+   const head={'Content-Type':'text/html; charset=utf-8'};if(!preview)head['Content-Disposition']='attachment; filename="status.html"';res.writeHead(200,head);return res.end(statusPage.page(cfg,publicUrl?.origin||'https://netops.kadenetworks.com',preview,q.get('frame')==='phone'));}
   if(route==='/api/portal/landing'){
    if(method==='GET')return json(res,200,{config:landing.get(store),themes:landing.THEMES});
    role(user,['admin']);if(method==='PUT'){const saved=landing.save(store,await body(req));store.audit(user,'Updated landing page design',saved.theme);return json(res,200,saved);}

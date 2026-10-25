@@ -90,7 +90,7 @@ function packageList(list,monthly,hotspot){
   const pop=CFG.popular&&p.name.toLowerCase()===CFG.popular.toLowerCase();
   return `<button class="pkg ${pop?'pop':''}" data-badge="${esc(t('popular'))}" data-pkg="${esc(p.id)}" data-kind="${hotspot?'hotspot':'pppoe'}" type="button"><span class="name">${esc(p.name)}</span><span class="meta">${esc(meta.join(' · '))}</span><span class="price">${kes(p.price)}${monthly?` <small>${esc(p.duration==='30 days'||p.duration==='1 month'?t('per_month'):'/ '+p.duration)}</small>`:''}</span></button>`;}).join(''):`<p class="empty-pkgs">${esc(state==='error'?t('loadFail'):t('noPlans'))}</p>`;}
 function render(){
- const b=document.body;b.dataset.theme=CFG.theme;document.documentElement.style.setProperty('--brand',CFG.brandColor);document.documentElement.style.setProperty('--brand-ink',inkFor(CFG.brandColor));document.documentElement.lang=LANG;
+ const b=document.body;b.dataset.theme=CFG.theme;b.dataset.layout=CFG.packageLayout||'auto';if(params.get('frame')==='phone')b.classList.add('phone-frame');document.documentElement.style.setProperty('--brand',CFG.brandColor);document.documentElement.style.setProperty('--brand-ink',inkFor(CFG.brandColor));document.documentElement.lang=LANG;
  document.title=`${CFG.brandName} Wi-Fi`;const intro=CFG.intro?.trim()?CFG.intro:tc('intro');
  $$('[data-bind=brandName]').forEach(e=>e.textContent=CFG.brandName);$$('[data-bind=intro]').forEach(e=>e.textContent=intro);
  $$('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));$$('[data-i18n-ph]').forEach(e=>e.placeholder=t(e.dataset.i18nPh));
