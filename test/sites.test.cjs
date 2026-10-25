@@ -37,7 +37,7 @@ test('old days expire after 30 days',()=>{
  assert.equal(store.setting('siteStats:r1:2026-09-01'),undefined);assert.deepEqual(store.setting('siteDays:r1').days,['2026-10-11']);
 });
 test('router script reads DNS logs and connections only; setup is shown, not sent',()=>{
- assert.match(sites.SCRIPT,/\/log print as-value where topics~"dns"/);assert.match(sites.SCRIPT,/\/ip firewall connection find where \(orig-bytes>1048576 or repl-bytes>1048576\)/);assert.doesNotMatch(sites.SCRIPT,/connection print/);
+ assert.match(sites.SCRIPT,/\/log find where topics~"dns" and message~"query from"/);assert.doesNotMatch(sites.SCRIPT,/log print/);assert.ok(sites.SCRIPT.includes(':pick $ids ([:len $ids]-800)'));assert.match(sites.SCRIPT,/\/ip firewall connection find where \(orig-bytes>1048576 or repl-bytes>1048576\)/);assert.doesNotMatch(sites.SCRIPT,/connection print/);
  assert.doesNotMatch(sites.SCRIPT,/\b(set|add|remove|disable)\b \[?\//);
  assert.ok(sites.SETUP.every(c=>/^\/(system logging|ip dns set)/.test(c)));
 });

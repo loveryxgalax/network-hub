@@ -67,7 +67,7 @@ test('customer discovery credentials are isolated from router monitoring, user s
  }finally{await app.close();assert.equal(path.dirname(path.resolve(directory)),path.resolve(os.tmpdir()));fs.rmSync(directory,{recursive:true,force:true});}
 });
 test('RADIUS timeouts and management login failures raise specific router alerts',()=>{
-const script=customers.generate('https://netops.example.test','00000000-0000-4000-8000-000000000000','x'.repeat(43));assert.ok(script.includes('[Rr][Aa][Dd][Ii][Uu][Ss] (server is not responding|timeout)'));assert.match(script,/monitoring v5/);
+const script=customers.generate('https://netops.example.test','00000000-0000-4000-8000-000000000000','x'.repeat(43));assert.ok(script.includes('[Rr][Aa][Dd][Ii][Uu][Ss] (server is not responding|timeout)'));assert.match(script,/monitoring v6/);assert.ok(!script.includes('/log print as-value'),'the script never walks the whole log');assert.ok(script.includes('/log find where topics~"dns"')&&script.includes('[/log get $id message]'));
  const classes=['<pppoe-a>: user a authentication failed: radius timeout','login failed: RADIUS server is not responding','login failure for user ispman from 10.124.0.171 via winbox'];
  const keys=classes.map(message=>customers.eventKeyForTest({topics:'system,error,critical',message}));
  assert.deepEqual(keys,['radius-unreachable','radius-unreachable','management-login-failed']);
