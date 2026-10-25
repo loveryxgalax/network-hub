@@ -5,7 +5,10 @@ const report=(overrides={})=>({schema:overrides.events?2:1,tables:Object.fromEnt
 const peer=(extra={})=>({ip:'192.0.2.20',mac:'00:11:22:33:44:55',name:'Fixture subscriber',uptime:'00:02:00',...extra});
 test('customer reports accept only observed fields and enforce bounds without assuming CPE type',()=>{
  const value=customers.normalize(report({dhcp:[peer({status:'bound',password:'excluded'})]}));assert.equal(value.tables.dhcp.rows[0].password,undefined);assert.equal(value.tables.dhcp.rows[0].rx,null);
- for(const raw of [report({arp:[peer({ip:'bad'})]}),report({arp:[peer({mac:'bad'})]}),report({ppp:[peer({rx:-1})]}),report({dhcp:new Array(501).fill(peer())})])assert.throws(()=>customers.normalize(raw));
+ assert.throws(()=>customers.normalize(report({dhcp:new Array(501).fill(peer())})));
+ // One odd value is cleaned or dropped instead of discarding the whole report.
+ assert.equal(customers.normalize(report({arp:[peer({ip:'bad'})]})).tables.arp.rows[0].ip,'');assert.equal(customers.normalize(report({arp:[peer({mac:'bad'})]})).tables.arp.rows[0].mac,'');assert.equal(customers.normalize(report({ppp:[peer({rx:-1})]})).tables.ppp.rows[0].rx,null);
+ assert.equal(customers.normalize(report({arp:[peer({ip:'bad',mac:'bad'})]})).tables.arp.rows.length,0);assert.equal(customers.normalize(report({dhcp:[peer({name:'tab\there'+'x'.repeat(300)})]})).tables.dhcp.rows[0].name,'tab here'+'x'.repeat(142));
  const invalid=report();invalid.tables.dhcp.ok=false;invalid.tables.dhcp.rows=[peer()];assert.throws(()=>customers.normalize(invalid));
 });
 test('discovery batches stay below RouterOS fetch limits and commit only complete authenticated snapshots',()=>{

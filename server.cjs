@@ -63,7 +63,8 @@ function createApp(options={}){
    if(!device||device.type!=='router'||!routerAgent.validToken(token,store.secret(credentialId)))throw error(401,'Customer discovery enrollment denied');
    if(Date.now()-(agentAccepted.get(credentialId)||0)<30000)throw error(429,'Wait at least thirty seconds between discovery reports');
    const report=await body(req,1048576);if(!routerAgent.validToken(token,store.secret(credentialId)))throw error(401,'Customer discovery enrollment denied');
-   const accepted=customers.receive(store,device,report,customerUploads);if(accepted.completed)agentAccepted.set(credentialId,Date.now());return json(res,200,accepted);
+   let accepted;try{accepted=customers.receive(store,device,report,customerUploads);}catch(cause){if(cause.status===400){store.setting('customerDiscoveryError:'+device.id,{time:Date.now(),message:cause.message});console.warn('Customer discovery report rejected for '+device.name+': '+cause.message);}throw cause;}
+   if(accepted.completed){agentAccepted.set(credentialId,Date.now());store.setting('customerDiscoveryError:'+device.id,null);}return json(res,200,accepted);
   }
   if(checkIn&&method==='POST'){
    const device=store.get('devices',checkIn[1]),token=String(req.headers.authorization||'').replace(/^Bearer /,'');
