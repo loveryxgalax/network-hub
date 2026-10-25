@@ -36,5 +36,8 @@ test('vouchers, manual connects, campaigns, reports, logs and nav counts',async(
   const rep=(await api('reports?days=7')).body;assert.equal(rep.total,1500);assert.equal(rep.perDay.length,7);assert.equal(rep.byPlan[0].name,'Home');assert.equal(rep.newCustomers,3);
   const prev=(await api('radius/campaign/preview','POST',{segment:'pppoe'})).body;assert.equal(prev.count,1);
   assert.equal((await api('radius/campaign','POST',{segment:'pppoe',message:'Hello {name}',confirm:1})).status,400,'needs SMS configured');
+ const st=(await api('portal/status')).body;assert.equal(st.config.design,'dashboard');
+  assert.equal((await api('portal/status','PUT',{...st.config,design:'neon',accent:'#112233'})).status,200);assert.equal((await api('portal/status','PUT',{...st.config,design:'nope'})).status,400);
+  const html=await (await fetch(origin+'/api/portal/status.html',{headers:{Cookie:cookie}})).text();assert.match(html,/\$\(session-time-left\)/);assert.match(html,/class="neon"/);
  }finally{app.server.close();app.bridge.close();app.store?.close?.();fs.rmSync(directory,{recursive:true,force:true});}
 });

@@ -17,7 +17,7 @@ const PRESETS={
 const group=(id,label,glyph,head)=>head?[id,label,glyph,head]:[id,label,glyph];
 const items=[
  group('radius','All customers & plans','onu','CUSTOMERS'),group('cust-new','New customers','plus'),group('cust-inactive','Inactive','clock'),group('cust-hotspot','Hotspot customers','activity'),group('cust-pppoe','PPPoE customers','router'),
- group('hs-packages','Packages','server','HOTSPOT'),group('hs-requests','Payment requests','check'),group('hs-sessions','Sessions','activity'),group('hs-auth','Auth logs','info'),group('hs-acct','Acct logs','info'),group('hs-manual','Manual connect','plus'),group('hs-vouchers','Vouchers','server'),
+ group('hs-packages','Packages','server','HOTSPOT'),group('captive','Captive experience','grid'),group('hs-requests','Payment requests','check'),group('hs-sessions','Sessions','activity'),group('hs-auth','Auth logs','info'),group('hs-acct','Acct logs','info'),group('hs-manual','Manual connect','plus'),group('hs-vouchers','Vouchers','server'),
  group('pp-packages','Packages','server','PPPOE'),group('pp-sessions','Sessions','activity'),group('pp-auth','Auth logs','info'),group('pp-acct','Acct logs','info'),
  group('pay-received','Received','check','PAYMENTS'),group('pay-reports','Reports','grid'),group('pay-mpesa','M-Pesa & portal','settings'),
  group('comms-sms','SMS','info','COMMS'),group('comms-campaigns','Campaigns','activity')
@@ -60,6 +60,36 @@ const pages={
   f.onsubmit=async e=>{e.preventDefault();if(!confirm(`Send this SMS to ${n} customer${n===1?'':'s'}?`))return;const v=Object.fromEntries(new FormData(f));send.disabled=true;try{await api('radius/campaign','POST',{segment:v.segment,planId:v.planId,message:v.message,confirm:n});toast('Campaign started');pages.campaigns(id);}catch(error){toast(error.message);send.disabled=false;}};
   const stop=$('#im-stop');if(stop)stop.onclick=async()=>{try{await api('radius/campaign','DELETE');toast('Stopping after the current message');}catch(e){toast(e.message);}};
   if(c.running)setTimeout(()=>{if(state.page===id&&!$('dialog[open]'))pages.campaigns(id);},4000);},
+ async captive(id){const admin=state.session.user.role==='admin';shell('Captive experience','What customers see when they connect: the landing page, and the status page for people already online.');
+  const [l,st]=await Promise.all([api('portal/landing'),api('portal/status')]);if(state.page!==id)return;cv.cfg=cv.cfg||l.config;cv.st=cv.st||st.config;
+  const sw=(name,label,on)=>`<label class="check-label"><input type="checkbox" name="${name}" ${on?'checked':''} ${admin?'':'disabled'}> ${label}</label>`,field=(label,input)=>`<label>${label}${input}</label>`;
+  const themes=l.themes.map(t=>`<button type="button" class="button ${cv.cfg.theme===t?'primary':'secondary'}" data-cv-theme="${t}" ${admin?'':'disabled'}>${t[0].toUpperCase()+t.slice(1)}</button>`).join('');
+  const designs=Object.entries(st.designs).map(([k,n])=>`<button type="button" class="button ${cv.st.design===k?'primary':'secondary'}" data-cv-design="${k}" ${admin?'':'disabled'}>${H(n)}</button>`).join('');
+  const c=cv.cfg,s=cv.st,sh=c.show;
+  $('#im-body').innerHTML=`<nav class="page-tabs"><a href="#captive" data-cv-tab="landing" class="${cv.tab==='landing'?'active':''}">Landing page</a><a href="#captive" data-cv-tab="status" class="${cv.tab==='status'?'active':''}">Status page</a></nav>
+  <div class="cv-grid"><form id="cv-form" class="card radius-form">${cv.tab==='landing'?`
+   <h2>Landing page</h2><p class="muted">The page customers see before they pay. Changes show in the preview straight away; press Save to publish.</p>
+   <div class="cv-themes">${themes}</div>
+   <div class="form-grid">${field('Business name',`<input name="brandName" maxlength="40" value="${H(c.brandName)}">`)+field('Brand colour',`<input name="brandColor" type="color" value="${H(c.brandColor)}">`)+field('Phone',`<input name="phone" maxlength="20" value="${H(c.phone)}">`)+field('WhatsApp',`<input name="whatsapp" maxlength="20" value="${H(c.whatsapp)}">`)+field('Email',`<input name="email" maxlength="80" value="${H(c.email)}">`)+field('Popular package (badge)',`<input name="popular" maxlength="60" value="${H(c.popular)}">`)+field('Default language',`<select name="defaultLang"><option value="sw" ${c.defaultLang==='sw'?'selected':''}>Kiswahili</option><option value="en" ${c.defaultLang==='en'?'selected':''}>English</option></select>`)+field('Account prefix',`<input name="accountPrefix" maxlength="8" value="${H(c.accountPrefix)}">`)}</div>
+   ${field('Intro line',`<textarea name="intro" rows="2" maxlength="240" placeholder="Leave empty to use each design's own wording">${H(c.intro)}</textarea>`)}
+   <h3>Show on the landing page</h3><div class="cv-switches">${sw('show.pppoe','PPPoE packages',sh.pppoe)+sw('show.hotspot','Hotspot packages',sh.hotspot)+sw('show.findAccount','Find my account',sh.findAccount)+sw('show.accessAccount','Access my account',sh.accessAccount)+sw('show.onTheGo','On-the-Go WiFi card',sh.onTheGo)+sw('show.contact','Contact section',sh.contact)}</div>`:`
+   <h2>Status page</h2><p class="muted">Where a customer lands once connected: time left, data used and a button to buy more.</p>
+   <div class="cv-themes">${designs}</div>
+   <div class="form-grid">${field('Name shown',`<input name="brandName" maxlength="40" value="${H(s.brandName)}">`)+field('Buy button text',`<input name="buyLabel" maxlength="30" value="${H(s.buyLabel)}">`)+field('Primary colour',`<input name="primary" type="color" value="${H(s.primary)}">`)+field('Background',`<input name="background" type="color" value="${H(s.background)}">`)+field('Text',`<input name="text" type="color" value="${H(s.text)}">`)+field('Accent',`<input name="accent" type="color" value="${H(s.accent)}">`)}</div>${sw('showLogo','Show logo',s.showLogo)}
+   <h3>Put it on the router</h3><p class="muted">Download <code>status.html</code>, then in WinBox open Files, <code>hotspot/</code>, and replace the router's <code>status.html</code> (keep a copy of the old one). The portal address must be in the walled garden so the buy button works.</p><a class="button secondary" href="/api/portal/status.html" download>Download status.html</a>`}
+   ${admin?'<button class="button primary" id="cv-save">Save</button>':'<p class="muted">Only admins can save changes.</p>'}</form>
+  <section class="card cv-preview"><header class="cv-bar"><strong>Preview</strong><span>${['mobile','tablet','laptop'].map(d=>`<button type="button" class="button ${cv.device===d?'primary':'secondary'}" data-cv-device="${d}">${d[0].toUpperCase()+d.slice(1)}</button>`).join('')}</span></header><div class="cv-stage"><iframe id="cv-frame" class="cv-${cv.device}" title="Preview" src="${cv.tab==='landing'?'/portal/?preview=1':'/api/portal/status.html?preview=1&cfg='+encodeURIComponent(JSON.stringify(cv.st))}"></iframe></div></section></div>`;
+  const f=$('#cv-form'),frame=$('#cv-frame'),read=()=>{const v=new FormData(f),get=n=>v.get(n);if(cv.tab==='landing'){const cfg={...cv.cfg};for(const k of ['brandName','brandColor','phone','whatsapp','email','popular','defaultLang','accountPrefix','intro'])cfg[k]=get(k)??'';cfg.show={};for(const k of Object.keys(cv.cfg.show))cfg.show[k]=v.has('show.'+k);return cfg;}
+   const cfg={...cv.st};for(const k of ['brandName','buyLabel','primary','background','text','accent'])cfg[k]=get(k)??'';cfg.showLogo=v.has('showLogo');return cfg;};
+  const push=()=>{if(cv.tab==='landing')frame.contentWindow?.postMessage({kade:'config',config:cv.cfg},location.origin);else frame.src='/api/portal/status.html?preview=1&cfg='+encodeURIComponent(JSON.stringify(cv.st));};
+  const change=()=>{if(cv.tab==='landing')cv.cfg=read();else cv.st=read();push();};
+  f.oninput=change;f.onchange=change;if(cv.tab==='landing')frame.onload=push;
+  for(const b of document.querySelectorAll('[data-cv-theme]'))b.onclick=()=>{cv.cfg={...read(),theme:b.dataset.cvTheme};pages.captive(id);};
+  for(const b of document.querySelectorAll('[data-cv-design]'))b.onclick=()=>{cv.st={...read(),design:b.dataset.cvDesign};pages.captive(id);};
+  for(const b of document.querySelectorAll('[data-cv-tab]'))b.onclick=e=>{e.preventDefault();cv.tab=b.dataset.cvTab;pages.captive(id);};
+  for(const b of document.querySelectorAll('[data-cv-device]'))b.onclick=()=>{cv.device=b.dataset.cvDevice;frame.className='cv-'+cv.device;for(const x of document.querySelectorAll('[data-cv-device]'))x.className='button '+(x===b?'primary':'secondary');};
+  f.onsubmit=async e=>{e.preventDefault();const btn=$('#cv-save');if(!btn)return;btn.disabled=true;try{if(cv.tab==='landing'){cv.cfg=await api('portal/landing','PUT',read());}else{cv.st=await api('portal/status','PUT',read());}toast('Saved');}catch(error){toast(error.message);}finally{btn.disabled=false;}};
+ },
  async reports(id){const days=Number(sessionStorage.getItem('imDays'))||30;shell('Reports','Revenue and growth from recorded payments.',`<select id="im-days" aria-label="Period">${[7,30,90,365].map(n=>`<option value="${n}" ${n===days?'selected':''}>Last ${n} days</option>`).join('')}</select>`);
   const r=await api('reports?days='+days);if(state.page!==id)return;
   const stat=(t,v,s)=>`<div class="card metric-card"><div><div class="metric-title">${t}</div><strong class="metric-value">${v}</strong><p>${s}</p></div></div>`,money=n=>'KSh '+Number(n).toLocaleString('en-KE'),tbl=(t,list)=>`<section class="card sites-panel"><div class="card-header"><h2>${t}</h2></div>${table(['NAME','AMOUNT','SHARE'],list,x=>`<tr><td>${H(x.name)}</td><td>${money(x.amount)}</td><td>${r.total?Math.round(x.amount/r.total*100):0}%</td></tr>`,'No payments in this period.')}</section>`;
@@ -67,7 +97,8 @@ const pages={
   kc.bars($('#im-chart'),{items:r.perDay.map(x=>({label:x.date.slice(days>31?5:8),title:x.date,value:x.amount,sub:money(x.amount)})),label:'Revenue per day',fmt:v=>money(v)});
   $('#im-days').onchange=e=>{sessionStorage.setItem('imDays',e.target.value);pages.reports(id);};}
 };
-const ROUTES={'hs-sessions':'sessions','pp-sessions':'sessions','hs-auth':'auth','pp-auth':'auth','hs-acct':'acct','pp-acct':'acct','hs-requests':'requests','hs-manual':'manual','hs-vouchers':'vouchers','comms-campaigns':'campaigns','pay-reports':'reports'};
+const cv={tab:'landing',cfg:null,st:null,device:'mobile'};
+const ROUTES={'hs-sessions':'sessions','pp-sessions':'sessions','hs-auth':'auth','pp-auth':'auth','hs-acct':'acct','pp-acct':'acct','hs-requests':'requests','hs-manual':'manual','hs-vouchers':'vouchers','comms-campaigns':'campaigns','pay-reports':'reports','captive':'captive'};
 const original=window.render;
 window.render=function(){
  const id=state.page,preset=PRESETS[id];

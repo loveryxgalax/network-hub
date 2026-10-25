@@ -213,8 +213,11 @@ function wireAdmin(){
    const data=await r.json().catch(()=>({}));btn.textContent=r.ok?'Saved ✓':(data.error||'Save failed');}catch{btn.textContent='Save failed';}setTimeout(()=>btn.textContent='Save',2200);};
  $('#copyCfg').onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(CFG,null,2));$('#copyCfg').textContent='Copied ✓';}catch{$('#copyCfg').textContent='Copy failed';}setTimeout(()=>$('#copyCfg').textContent='Copy JSON',1500);};
 }
+window.addEventListener('message',e=>{if(e.origin!==location.origin||!params.has('preview')||e.data?.kade!=='config')return;const c=e.data.config||{};CFG={...CFG,...c,show:{...CFG.show,...(c.show||{})}};if(c.defaultLang)LANG=c.defaultLang;render();});
 async function checkAdmin(){
- if(!params.has('admin'))return;
+ if(params.has('preview')){try{parent.postMessage({kade:'ready'},location.origin);}catch{}return;}
+ if(params.has('admin')){location.replace('/#captive');return;}
+ return;
  try{const r=await fetch('/api/session',{credentials:'same-origin'}),d=await r.json();if(d.user?.role==='admin'){csrf=d.csrf;isAdmin=true;wireAdmin();render();return;}}catch{}
  $('#adminNote').classList.remove('hide');
 }

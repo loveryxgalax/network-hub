@@ -15,7 +15,7 @@ const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
 const c2b=require('./lib/c2b.cjs');
-const landing=require('./lib/landing.cjs');
+const landing=require('./lib/landing.cjs'),statusPage=require('./lib/status.cjs');
 const overview=require('./lib/overview.cjs');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const error=(status,message)=>Object.assign(new Error(message),{status});
@@ -96,6 +96,9 @@ function createApp(options={}){
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
   if(route==='/api/overview'&&method==='GET'){if(user.role==='installer')throw error(403,'The overview is not available to field installers');const range=url.searchParams.get('range')||'24h',key=range+(user.role==='admin'?'a':'n'),hit=overviewCache.get(key);if(hit&&Date.now()-hit.at<15000)return json(res,200,hit.value);const value=overview.build(store,range);if(user.role!=='admin')value.revenue={today:null,week:null,month:null,days:[],byMethod:{},recent:[]};overviewCache.set(key,{at:Date.now(),value});return json(res,200,value);}
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
+  if(route==='/api/portal/status'){if(method==='GET')return json(res,200,{config:statusPage.get(store),designs:statusPage.DESIGNS});role(user,['admin']);if(method==='PUT'){const saved=statusPage.save(store,await body(req));store.audit(user,'Updated hotspot status page','portal');return json(res,200,saved);}}
+  if(route==='/api/portal/status.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);const q=url.searchParams,preview=q.get('preview')==='1';let cfg=statusPage.get(store);if(preview){try{cfg=statusPage.validate({...cfg,...JSON.parse(q.get('cfg')||'{}')});}catch{}}
+   const head={'Content-Type':'text/html; charset=utf-8'};if(!preview)head['Content-Disposition']='attachment; filename="status.html"';res.writeHead(200,head);return res.end(statusPage.page(cfg,publicUrl?.origin||'https://netops.kadenetworks.com',preview));}
   if(route==='/api/portal/landing'){
    if(method==='GET')return json(res,200,{config:landing.get(store),themes:landing.THEMES});
    role(user,['admin']);if(method==='PUT'){const saved=landing.save(store,await body(req));store.audit(user,'Updated landing page design',saved.theme);return json(res,200,saved);}
@@ -271,7 +274,7 @@ function createApp(options={}){
   });return json(res,existing?200:201,kind==='devices'?readDevice(saved):saved);
  }
  const server=http.createServer(async(req,res)=>{
-  res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
   try{const url=new URL(req.url,'http://localhost');if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(url.pathname.startsWith('/portal/api/'))return await portalApi(req,res,url);if(url.pathname==='/portal'){res.writeHead(301,{Location:'/portal/'+url.search});return res.end();}if(url.pathname.startsWith('/portal/')&&['GET','HEAD'].includes(req.method)){const rel=url.pathname==='/portal/'?'/index.html':url.pathname.slice('/portal'.length),file=path.resolve(portalRoot,'.'+rel);if(!file.startsWith(portalRoot+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'};res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream'});return res.end(req.method==='HEAD'?undefined:fs.readFileSync(file));}if(!['GET','HEAD'].includes(req.method))throw error(405,'Method not allowed');let requested;try{requested=decodeURIComponent(url.pathname);}catch{throw error(400,'Invalid URL');}const file=path.resolve(root,'.'+(requested==='/'?'/index.html':requested));if(!file.startsWith(root+path.sep))throw error(403,'Invalid path');if(!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.txt':'text/plain; charset=utf-8'};res.setHeader('Content-Type',types[path.extname(file)]||'application/octet-stream');res.statusCode=200;if(req.method==='HEAD')return res.end();fs.createReadStream(file).pipe(res);
   }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'Server could not complete this request'});if(!cause.status)console.error(cause.name+': server operation failed');}
  });
