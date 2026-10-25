@@ -457,4 +457,8 @@ body[data-layout=swipe] .pkgs{display:flex;grid-template-columns:none;gap:12px;o
 body[data-layout=swipe] .pkg{flex:0 0 72%;max-width:260px;scroll-snap-align:start;flex-direction:column;align-items:stretch}
 body[data-layout=swipe] .pkg .meta{order:0;width:auto}
 body[data-layout=swipe] .pkg .price{margin:6px 0 0;font-size:22px}
-body.phone-frame{padding-top:46px}
+body.phone-frame{padding-top:34px}
+html:has(body.phone-frame){scrollbar-width:none}html:has(body.phone-frame)::-webkit-scrollbar{display:none}
+body.phone-frame .pkgs{scrollbar-width:none}body.phone-frame .pkgs::-webkit-scrollbar{display:none}
+
+body[data-layout=swipe] .pkgs{scrollbar-width:none}body[data-layout=swipe] .pkgs::-webkit-scrollbar{display:none}
