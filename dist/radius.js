@@ -54,7 +54,7 @@ function paintRadius(){const d=radiusView.data;if(!d)return;
 }
 async function loadRadius(){const request=++radiusView.request;try{const [d,b,m]=await Promise.all([api('radius'),api('billing'),api('mpesa')]);if(request!==radiusView.request||state.page!=='radius')return;radiusView.data=d;radiusView.billing=b;radiusView.mpesa=m;paintRadius();}catch(error){if(request===radiusView.request)$('#radius-content').innerHTML=notice('Could not load subscribers',h(error.message),true);}}
 function renderRadius(){
- $('#main').innerHTML=heading('Subscribers & plans','Netops\' own RADIUS: who may log in, at what speed and until when. It replaces ISPman one router at a time.','<button class="button secondary" id="radius-new-plan">New plan</button><button class="button primary" id="radius-new-sub">New subscriber</button>')+
+ $('#main').innerHTML=heading('Subscribers & plans','Netops\' own RADIUS: who may log in, at what speed and until when. It replaces ISPman one router at a time.','<button class="button secondary" id="radius-import">Import CSV</button><button class="button secondary" id="radius-new-plan">New plan</button><button class="button primary" id="radius-new-sub">New subscriber</button>')+
  `<div id="radius-content"><div id="radius-metrics" class="dashboard-cards sites-cards radius-cards"><div class="card metric-card"><p>Loading…</p></div></div>
  <div class="sites-tabs" role="tablist">${[['subscribers','Subscribers'],['plans','Plans'],['sessions','Online now'],['log','Login log'],['payments','Payments'],['mpesa','M-Pesa & portal'],['sms','SMS'],['setup','Router setup']].map(([k,l])=>`<button type="button" role="tab" data-radius-tab="${k}">${l}</button>`).join('')}</div>
  <section class="card sites-panel" data-radius-panel="subscribers"><div class="table-toolbar sites-toolbar radius-toolbar"><input type="search" id="radius-query" placeholder="Search name, username, phone, MAC" aria-label="Search subscribers"><select id="radius-filter" aria-label="Status">${radiusOptions([['all','All subscribers'],['active','Active'],['online','Online now'],['expired','Expired'],['suspended','Suspended']],radiusView.filter)}</select></div><div id="radius-subscribers"></div></section>
@@ -66,7 +66,7 @@ function renderRadius(){
  <section class="sites-panel" data-radius-panel="sms" hidden><div id="radius-sms"></div></section>
  <section class="card sites-panel" data-radius-panel="setup" hidden><div class="card-header"><div><h2>Connect a MikroTik</h2><p>Each router reaches this RADIUS through a private WireGuard tunnel to the netops server. Nothing here changes a router by itself.</p></div></div>
  <ol class="radius-steps"><li><strong>Once on the server:</strong> <code>sudo bash deployment/wireguard/setup-server.sh</code>, open UDP 51820 in Azure, set <code>RADIUS_SECRET</code> and <code>NETWORK_RADIUS_TOKEN</code> in <code>.env</code>, then <code>docker compose --profile radius up -d --build</code>.</li><li><strong>Per router:</strong> <code>sudo bash deployment/wireguard/add-router.sh hEX 2</code> prints the commands to paste on that MikroTik.</li><li><strong>Test without affecting customers:</strong> the router sends only logins ending in <code>@<span class="radius-realm"></span></code> to netops; everyone else stays on ISPman. Log in as <code>username@<span class="radius-realm"></span></code> on PPPoE or the hotspot.</li><li><strong>Switch over</strong> one router at a time once tests pass. ISPman stays as the fallback until you remove it.</li></ol></section></div>`;
- $('#radius-new-plan').onclick=()=>planEditor();$('#radius-new-sub').onclick=()=>subscriberEditor();
+ $('#radius-new-plan').onclick=()=>planEditor();$('#radius-import').onclick=importDialog;$('#radius-new-sub').onclick=()=>subscriberEditor();
  for(const b of document.querySelectorAll('[data-radius-tab]'))b.onclick=()=>{radiusView.tab=b.dataset.radiusTab;paintRadius();};
  $('#radius-query').oninput=e=>{radiusView.q=e.target.value;paintRadius();};$('#radius-filter').onchange=e=>{radiusView.filter=e.target.value;paintRadius();};
  loadRadius();
@@ -104,4 +104,18 @@ function paintMpesa(){const m=radiusView.mpesa;if(!m)return;let portalHost='neto
 /ip hotspot walled-garden ip add dst-host=${h(portalHost)} action=accept comment="netops portal"</pre></li><li>The router must use the netops RADIUS for hotspot logins (Router setup tab).</li></ol></section></div>
  <section class="card"><div class="card-header"><div><h2>Portal payments</h2><p>M-Pesa requests from the portal (latest 300).</p></div></div>${table(['TIME','PHONE','FOR','AMOUNT','STATUS','RECEIPT / REASON','ACCOUNT'],m.payments,p=>`<tr><td>${h(stamp(p.createdAt))}</td><td>${h(p.phone)}</td><td>${p.kind==='account'?'Home internet':'Wi-Fi'}<small>${h(p.planName)}</small></td><td>${ksh(p.amount)}</td><td><span class="status ${p.status==='paid'?'online':p.status==='failed'?'offline':'warning'}">${statusText[p.status]||h(p.status)}</span></td><td>${p.receipt?`<code>${h(p.receipt)}</code>`:`<small>${h(p.reason||'')}</small>`}</td><td>${h(p.username||'—')}</td></tr>`,'No portal payments yet.')}</section>`;
  const f=$('#mpesa-config');if(f)f.onsubmit=async e=>{e.preventDefault();const btn=$('button',f);btn.disabled=true;try{await api('mpesa','PUT',Object.fromEntries(new FormData(f)));toast('M-Pesa saved');await loadRadius();}catch(error){toast(error.message);}finally{btn.disabled=false;}};
+}
+
+// Import customers from a CSV (e.g. an ISPman export): preview, then save all or nothing.
+function importDialog(){let csv='';
+ radiusForm('Import subscribers','Columns (any order): name, username, password, phone, plan, expires (YYYY-MM-DD), service, static_ip. Plans must already exist with the same names. Existing usernames are updated.',
+  radiusField('CSV file','<input name="file" type="file" accept=".csv,text/csv,text/plain" required>')+'<div id="import-preview"></div>','Preview',async input=>{
+   if(!csv){csv=await input.file.text();}
+   const commit=$('#editor-form [type=submit]').dataset.commit==='1',r=await api('radius/import','POST',{csv,commit});
+   if(r.committed){toast(`Imported ${r.create} new and updated ${r.update} subscribers`);return;}
+   $('#import-preview').innerHTML=`<p><strong>${r.create}</strong> new · <strong>${r.update}</strong> updated · <strong class="${r.errors?'form-error':''}">${r.errors} with problems</strong></p>`+table(['LINE','USERNAME','RESULT'],r.rows.slice(0,200),x=>`<tr><td>${x.line}</td><td>${h(x.username)}</td><td>${x.error?`<span class="form-error">${h(x.error)}</span>`:x.action==='create'?'New':'Update'}${x.expiresAt?` <small>expires ${h(stamp(x.expiresAt))}</small>`:''}</td></tr>`);
+   const btn=$('#editor-form [type=submit]');if(!r.errors){btn.textContent='Import '+r.total+' subscribers';btn.dataset.commit='1';}else{btn.textContent='Preview again';delete btn.dataset.commit;csv='';}
+   throw Object.assign(new Error(r.errors?'Fix the rows marked in red in your file, then choose it again. Nothing was saved.':'Check the preview, then import.'),{keepOpen:true});
+  });
+ $('#editor-form [type=submit]').dataset.commit='';
 }

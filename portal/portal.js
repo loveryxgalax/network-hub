@@ -37,6 +37,7 @@ function poll(id,token,started){clearTimeout(polling);polling=setTimeout(async()
 },3000);}
 async function init(){
  for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{alertBox('');show(b.dataset.tab);};
+ const tab=params.get('tab');if(['buy','code','account'].includes(tab))show(tab);
  const err=params.get('error');if(err)alertBox(err);
  try{const info=await call('info');document.title=info.name+' Wi-Fi';$('#portal-name').textContent=info.name;plans=info.plans;renderPlans();if(info.support)$('#portal-support').textContent='Help: '+info.support;if(!info.mpesa)alertBox('M-Pesa payments are not available yet. If you have a code, use “I have a code”.');}
  catch{$('#portal-plans').innerHTML='<p class="portal-muted">Could not load packages. Refresh the page.</p>';}

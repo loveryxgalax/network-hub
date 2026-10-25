@@ -39,3 +39,15 @@ test('netops RADIUS decides logins, speeds and expiry, and records accounting',a
   assert.equal((await api('radius/subscribers/'+h.id+'/password')).body.password,h.password);
  }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
 });
+test('ISPman-style CSV imports preview first and save all or nothing',()=>{
+ const {Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'network-import-')),store=new Store(dir);
+ try{store.put('plans',radius.plan({name:'Home 10',service:'pppoe',downloadMbps:10,uploadMbps:5,price:2500,durationValue:30,durationUnit:'days'}));
+  const good='﻿Full Name,Username,Password,Phone,Package,Expiry Date\n"Wanjiru, Jane",Jane@kade,pass1234,0712345678,home 10,2026-11-30\nPeter,peter,secret99,,Home 10,\n';
+  const preview=radius.importCsv(store,good);assert.equal(preview.create,2);assert.equal(preview.errors,0);assert.equal(preview.committed,false);assert.equal(store.list('subscribers').length,0,'preview saves nothing');
+  const bad=good+'Ann,ann,pw123456,,Gold,2026-11-30\n';const r=radius.importCsv(store,bad,true);assert.equal(r.errors,1);assert.match(r.rows[2].error,/No plan named "Gold"/);assert.equal(store.list('subscribers').length,0,'one bad row saves nothing');
+  const done=radius.importCsv(store,good,true);assert.equal(done.committed,true);const jane=store.list('subscribers').find(s=>s.username==='jane');
+  assert.equal(jane.name,'Wanjiru, Jane');assert.equal(radius.password(store,jane.id),'pass1234');assert.equal(new Date(jane.expiresAt).toISOString(),'2026-11-30T20:59:00.000Z');
+  const again=radius.importCsv(store,'username,plan,expires\njane,Home 10,2026-12-31\n',true);assert.equal(again.update,1);assert.equal(radius.password(store,jane.id),'pass1234','updates keep the password when the column is empty');
+  assert.throws(()=>radius.importCsv(store,'name,phone\nx,1\n'),/username and plan/);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});

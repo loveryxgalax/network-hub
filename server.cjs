@@ -111,6 +111,7 @@ function createApp(options={}){
    const write=()=>role(user,['admin','operator','manager']);
    if(route==='/api/radius'&&method==='GET')return json(res,200,radius.overview(store));
    if(route==='/api/radius/settings'&&method==='PUT'){role(user,['admin']);const saved=radius.updateSettings(store,await body(req));store.audit(user,'Updated RADIUS settings','radius');return json(res,200,saved);}
+   if(route==='/api/radius/import'&&method==='POST'){role(user,['admin','manager']);const input=await body(req,4194304);const result=radius.importCsv(store,input.csv,input.commit===true);if(result.committed)store.audit(user,'Imported '+result.total+' subscribers','radius');return json(res,200,result);}
    if(route==='/api/radius/plans'&&method==='POST'){write();const saved=store.put('plans',radius.plan(await body(req)));store.audit(user,'Created plan',saved.id);return json(res,201,saved);}
    const planRoute=route.match(/^\/api\/radius\/plans\/([a-f0-9-]{36})$/);
    if(planRoute){write();const existing=store.get('plans',planRoute[1]);if(!existing)throw error(404,'Plan not found');
