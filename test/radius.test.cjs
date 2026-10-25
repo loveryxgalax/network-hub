@@ -59,3 +59,17 @@ test('ISPman-style CSV imports preview first and save all or nothing',()=>{
   const big='username,plan\n'+Array.from({length:3000},(_,i)=>'w'+String(i).padStart(5,'0')+',OFA MOTO').join('\n');const t0=Date.now();assert.equal(radius.importCsv(store,big,true).create,3000);assert.ok(Date.now()-t0<20000,'3,000 rows import quickly');
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('ISPman PPPoE exports import with spaced usernames, existing passwords and deactivated status; paybill matches names with spaces',()=>{
+ const {Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs'),c2b=require('../lib/c2b.cjs'),mpesa=require('../lib/mpesa.cjs');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'network-pppoe-')),store=new Store(dir);
+ try{store.put('plans',radius.plan({name:'Basic',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days'}));
+  const csv='name,username,password,phone,plan,expires,service,status\nChristine Mwikali Dashmash,Christine Mwikali,@Net,+254723632248,basic,2026-11-06 20:47,pppoe,Online\nDante Muthengi,Dante  Muthengi,@Net,,Basic,2026-09-24 23:59,pppoe,Deactivated\n';
+  const r=radius.importCsv(store,csv,true);assert.equal(r.errors,0);assert.equal(r.create,2);
+  const dante=store.list('subscribers').find(s=>s.username==='dante muthengi');assert.equal(dante.status,'suspended');assert.equal(radius.password(store,dante.id),'@Net');
+  // The router sends the username exactly as the customer's router has it; capitals and spaces still match.
+  const asked=radius.authorize(store,{'User-Name':'Christine Mwikali','Service-Type':'Framed-User','Framed-Protocol':'PPP'});assert.equal(asked.status,200);assert.equal(asked.attributes['control:Cleartext-Password'],'@Net');
+  assert.equal(radius.authorize(store,{'User-Name':'Dante Muthengi','Service-Type':'Framed-User'}).status,401,'deactivated customers are refused');
+  mpesa.setConfig(store,{env:'production',type:'paybill',shortcode:'174379',consumerKey:'a',consumerSecret:'b',passkey:'c'});
+  assert.equal(c2b.match(store,'christine mwikali')?.username,'christine mwikali');assert.equal(c2b.match(store,'ChristineMwikali')?.username,'christine mwikali','a customer who types the account without the space is still found');
+  assert.throws(()=>radius.subscriber(store,{name:'x',username:'bad!name',service:'pppoe',planId:store.list('plans')[0].id}),/Usernames use/);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
