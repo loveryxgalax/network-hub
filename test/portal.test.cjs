@@ -58,7 +58,7 @@ test('portal pages and API are public; M-Pesa settings are admin-only',async()=>
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-portal-app-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test'});
  await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+app.server.address().port;
  try{
-  const page=await fetch(origin+'/portal/');assert.equal(page.status,200);assert.match(await page.text(),/Buy Wi-Fi/);
+  const page=await fetch(origin+'/portal/');assert.equal(page.status,200);const html=await page.text();assert.match(html,/id="portal-plans"/);assert.match(html,/Kade Networks/);assert.ok(!/\son(error|click|load)=/i.test(html),"no inline handlers: the page security policy blocks them");
   assert.equal((await fetch(origin+'/portal/../server.cjs')).status,404);
   const info=await (await fetch(origin+'/portal/api/info')).json();assert.equal(info.mpesa,false);assert.deepEqual(info.plans,[]);
   assert.equal((await fetch(origin+'/portal/api/mpesa/aaaaaaaaaaaaaaaaaaaaaaaa',{method:'POST',body:'{}'})).status,404);
