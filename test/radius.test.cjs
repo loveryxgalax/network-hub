@@ -49,5 +49,13 @@ test('ISPman-style CSV imports preview first and save all or nothing',()=>{
   assert.equal(jane.name,'Wanjiru, Jane');assert.equal(radius.password(store,jane.id),'pass1234');assert.equal(new Date(jane.expiresAt).toISOString(),'2026-11-30T20:59:00.000Z');
   const again=radius.importCsv(store,'username,plan,expires\njane,Home 10,2026-12-31\n',true);assert.equal(again.update,1);assert.equal(radius.password(store,jane.id),'pass1234','updates keep the password when the column is empty');
   assert.throws(()=>radius.importCsv(store,'name,phone\nx,1\n'),/username and plan/);
+  // Hotspot wallets without passwords: passwords are generated, plan names match ignoring case and spacing, balances are kept, and thousands of rows are fast.
+  store.put('plans',radius.plan({name:'OFA MOTO',service:'hotspot',downloadMbps:5,uploadMbps:5,price:10,durationValue:1,durationUnit:'hours'}));
+  const wallets='Wallet,Phone,Package,Expiry,Balance\nKNE-A52MDE,+254720463327,ofa  moto,2026-10-25 20:29:52,10\nKNE-34QTY8,,OFA MOTO,,\n';
+  const w=radius.importCsv(store,wallets.replace('Wallet','username'),true);assert.equal(w.committed,true);assert.equal(w.generated,2);
+  const kne=store.list('subscribers').find(s=>s.username==='kne-a52mde');assert.equal(kne.service,'hotspot');assert.equal(kne.balance,10);assert.equal(new Date(kne.expiresAt).toISOString(),'2026-10-25T17:29:00.000Z');assert.match(radius.password(store,kne.id),/^\d{6}$/);
+  assert.ok(store.list('subscribers').find(s=>s.username==='kne-34qty8').expiresAt<=Date.now(),'no expiry means expired');
+  const pp=radius.importCsv(store,'username,plan,service\nbob,Home 10,pppoe\n');assert.equal(pp.errors,1);assert.match(pp.rows[0].error,/need their current password/,'PPPoE customers keep their real password');
+  const big='username,plan\n'+Array.from({length:3000},(_,i)=>'w'+String(i).padStart(5,'0')+',OFA MOTO').join('\n');const t0=Date.now();assert.equal(radius.importCsv(store,big,true).create,3000);assert.ok(Date.now()-t0<20000,'3,000 rows import quickly');
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
