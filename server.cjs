@@ -10,6 +10,7 @@ const routerAgent=require('./lib/router-agent.cjs');
 const customers=require('./lib/customers.cjs');
 const sites=require('./lib/sites.cjs');
 const radius=require('./lib/radius.cjs');
+const billing=require('./lib/billing.cjs');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const error=(status,message)=>Object.assign(new Error(message),{status});
 const publicUser=u=>({id:u.id,email:u.email,name:u.name,role:u.role,active:!!u.active});
@@ -20,7 +21,7 @@ function createApp(options={}){
  const publicOrigin=options.publicOrigin??process.env.NETWORK_PUBLIC_ORIGIN;
  const publicUrl=publicOrigin?new URL(publicOrigin):null;
  if(publicUrl&&(publicUrl.protocol!=='https:'||publicUrl.username||publicUrl.password||publicUrl.pathname!=='/'||publicUrl.search||publicUrl.hash))throw new Error('NETWORK_PUBLIC_ORIGIN must be an HTTPS origin');
- const root=path.join(__dirname,'dist'),busy=new Set(),attempts=new Map(),agentAccepted=new Map(),customerUploads=new Map();let timer,closing=false,collecting=false,lastPrune=0;
+ const root=path.join(__dirname,'dist'),busy=new Set(),attempts=new Map(),agentAccepted=new Map(),customerUploads=new Map();let timer,closing=false,collecting=false,lastPrune=0,lastReminders=0;
  const pollMs=Number(options.pollMs||process.env.NETWORK_POLL_MS||30000);if(!Number.isFinite(pollMs)||pollMs<1000)throw new Error('Polling interval must be at least 1000ms');
  const users=()=>store.db.prepare('SELECT * FROM users ORDER BY created').all();
  const text=(value,label,max=250)=>{if(typeof value!=='string'||!value.trim()||value.length>max)throw error(400,'Invalid '+label);return value.trim();};
@@ -52,7 +53,7 @@ function createApp(options={}){
    return recordSnapshot(device,snapshot);
   }catch(cause){const current=store.get('devices',device.id);if(current)store.transaction(()=>{store.measure(device.id,false,{});store.put('devices',{...current,status:'offline',lastCheck:Date.now(),lastError:cause.message},current);if(!store.list('alerts').some(a=>a.deviceId===device.id&&a.source==='collector'&&a.status!=='Resolved'))store.put('alerts',{title:device.name+' is unreachable',details:cause.message,deviceId:device.id,severity:'critical',status:'Open',source:'collector'});});return {online:false,error:cause.message};}finally{busy.delete(device.id);}
  }
- async function collect(){if(collecting)return;collecting=true;try{if(Date.now()-lastPrune>3600000){store.prune();radius.prune(store);lastPrune=Date.now();}for(const d of store.list('devices').filter(d=>d.driver!=='none'&&d.type!=='onu')){if(closing)break;if(d.driver==='routeros-script'){if(d.lastSeen&&Date.now()-d.lastSeen>90000&&store.secret('agent:'+d.id))store.transaction(()=>{store.measure(d.id,false,{source:'routeros-script'});const latest=store.get('devices',d.id);if(latest.status!=='offline')store.put('devices',{...latest,status:'offline',lastError:'No authenticated script check-in for 90 seconds'},latest);if(!store.list('alerts').some(a=>a.deviceId===d.id&&a.source==='collector'&&a.status!=='Resolved'))store.put('alerts',{title:d.name+' stopped checking in',deviceId:d.id,source:'collector',severity:'critical',status:'Open',details:'No authenticated script check-in for 90 seconds'});});continue;}if(!busy.has(d.id))await poll(d);}}finally{collecting=false;}}
+ async function collect(){if(collecting)return;collecting=true;try{if(Date.now()-lastPrune>3600000){store.prune();radius.prune(store);lastPrune=Date.now();}if(Date.now()-lastReminders>600000){lastReminders=Date.now();billing.runReminders(store).catch(()=>{});}for(const d of store.list('devices').filter(d=>d.driver!=='none'&&d.type!=='onu')){if(closing)break;if(d.driver==='routeros-script'){if(d.lastSeen&&Date.now()-d.lastSeen>90000&&store.secret('agent:'+d.id))store.transaction(()=>{store.measure(d.id,false,{source:'routeros-script'});const latest=store.get('devices',d.id);if(latest.status!=='offline')store.put('devices',{...latest,status:'offline',lastError:'No authenticated script check-in for 90 seconds'},latest);if(!store.list('alerts').some(a=>a.deviceId===d.id&&a.source==='collector'&&a.status!=='Resolved'))store.put('alerts',{title:d.name+' stopped checking in',deviceId:d.id,source:'collector',severity:'critical',status:'Open',details:'No authenticated script check-in for 90 seconds'});});continue;}if(!busy.has(d.id))await poll(d);}}finally{collecting=false;}}
  async function api(req,res,url){
   const route=url.pathname,method=req.method,isPublic=!!publicUrl&&req.headers.host===publicUrl.host,secure=isPublic||!!req.socket.encrypted||process.env.NETWORK_SECURE_COOKIE==='1';
   if(publicUrl&&!isPublic&&!['127.0.0.1','localhost','[::1]'].includes(new URL('http://'+req.headers.host).hostname))throw error(403,'Unrecognized dashboard hostname');
@@ -88,6 +89,15 @@ function createApp(options={}){
   if(route==='/api/customers'&&method==='GET'){if(user.role==='installer')throw error(403,'Customer discovery is not available to field installers');return json(res,200,customers.list(store,url.searchParams));}
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
+  if(route.startsWith('/api/billing/')||route==='/api/billing'){
+   if(user.role==='installer')throw error(403,'Billing is not available to field installers');
+   if(route==='/api/billing'&&method==='GET')return json(res,200,billing.overview(store));
+   role(user,['admin']);
+   if(route==='/api/billing/settings'&&method==='PUT'){const saved=billing.updateSettings(store,await body(req));store.audit(user,'Updated SMS reminders','billing');return json(res,200,saved);}
+   if(route==='/api/billing/sms'&&method==='PUT'){const saved=billing.setSmsConfig(store,await body(req));store.audit(user,'Updated SMS provider','billing');return json(res,200,saved);}
+   if(route==='/api/billing/sms/test'&&method==='POST'){const input=await body(req);const result=await billing.sendSms(store,input.to,String(input.message||'Test message from Kade Networks netops.').slice(0,459),'test');store.audit(user,'Sent test SMS','billing');return json(res,200,result);}
+   throw error(404,'API endpoint not found');
+  }
   if(route.startsWith('/api/radius')){
    if(user.role==='installer')throw error(403,'Subscribers are not available to field installers');
    const write=()=>role(user,['admin','operator','manager']);
@@ -99,10 +109,11 @@ function createApp(options={}){
     if(method==='PATCH'){const saved=store.put('plans',radius.plan(await body(req),existing),existing);store.audit(user,'Updated plan',saved.id);return json(res,200,saved);}
     if(method==='DELETE'){if(store.list('subscribers').some(s=>s.planId===existing.id))throw error(409,'Move this plan\'s subscribers to another plan first');store.remove('plans',existing.id);store.audit(user,'Deleted plan',existing.id);return json(res,200,{ok:true});}}
    if(route==='/api/radius/subscribers'&&method==='POST'){write();const input=await body(req);let saved,secret;store.transaction(()=>{saved=store.put('subscribers',radius.subscriber(store,input));secret=radius.setPassword(store,saved.id,input.password);});store.audit(user,'Created subscriber',saved.id);return json(res,201,{...saved,password:secret});}
-   const subRoute=route.match(/^\/api\/radius\/subscribers\/([a-f0-9-]{36})(?:\/(renew|password))?$/);
+   const subRoute=route.match(/^\/api\/radius\/subscribers\/([a-f0-9-]{36})(?:\/(renew|password|payments))?$/);
    if(subRoute){const existing=store.get('subscribers',subRoute[1]);if(!existing)throw error(404,'Subscriber not found');
     if(subRoute[2]==='password'&&method==='GET'){role(user,['admin','operator','manager']);store.audit(user,'Viewed subscriber password',existing.id);return json(res,200,{password:radius.password(store,existing.id)});}
     write();
+    if(subRoute[2]==='payments'&&method==='POST'){const result=billing.pay(store,existing.id,await body(req));store.audit(user,'Recorded payment '+result.payment.reference,existing.id);const sms=await billing.receipt(store,result);return json(res,201,{...result,sms});}
     if(subRoute[2]==='renew'&&method==='POST'){const saved=radius.renew(store,existing.id,(await body(req)).periods||1);store.audit(user,'Renewed subscriber',existing.id);return json(res,200,saved);}
     if(!subRoute[2]&&method==='PATCH'){const input=await body(req);let saved,secret;store.transaction(()=>{saved=store.put('subscribers',radius.subscriber(store,input,existing),existing);if(input.password)secret=radius.setPassword(store,existing.id,input.password);});store.audit(user,'Updated subscriber',existing.id);return json(res,200,secret?{...saved,password:secret}:saved);}
     if(!subRoute[2]&&method==='DELETE'){store.transaction(()=>{store.remove('subscribers',existing.id);store.db.prepare('DELETE FROM secrets WHERE device_id=?').run('subscriber:'+existing.id);});store.audit(user,'Deleted subscriber',existing.id);return json(res,200,{ok:true});}}

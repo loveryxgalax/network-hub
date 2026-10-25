@@ -133,3 +133,8 @@ dialog.modal::backdrop{background:#0b1a24a6;backdrop-filter:blur(2px)}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
 @media (max-width:760px){.form-grid{grid-template-columns:1fr}}
 .sites-cards.radius-cards{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important}
+.radius-sms-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;margin-bottom:16px}
+.radius-form{padding:16px 20px 20px;display:grid;gap:10px}
+.radius-form textarea{width:100%;font:inherit}
+.radius-form .button{justify-self:start}
+.radius-message{max-width:420px;white-space:normal;font-size:12.5px}
