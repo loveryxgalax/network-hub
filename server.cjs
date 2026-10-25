@@ -10,6 +10,7 @@ const routerAgent=require('./lib/router-agent.cjs');
 const customers=require('./lib/customers.cjs');
 const sites=require('./lib/sites.cjs');
 const radius=require('./lib/radius.cjs');
+const vouchers=require('./lib/vouchers.cjs'),campaigns=require('./lib/campaigns.cjs'),reports=require('./lib/reports.cjs');
 const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
@@ -120,10 +121,25 @@ function createApp(options={}){
    if(route==='/api/billing/sms/test'&&method==='POST'){const input=await body(req);const result=await billing.sendSms(store,input.to,String(input.message||'Test message from Kade Networks netops.').slice(0,459),'test');store.audit(user,'Sent test SMS','billing');return json(res,200,result);}
    throw error(404,'API endpoint not found');
   }
+  if(route==='/api/reports'&&method==='GET'){if(user.role==='installer')throw error(403,'Reports are not available to field installers');return json(res,200,reports.build(store,url.searchParams.get('days')));}
+  if(route==='/api/nav-counts'&&method==='GET'){const o=user.role==='installer'?null:radius.overview(store);return json(res,200,o?{customers:o.counts.subscribers,hotspot:o.subscribers.filter(x=>x.service==='hotspot').length,pppoe:o.subscribers.filter(x=>x.service==='pppoe').length,inactive:o.counts.expired,online:o.counts.online,requests:store.list('portalPayments').filter(x=>x.status==='pending').length}:{});}
   if(route.startsWith('/api/radius')){
    if(user.role==='installer')throw error(403,'Subscribers are not available to field installers');
    const write=()=>role(user,['admin','operator','manager']);
    if(route==='/api/radius'&&method==='GET')return json(res,200,radius.overview(store));
+   if(route==='/api/radius/manual-connect'&&method==='POST'){write();const input=await body(req);const plan=store.get('plans',String(input.planId||''));if(!plan||plan.service==='pppoe')throw error(400,'Choose a hotspot plan');
+    const code=require('./lib/vouchers.cjs').generate(store,{planId:plan.id,count:1,length:6,name:'Manual connects'},user).codes[0],sub=require('./lib/vouchers.cjs').redeem(store,code);
+    store.put('subscribers',{...sub,name:String(input.name||'').trim().slice(0,80)||sub.name,phone:String(input.phone||'').trim().slice(0,20)},sub);store.audit(user,'Manual connect '+code,sub.id);
+    let sms=null;if(input.sms===true&&billing.phone(input.phone))sms=await billing.sendSms(store,input.phone,'Your Kade Networks '+plan.name+' code: '+code+'. Enter it on the WiFi page.','manual');
+    return json(res,201,{code,plan:plan.name,expiresAt:sub.expiresAt,sms});}
+   if(route==='/api/radius/vouchers'&&method==='GET'){return json(res,200,{batches:vouchers.batches(store)});}
+   if(route==='/api/radius/vouchers'&&method==='POST'){role(user,['admin','manager']);const out=vouchers.generate(store,await body(req),user);store.audit(user,'Generated '+out.codes.length+' vouchers',out.batch.id);return json(res,201,out);}
+   const vRoute=route.match(/^\/api\/radius\/vouchers\/([a-f0-9-]{36})$/);
+   if(vRoute){if(method==='GET')return json(res,200,{codes:vouchers.codes(store,vRoute[1])});if(method==='DELETE'){role(user,['admin','manager']);const out=vouchers.removeBatch(store,vRoute[1]);store.audit(user,'Deleted voucher batch',vRoute[1]);return json(res,200,out);}}
+   if(route==='/api/radius/campaign'&&method==='GET')return json(res,200,{campaign:campaigns.status(store),running:campaigns.isRunning(),segments:campaigns.SEGMENTS});
+   if(route==='/api/radius/campaign/preview'&&method==='POST')return json(res,200,campaigns.preview(store,await body(req)));
+   if(route==='/api/radius/campaign'&&method==='POST'){role(user,['admin','manager']);const run=campaigns.start(store,await body(req),user);store.audit(user,'Started SMS campaign to '+run.total,'campaign');const {done,...out}=run;return json(res,202,out);}
+   if(route==='/api/radius/campaign'&&method==='DELETE'){role(user,['admin','manager']);return json(res,200,campaigns.cancel());}
    if(route==='/api/radius/settings'&&method==='PUT'){role(user,['admin']);const saved=radius.updateSettings(store,await body(req));store.audit(user,'Updated RADIUS settings','radius');return json(res,200,saved);}
    if(route==='/api/radius/import'&&method==='POST'){role(user,['admin','manager']);const input=await body(req,4194304);const result=radius.importCsv(store,input.csv,input.commit===true);if(result.committed)store.audit(user,'Imported '+result.total+' subscribers','radius');return json(res,200,result);}
    if(route==='/api/radius/plans'&&method==='POST'){write();const saved=store.put('plans',radius.plan(await body(req)));store.audit(user,'Created plan',saved.id);return json(res,201,saved);}

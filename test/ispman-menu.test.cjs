@@ -1,0 +1,40 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const {createApp}=require('../server.cjs');
+const rest=value=>Object.fromEntries(Object.entries(value).map(([k,v])=>[k,{type:'string',value:[v]}]));
+test('vouchers, manual connects, campaigns, reports, logs and nav counts',async()=>{
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-menu-')),token='bridge-token-for-tests-0123456789',app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test',radiusToken:token,radiusPort:0});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));await new Promise(r=>app.bridge.listen(0,'127.0.0.1',r));
+ const origin='http://127.0.0.1:'+app.server.address().port,bridgeOrigin='http://127.0.0.1:'+app.bridge.address().port;let cookie='',csrf='';
+ const api=async(route,method='GET',input)=>{const r=await fetch(origin+'/api/'+route,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},...(input===undefined?{}:{body:JSON.stringify(input)})});return {status:r.status,body:await r.json(),response:r};};
+ const ask=async(route,input)=>{const r=await fetch(bridgeOrigin+'/radius/'+route,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(input)});const t=await r.text();return {status:r.status,body:t?JSON.parse(t):{}};};
+ try{
+  const owner=await api('setup','POST',{name:'Menu QA',workspace:'QA',email:'menu@example.test',password:'fixture-owner-password-123'});cookie=owner.response.headers.get('set-cookie').split(';')[0];csrf=owner.body.csrf;
+  const plan=(await api('radius/plans','POST',{name:'Daily',service:'hotspot',downloadMbps:5,uploadMbps:2,price:50,durationValue:1,durationUnit:'days',devices:1})).body;
+  const ppp=(await api('radius/plans','POST',{name:'Home',service:'pppoe',downloadMbps:5,uploadMbps:2,price:1500,durationValue:30,durationUnit:'days',devices:1})).body;
+  assert.equal((await api('radius/vouchers','POST',{planId:ppp.id,count:2})).status,400,'PPPoE plans cannot be vouchers');
+  const made=await api('radius/vouchers','POST',{planId:plan.id,count:3,length:8});assert.equal(made.status,201);assert.equal(made.body.codes.length,3);
+  const code=made.body.codes[0];assert.match(code,/^[A-Z2-9]{8}$/);
+  assert.equal((await api('radius/vouchers')).body.batches[0].unused,3);
+  let r=await ask('authorize',rest({'User-Name':code,'Service-Type':'Login-User'}));
+  assert.equal(r.status,200,'an unused voucher is redeemed by the first login');assert.ok(Number(r.body['reply:Session-Timeout'])>86000&&Number(r.body['reply:Session-Timeout'])<=86400);
+  assert.equal(r.body['control:Cleartext-Password'],code.toLowerCase());
+  assert.equal((await api('radius/vouchers')).body.batches[0].used,1);
+  assert.equal((await ask('authorize',rest({'User-Name':code,'Service-Type':'Login-User'}))).status,200,'the same voucher keeps working until it expires');
+  assert.equal((await ask('authorize',rest({'User-Name':'ZZZZZZZZ','Service-Type':'Login-User'}))).status,404);
+  assert.equal((await ask('authorize',rest({'User-Name':made.body.codes[1],'Service-Type':'Framed-User'}))).status,404,'vouchers are hotspot only');
+  const batch=(await api('radius/vouchers')).body.batches[0];assert.deepEqual((await api('radius/vouchers/'+batch.id,'DELETE')).body,{removed:2});
+  const manual=await api('radius/manual-connect','POST',{planId:plan.id,name:'Walk-in',phone:'0712345678'});assert.equal(manual.status,201);assert.match(manual.body.code,/^[A-Z2-9]{6}$/);
+  assert.equal((await ask('authorize',rest({'User-Name':manual.body.code,'Service-Type':'Login-User'}))).status,200);
+  assert.equal((await api('radius/manual-connect','POST',{planId:ppp.id})).status,400);
+  await ask('accounting',rest({'Acct-Status-Type':'Start','Acct-Session-Id':'a1','User-Name':code,'NAS-IP-Address':'10.99.0.4'}));
+  await ask('accounting',rest({'Acct-Status-Type':'Stop','Acct-Session-Id':'a1','User-Name':code,'NAS-IP-Address':'10.99.0.4','Acct-Session-Time':'60','Acct-Input-Octets':'1000'}));
+  const ov=(await api('radius')).body;assert.equal(ov.history.length,1);assert.deepEqual(ov.acct.map(x=>x.status),['stop','start']);
+  const counts=(await api('nav-counts')).body;assert.equal(counts.hotspot,2);assert.equal(counts.pppoe,0);assert.equal(counts.customers,2);
+  const sub=(await api('radius/subscribers','POST',{name:'Ann',username:'ann',service:'pppoe',planId:ppp.id,password:'pw123456',phone:'0722000111'})).body;
+  const pay=await api('radius/subscribers/'+sub.id+'/payments','POST',{amount:1500,reference:'RPT0001',method:'cash'});assert.equal(pay.status,201);
+  const rep=(await api('reports?days=7')).body;assert.equal(rep.total,1500);assert.equal(rep.perDay.length,7);assert.equal(rep.byPlan[0].name,'Home');assert.equal(rep.newCustomers,3);
+  const prev=(await api('radius/campaign/preview','POST',{segment:'pppoe'})).body;assert.equal(prev.count,1);
+  assert.equal((await api('radius/campaign','POST',{segment:'pppoe',message:'Hello {name}',confirm:1})).status,400,'needs SMS configured');
+ }finally{app.server.close();app.bridge.close();app.store?.close?.();fs.rmSync(directory,{recursive:true,force:true});}
+});
