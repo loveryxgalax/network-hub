@@ -1,7 +1,8 @@
-# Always-on Network Hub for a Linux server. No ports are published: the only way in is the Cloudflare Tunnel.
+# Always-on Network Hub for a Linux server. Memory caps fit a 1 GB server with swap; raise them in .env on larger servers. No ports are published: the only way in is the Cloudflare Tunnel.
 # Setup: docs/ALWAYS-ON.md
 services:
   hub:
+    mem_limit: ${HUB_MEMORY:-300m}
     build: .
     restart: unless-stopped
     environment:
@@ -12,9 +13,10 @@ services:
     networks: [internal]
 
   mongo:
+    mem_limit: ${MONGO_MEMORY:-450m}
     image: mongo:8.0
     restart: unless-stopped
-    command: ["mongod", "--auth", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+    command: ["mongod", "--auth", "--bind_ip_all", "--wiredTigerCacheSizeGB", "${MONGO_CACHE_GB:-0.25}"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?set in .env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set in .env}
@@ -23,6 +25,7 @@ services:
     networks: [internal]
 
   acs:
+    mem_limit: ${ACS_MEMORY:-400m}
     build:
       context: .
       dockerfile: deployment/docker/acs/Dockerfile
@@ -38,12 +41,14 @@ services:
     networks: [internal]
 
   tunnel:
+    mem_limit: ${TUNNEL_MEMORY:-100m}
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
     depends_on: [hub, acs]
-    command: ["tunnel", "--no-autoupdate", "--config", "/etc/cloudflared/config.yml", "run"]
-    volumes:
-      - ./deployment/docker/cloudflared:/etc/cloudflared:ro
+    # Dashboard-managed tunnel: hostnames are set in Cloudflare Zero Trust, the server only holds the token.
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
     networks: [internal]
 
 volumes:

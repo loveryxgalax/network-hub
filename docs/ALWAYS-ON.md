@@ -1,6 +1,6 @@
 # Always-on hosting (Linux server + Docker)
 
-Goal: `https://netops.kadenetworks.com` keeps running with the owner's PC switched off. Same hostname, same tunnel, so routers and CPE need no change.
+Goal: `https://netops.kadenetworks.com` keeps running with the owner's PC switched off. Same hostname and paths (including `/cwmp/`), so routers and CPE need no change. The Cloudflare tunnel connector runs on the server, not on a PC.
 
 Status: **prepared, not yet tested on a real server** (written without a Docker daemon available). Treat the first run as a rehearsal on an empty database before moving live data.
 
@@ -11,7 +11,7 @@ Status: **prepared, not yet tested on a real server** (written without a Docker 
 | `hub` (Node 24, SQLite in volume `hub-data`) | `scripts/start-dashboard.ps1` | No |
 | `mongo` 8.0 (auth on, volume `mongo-data`) | MongoDB in WSL | No |
 | `acs` (GenieACS CWMP + NBI + connection-isolation proxy, serial-scoped CPE logins in volume `acs-private`) | NetworkHub-ACS WSL distribution | Only `/cwmp/` through the tunnel |
-| `tunnel` (cloudflared) | `scripts/start-cloudflare.ps1` | Outbound only |
+| `tunnel` (cloudflared, dashboard-managed, token in `.env`) | `scripts/start-cloudflare.ps1` | Outbound only |
 
 No ports are published on the server. Only an SSH port needs to be reachable (prefer key login, no password login). Docker restarts every container after a crash or reboot, and the server needs no signed-in user.
 
@@ -19,7 +19,13 @@ No ports are published on the server. Only an SSH port needs to be reachable (pr
 
 Run `deployment/docker/server-setup.sh` once on a fresh server to install Docker, automatic updates and an SSH-only firewall.
 
-Ubuntu 24.04 LTS, 2 vCPU, 4 GB RAM, 40 GB disk, with automatic security updates and NTP on (the ACS depends on correct time). Any reputable VPS works. Pick the region closest to your routers. Install Docker Engine and the compose plugin from Docker's official apt repository.
+Recommended: Ubuntu 24.04 LTS, 2 vCPU, 4 GB RAM, 40 GB disk, with automatic security updates and NTP on (the ACS depends on correct time). Pick the region closest to your routers.
+
+### Google Cloud free tier (e2-micro)
+
+Works with limits: about 1 GB RAM, so `server-setup.sh` adds 2 GB swap and `docker-compose.yml` caps each container's memory (defaults in `.env.docker.example`). Expect occasional slowness under load; resize to e2-medium later without reinstalling. The free tier only covers `us-west1`, `us-central1` or `us-east1`, a standard persistent disk up to 30 GB, and a small monthly egress allowance; confirm Google's current terms and set a billing budget alert.
+
+Create the VM: Compute Engine → Create instance → region one of the three above, machine type **e2-micro**, boot disk **Ubuntu 24.04 LTS, Standard persistent disk, 30 GB**, HTTP/HTTPS unticked. Connect with the console's SSH button.
 
 ## What a server cannot do
 
@@ -42,11 +48,11 @@ Without the tunnel, check from the server only: `docker compose exec hub node -e
 2. Back up together: `data\network.sqlite` plus any `-wal`/`-shm` files and `data\master.key`. From the WSL distribution: `mongodump` of the `genieacs` database, and copy `/etc/network-hub-acs/cpes.json`.
 3. Copy them to the server over SSH (scp), never through chat or git.
 4. Restore into the volumes (hub-data gets the three data files; `mongorestore` into `mongo`; `cpes.json` into `acs-private`) before starting `hub`/`acs`. Set the dashboard's ACS connection URL to `http://acs:7557` under TR-069 → Connect ACS (credentials stay in the UI).
-5. Put the existing tunnel credentials JSON and a filled-in `config.yml` (from `config.example.yml`) in `deployment/docker/cloudflared/`, `chmod 600`, then `docker compose up -d tunnel`.
+5. Tunnel (Cloudflare dashboard, kadenetworks.com account): Zero Trust → Networks → Tunnels → **Create a tunnel** → Cloudflared, name `netops-server`. Copy only the token into `TUNNEL_TOKEN` in the server's `.env` (never into chat or git). Delete the old DNS record for `netops` (it points to the PC's tunnel), then add two **Public hostnames** to the new tunnel, in this order: `netops.kadenetworks.com` path `^/cwmp/` → `http://acs:7548`, then `netops.kadenetworks.com` (no path) → `http://hub:4317`. Run `docker compose up -d tunnel`.
 6. Verify: sign in at the public URL, router freshness updating, a TR-069 device check-in, one CPE refresh. Keep the PC's data folder untouched for at least a week as the rollback copy.
 7. Disable the Windows tasks **Kade Network Hub** and **Kade Network Hub ACS** so two connectors never serve the same tunnel.
 
-Rollback: stop the `tunnel` container, run `scripts\install-online-startup.ps1 -StartNow` on the PC.
+Rollback: remove the public hostnames from `netops-server`, run `cloudflared tunnel route dns --overwrite-dns kade-network-ops netops.kadenetworks.com` on the PC, then `scripts\install-online-startup.ps1 -StartNow`.
 
 ## Backups (required for always-on)
 
