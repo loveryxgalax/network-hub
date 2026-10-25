@@ -9,6 +9,7 @@ const gis=require('./lib/gis.cjs');
 const routerAgent=require('./lib/router-agent.cjs');
 const customers=require('./lib/customers.cjs');
 const sites=require('./lib/sites.cjs');
+const radius=require('./lib/radius.cjs');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const error=(status,message)=>Object.assign(new Error(message),{status});
 const publicUser=u=>({id:u.id,email:u.email,name:u.name,role:u.role,active:!!u.active});
@@ -51,7 +52,7 @@ function createApp(options={}){
    return recordSnapshot(device,snapshot);
   }catch(cause){const current=store.get('devices',device.id);if(current)store.transaction(()=>{store.measure(device.id,false,{});store.put('devices',{...current,status:'offline',lastCheck:Date.now(),lastError:cause.message},current);if(!store.list('alerts').some(a=>a.deviceId===device.id&&a.source==='collector'&&a.status!=='Resolved'))store.put('alerts',{title:device.name+' is unreachable',details:cause.message,deviceId:device.id,severity:'critical',status:'Open',source:'collector'});});return {online:false,error:cause.message};}finally{busy.delete(device.id);}
  }
- async function collect(){if(collecting)return;collecting=true;try{if(Date.now()-lastPrune>3600000){store.prune();lastPrune=Date.now();}for(const d of store.list('devices').filter(d=>d.driver!=='none'&&d.type!=='onu')){if(closing)break;if(d.driver==='routeros-script'){if(d.lastSeen&&Date.now()-d.lastSeen>90000&&store.secret('agent:'+d.id))store.transaction(()=>{store.measure(d.id,false,{source:'routeros-script'});const latest=store.get('devices',d.id);if(latest.status!=='offline')store.put('devices',{...latest,status:'offline',lastError:'No authenticated script check-in for 90 seconds'},latest);if(!store.list('alerts').some(a=>a.deviceId===d.id&&a.source==='collector'&&a.status!=='Resolved'))store.put('alerts',{title:d.name+' stopped checking in',deviceId:d.id,source:'collector',severity:'critical',status:'Open',details:'No authenticated script check-in for 90 seconds'});});continue;}if(!busy.has(d.id))await poll(d);}}finally{collecting=false;}}
+ async function collect(){if(collecting)return;collecting=true;try{if(Date.now()-lastPrune>3600000){store.prune();radius.prune(store);lastPrune=Date.now();}for(const d of store.list('devices').filter(d=>d.driver!=='none'&&d.type!=='onu')){if(closing)break;if(d.driver==='routeros-script'){if(d.lastSeen&&Date.now()-d.lastSeen>90000&&store.secret('agent:'+d.id))store.transaction(()=>{store.measure(d.id,false,{source:'routeros-script'});const latest=store.get('devices',d.id);if(latest.status!=='offline')store.put('devices',{...latest,status:'offline',lastError:'No authenticated script check-in for 90 seconds'},latest);if(!store.list('alerts').some(a=>a.deviceId===d.id&&a.source==='collector'&&a.status!=='Resolved'))store.put('alerts',{title:d.name+' stopped checking in',deviceId:d.id,source:'collector',severity:'critical',status:'Open',details:'No authenticated script check-in for 90 seconds'});});continue;}if(!busy.has(d.id))await poll(d);}}finally{collecting=false;}}
  async function api(req,res,url){
   const route=url.pathname,method=req.method,isPublic=!!publicUrl&&req.headers.host===publicUrl.host,secure=isPublic||!!req.socket.encrypted||process.env.NETWORK_SECURE_COOKIE==='1';
   if(publicUrl&&!isPublic&&!['127.0.0.1','localhost','[::1]'].includes(new URL('http://'+req.headers.host).hostname))throw error(403,'Unrecognized dashboard hostname');
@@ -87,6 +88,26 @@ function createApp(options={}){
   if(route==='/api/customers'&&method==='GET'){if(user.role==='installer')throw error(403,'Customer discovery is not available to field installers');return json(res,200,customers.list(store,url.searchParams));}
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
+  if(route.startsWith('/api/radius')){
+   if(user.role==='installer')throw error(403,'Subscribers are not available to field installers');
+   const write=()=>role(user,['admin','operator','manager']);
+   if(route==='/api/radius'&&method==='GET')return json(res,200,radius.overview(store));
+   if(route==='/api/radius/settings'&&method==='PUT'){role(user,['admin']);const saved=radius.updateSettings(store,await body(req));store.audit(user,'Updated RADIUS settings','radius');return json(res,200,saved);}
+   if(route==='/api/radius/plans'&&method==='POST'){write();const saved=store.put('plans',radius.plan(await body(req)));store.audit(user,'Created plan',saved.id);return json(res,201,saved);}
+   const planRoute=route.match(/^\/api\/radius\/plans\/([a-f0-9-]{36})$/);
+   if(planRoute){write();const existing=store.get('plans',planRoute[1]);if(!existing)throw error(404,'Plan not found');
+    if(method==='PATCH'){const saved=store.put('plans',radius.plan(await body(req),existing),existing);store.audit(user,'Updated plan',saved.id);return json(res,200,saved);}
+    if(method==='DELETE'){if(store.list('subscribers').some(s=>s.planId===existing.id))throw error(409,'Move this plan\'s subscribers to another plan first');store.remove('plans',existing.id);store.audit(user,'Deleted plan',existing.id);return json(res,200,{ok:true});}}
+   if(route==='/api/radius/subscribers'&&method==='POST'){write();const input=await body(req);let saved,secret;store.transaction(()=>{saved=store.put('subscribers',radius.subscriber(store,input));secret=radius.setPassword(store,saved.id,input.password);});store.audit(user,'Created subscriber',saved.id);return json(res,201,{...saved,password:secret});}
+   const subRoute=route.match(/^\/api\/radius\/subscribers\/([a-f0-9-]{36})(?:\/(renew|password))?$/);
+   if(subRoute){const existing=store.get('subscribers',subRoute[1]);if(!existing)throw error(404,'Subscriber not found');
+    if(subRoute[2]==='password'&&method==='GET'){role(user,['admin','operator','manager']);store.audit(user,'Viewed subscriber password',existing.id);return json(res,200,{password:radius.password(store,existing.id)});}
+    write();
+    if(subRoute[2]==='renew'&&method==='POST'){const saved=radius.renew(store,existing.id,(await body(req)).periods||1);store.audit(user,'Renewed subscriber',existing.id);return json(res,200,saved);}
+    if(!subRoute[2]&&method==='PATCH'){const input=await body(req);let saved,secret;store.transaction(()=>{saved=store.put('subscribers',radius.subscriber(store,input,existing),existing);if(input.password)secret=radius.setPassword(store,existing.id,input.password);});store.audit(user,'Updated subscriber',existing.id);return json(res,200,secret?{...saved,password:secret}:saved);}
+    if(!subRoute[2]&&method==='DELETE'){store.transaction(()=>{store.remove('subscribers',existing.id);store.db.prepare('DELETE FROM secrets WHERE device_id=?').run('subscriber:'+existing.id);});store.audit(user,'Deleted subscriber',existing.id);return json(res,200,{ok:true});}}
+   throw error(404,'API endpoint not found');
+  }
   if(route==='/api/router-events'&&method==='GET'){if(user.role==='installer')throw error(403,'Router events are not available to field installers');return json(res,200,customers.routerEvents(store,url.searchParams));}
   const customerLabel=route.match(/^\/api\/customers\/([a-f0-9]{64})$/);
   if(customerLabel&&method==='PATCH'){if(!permissions.equipment(user.role))throw error(403,'Your role cannot classify discovered devices');const saved=customers.annotate(store,customerLabel[1],await body(req));store.audit(user,'Classified discovered customer device',customerLabel[1]);return json(res,200,saved);}
@@ -204,8 +225,19 @@ function createApp(options={}){
   try{const url=new URL(req.url,'http://localhost');if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(!['GET','HEAD'].includes(req.method))throw error(405,'Method not allowed');let requested;try{requested=decodeURIComponent(url.pathname);}catch{throw error(400,'Invalid URL');}const file=path.resolve(root,'.'+(requested==='/'?'/index.html':requested));if(!file.startsWith(root+path.sep))throw error(403,'Invalid path');if(!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8'};res.setHeader('Content-Type',types[path.extname(file)]||'application/octet-stream');res.statusCode=200;if(req.method==='HEAD')return res.end();fs.createReadStream(file).pipe(res);
   }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'Server could not complete this request'});if(!cause.status)console.error(cause.name+': server operation failed');}
  });
+ // FreeRADIUS bridge (rlm_rest). Separate port that only the private Compose network reaches; never routed by the tunnel.
+ const radiusToken=options.radiusToken??process.env.NETWORK_RADIUS_TOKEN;
+ const bridge=radiusToken?http.createServer(async(req,res)=>{
+  try{const header=String(req.headers.authorization||''),basic=/^Basic /.test(header)?Buffer.from(header.slice(6),'base64').toString().replace(/^[^:]*:/,''):null,given=Buffer.from(basic??header.replace(/^Bearer /,'')),expected=Buffer.from(radiusToken);if(given.length!==expected.length||!crypto.timingSafeEqual(given,expected))throw error(401,'RADIUS bridge denied');
+   if(req.method!=='POST')throw error(405,'Method not allowed');const where=new URL(req.url,"http://localhost").pathname,input=await body(req);
+   if(where==="/radius/authorize"){const r=radius.authorize(store,input);res.writeHead(r.status,{'Content-Type':'application/json'});return res.end(JSON.stringify(r.attributes));}
+   if(where==="/radius/accounting"){radius.accounting(store,input);res.writeHead(204);return res.end();}
+   if(where==="/radius/post-auth"){res.writeHead(204);return res.end();}
+   throw error(404,'Not found');
+  }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'RADIUS bridge error'});if(!cause.status)console.error(cause.name+': RADIUS bridge failed');}
+ }):null;
  server.on('listening',()=>{if(options.collector!==false){timer=setInterval(()=>collect().catch(()=>{}),pollMs);timer.unref();collect().catch(()=>{});}});
- return {server,store,poll,close:async()=>{closing=true;clearInterval(timer);await new Promise(resolve=>server.close(resolve));while(busy.size)await new Promise(resolve=>setTimeout(resolve,50));store.close();}};
+ return {server,bridge,store,poll,close:async()=>{closing=true;clearInterval(timer);await new Promise(resolve=>server.close(resolve));if(bridge?.listening)await new Promise(resolve=>bridge.close(resolve));while(busy.size)await new Promise(resolve=>setTimeout(resolve,50));store.close();}};
 }
-if(require.main===module){const app=createApp(),port=Number(process.env.PORT||4317),host=process.env.HOST||'127.0.0.1';app.server.listen(port,host,()=>console.log(`Network Hub: http://${host}:${port}`));for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>app.close().then(()=>process.exit(0)));}
+if(require.main===module){const app=createApp(),port=Number(process.env.PORT||4317),host=process.env.HOST||'127.0.0.1';app.server.listen(port,host,()=>console.log(`Network Hub: http://${host}:${port}`));if(app.bridge){const radiusPort=Number(process.env.NETWORK_RADIUS_PORT||4318);app.bridge.listen(radiusPort,process.env.NETWORK_RADIUS_HOST||host,()=>console.log('RADIUS bridge listening on port '+radiusPort));}for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>app.close().then(()=>process.exit(0)));}
 module.exports={createApp};

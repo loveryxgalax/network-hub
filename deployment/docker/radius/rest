@@ -1,0 +1,34 @@
+# Every login and accounting record is decided and stored by the netops hub (internal port, never public).
+rest {
+	connect_uri = "http://hub:4318"
+	authorize {
+		uri = "${..connect_uri}/radius/authorize"
+		method = 'post'
+		body = 'json'
+		auth = 'basic'
+		username = 'freeradius'
+		password = "$ENV{NETWORK_RADIUS_TOKEN}"
+		require_auth = yes
+		timeout = 3
+	}
+	accounting {
+		uri = "${..connect_uri}/radius/accounting"
+		method = 'post'
+		body = 'json'
+		auth = 'basic'
+		username = 'freeradius'
+		password = "$ENV{NETWORK_RADIUS_TOKEN}"
+		require_auth = yes
+		timeout = 3
+	}
+	pool {
+		start = 0
+		min = 0
+		max = 8
+		spare = 2
+		uses = 0
+		retry_delay = 5
+		lifetime = 0
+		idle_timeout = 60
+	}
+}

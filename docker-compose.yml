@@ -10,6 +10,9 @@ services:
       # GenieACS NBI is reached inside the private Compose network as http://acs:7557 (never published).
       NETWORK_TRUSTED_HTTP_HOSTS: acs
       NETWORK_POLL_MS: ${NETWORK_POLL_MS:-30000}
+      # Internal RADIUS bridge for FreeRADIUS (port 4318 on the private network only). Empty = disabled.
+      NETWORK_RADIUS_TOKEN: ${NETWORK_RADIUS_TOKEN:-}
+      NETWORK_RADIUS_HOST: 0.0.0.0
     volumes:
       - hub-data:/data
     networks: [internal]
@@ -40,6 +43,22 @@ services:
       MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?set in .env}
     volumes:
       - acs-private:/private
+    networks: [internal]
+
+  # Netops RADIUS (replaces ISPman's). Off until you run: docker compose --profile radius up -d
+  # Listens only on the WireGuard address (wg0, 10.99.0.1), so only enrolled MikroTiks can reach it.
+  radius:
+    profiles: [radius]
+    mem_limit: ${RADIUS_MEMORY:-96m}
+    build: deployment/docker/radius
+    restart: unless-stopped
+    depends_on: [hub]
+    environment:
+      RADIUS_SECRET: ${RADIUS_SECRET:-}
+      NETWORK_RADIUS_TOKEN: ${NETWORK_RADIUS_TOKEN:-}
+    ports:
+      - "${RADIUS_BIND:-10.99.0.1}:1812:1812/udp"
+      - "${RADIUS_BIND:-10.99.0.1}:1813:1813/udp"
     networks: [internal]
 
   tunnel:

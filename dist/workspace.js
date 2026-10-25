@@ -26,7 +26,7 @@ const nav=[
  ['mikrotiks','Routers','router','MIKROTIK'],['subscriber-monitoring','PPPoE & router alerts','activity'],['sites','Sites & traffic','activity'],['customers','Customer discovery','onu'],['load-balancing','Load balancing & Failover','activity'],
  ['network-health','Network health','activity','MONITORING'],['uptime','Uptime','clock'],['network-map','Network map','grid'],
  ['fibre','Fibre overview','activity','FIBRE'],['cables','Cables & cores','server'],['closures','Closures & splices','grid'],['power','ONU vs OLT power','activity'],['inventory','Inventory','server'],
- ['jobs','Work orders','check','TASKS'],['wallet','Billing records','server','ACCOUNT'],['tickets','Support tickets','info'],['team','Team','onu'],['settings','Settings','settings']
+ ['radius','Subscribers & plans','onu','SUBSCRIBERS'],['jobs','Work orders','check','TASKS'],['wallet','Billing records','server','ACCOUNT'],['tickets','Support tickets','info'],['team','Team','onu'],['settings','Settings','settings']
 ];
 const money=n=>new Intl.NumberFormat('en-KE',{style:'currency',currency:'KES'}).format(n||0);
 const stamp=value=>value?new Date(value).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'Not observed';
@@ -52,7 +52,7 @@ function addButton(kind,label,defaults={}){return NetworkPermissions.write(state
 function notice(title,text,warning=false){return `<div class="notice ${warning?'warning':''}">${icon(warning?'warning':'info',20)}<div><strong>${title}</strong><br>${text}</div></div>`;}
 function tabs(items){return `<nav class="page-tabs">${items.map(([id,label])=>`<a class="${state.page===id?'active':''}" href="#${id}">${label}</a>`).join('')}</nav>`;}
 function render(){if(!state.session?.user)return;chrome();$('#breadcrumb').textContent=nav.find(n=>n[0]===state.page)?.[1]||state.page;const route=state.page;
- if(route==='subscriber-monitoring')return renderSubscriberMonitoring();if(route==='sites')return renderSites();if(route==='customers')return renderCustomers();if(route==='cpe-onboarding')return renderCpeOnboarding();
+ if(route==='subscriber-monitoring')return renderSubscriberMonitoring();if(route==='sites')return renderSites();if(route==='radius')return renderRadius();if(route==='customers')return renderCustomers();if(route==='cpe-onboarding')return renderCpeOnboarding();
  if(route==='dashboard')return renderDashboard();if(['mikrotiks','olts','olt-onus'].includes(route))return renderDevices(route==='mikrotiks'?'router':route==='olts'?'olt':'onu');
  if(route==='tr069')return renderAcs();if(route==='network-health'||route==='uptime')return renderHealth();if(route==='power')return renderPower();if(route==='network-map')return renderMap();if(route==='unconfigured')return renderDiscovery();if(route==='load-balancing')return renderRoutes();if(route==='wallet')return renderBilling();if(route==='team')return renderTeam();if(route==='settings')return renderSettings();if(route==='ai')return renderAssistant();if(route==='fibre')return renderFibre();
  const mapping={jobs:'jobs',tickets:'tickets',notifications:'alerts',network:'zones',odbs:'odbs',cables:'cables',closures:'closures',splices:'splices',inventory:'stock',stockMoves:'stockMoves','olt-configuration':'profiles',payments:'payments',invoices:'invoices',speeds:'speeds',presets:'presets'};if(mapping[route])renderCollection(mapping[route]);
