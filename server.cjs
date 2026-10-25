@@ -14,6 +14,7 @@ const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
 const c2b=require('./lib/c2b.cjs');
+const landing=require('./lib/landing.cjs');
 const overview=require('./lib/overview.cjs');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const error=(status,message)=>Object.assign(new Error(message),{status});
@@ -94,6 +95,10 @@ function createApp(options={}){
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
   if(route==='/api/overview'&&method==='GET'){if(user.role==='installer')throw error(403,'The overview is not available to field installers');const range=url.searchParams.get('range')||'24h',key=range+(user.role==='admin'?'a':'n'),hit=overviewCache.get(key);if(hit&&Date.now()-hit.at<15000)return json(res,200,hit.value);const value=overview.build(store,range);if(user.role!=='admin')value.revenue={today:null,week:null,month:null,days:[],byMethod:{},recent:[]};overviewCache.set(key,{at:Date.now(),value});return json(res,200,value);}
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
+  if(route==='/api/portal/landing'){
+   if(method==='GET')return json(res,200,{config:landing.get(store),themes:landing.THEMES});
+   role(user,['admin']);if(method==='PUT'){const saved=landing.save(store,await body(req));store.audit(user,'Updated landing page design',saved.theme);return json(res,200,saved);}
+  }
   if(route==='/api/mpesa'){
    if(user.role==='installer')throw error(403,'Billing is not available to field installers');
    if(method==='GET')return json(res,200,{config:mpesa.publicConfig(store),c2b:mpesa.config(store)?c2b.overview(store,publicUrl?.origin||'http://'+req.headers.host):null,portal:portal.settings(store),portalUrl:(publicUrl?.origin||'http://'+req.headers.host)+'/portal/',payments:store.list('portalPayments').slice(0,300).map(({tokenHash,checkoutRequestId,...p})=>p)});
@@ -261,6 +266,10 @@ function createApp(options={}){
  async function portalApi(req,res,url){
   const route=url.pathname,method=req.method,origin=publicUrl?.origin||'http://'+req.headers.host;
   if(route==='/portal/api/info'&&method==='GET')return json(res,200,portal.info(store));
+  // The landing page: design settings plus real packages in one call, and the two visitor lookups (rate limited; no contact details returned).
+  if(route==='/portal/api/config'&&method==='GET'){const cfg=landing.get(store),inf=portal.info(store);return json(res,200,{config:{...cfg,brandName:cfg.brandName||inf.name,phone:cfg.phone||inf.support,whatsapp:cfg.whatsapp||cfg.phone||inf.support},plans:inf.plans,pppoePlans:inf.pppoePlans,mpesa:inf.mpesa});}
+  if(route==='/portal/api/account'&&method==='POST'){limit(req,'account',240,600000);const input=await body(req,2048),q=String(input.query||'').slice(0,400);limit(req,'account-q',12,600000,q.toLowerCase().slice(0,60)||'empty');return json(res,200,landing.account(store,q));}
+  if(route==='/portal/api/session'&&method==='GET'){limit(req,'session',240,600000);return json(res,200,landing.session(store,url.searchParams.get('mac')));}
   if(route==='/portal/api/pay'&&method==='POST'){limit(req,'pay',120,600000);const input=await body(req,4096);limit(req,'pay-phone',5,600000,billing.phone(input.phone)||'invalid');return json(res,201,await portal.start(store,input,origin));}
   const st=route.match(/^\/portal\/api\/pay\/([a-f0-9]{32})$/);
   if(st&&method==='GET'){limit(req,'status',3000,600000);limit(req,'status-id',300,600000,st[1]);return json(res,200,await portal.status(store,st[1],url.searchParams.get('t')));}

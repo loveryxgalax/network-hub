@@ -58,7 +58,7 @@ test('portal pages and API are public; M-Pesa settings are admin-only',async()=>
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-portal-app-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test'});
  await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+app.server.address().port;
  try{
-  const page=await fetch(origin+'/portal/');assert.equal(page.status,200);const html=await page.text();assert.match(html,/id="portal-plans"/);assert.match(html,/Kade Networks/);assert.ok(!/\son(error|click|load)=/i.test(html),"no inline handlers: the page security policy blocks them");
+  const page=await fetch(origin+'/portal/');assert.equal(page.status,200);const html=await page.text();assert.match(html,/id="hotspotPkgs"/);assert.match(html,/Kade Networks/);assert.ok(!/\son(error|click|load)=/i.test(html),"no inline handlers: the page security policy blocks them");
   assert.equal((await fetch(origin+'/portal/../server.cjs')).status,404);
   const info=await (await fetch(origin+'/portal/api/info')).json();assert.equal(info.mpesa,false);assert.deepEqual(info.plans,[]);
   assert.equal((await fetch(origin+'/portal/api/mpesa/aaaaaaaaaaaaaaaaaaaaaaaa',{method:'POST',body:'{}'})).status,404);
@@ -138,5 +138,34 @@ test('paybill endpoints are public only with the secret path',async()=>{
   const ok=await post(secret+'/confirmation',{TransID:'UJPATBBZMU',TransAmount:'10',BusinessShortCode:'174379',BillRefNumber:'nobody'});assert.equal(ok.status,200);assert.equal((await ok.json()).ResultCode,0);
   assert.equal(app.store.list('c2bPayments')[0].status,'unallocated');
   const v=await (await post(secret+'/validation',{BusinessShortCode:'174379',BillRefNumber:'nobody'})).json();assert.equal(v.ResultCode,'C2B00012');
+ }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
+});
+test('landing page settings are validated, admin-only to change, and public to read with the real packages',async()=>{
+ const landing=require('../lib/landing.cjs');
+ assert.throws(()=>landing.validate({...landing.DEFAULTS,theme:'neon'}),/nine designs/);assert.throws(()=>landing.validate({...landing.DEFAULTS,brandColor:'red'}),/colour/);assert.throws(()=>landing.validate({...landing.DEFAULTS,intro:'<script>'}),/intro/);
+ const ok=landing.validate({...landing.DEFAULTS,theme:'bento',brandColor:'#0A3CFF',phone:'+254 181 820 518x',accountPrefix:'kne!',show:{pppoe:false,hotspot:true}});assert.equal(ok.brandColor,'#0a3cff');assert.equal(ok.phone,'+254 181 820 518');assert.equal(ok.accountPrefix,'KNE');assert.equal(ok.show.pppoe,false);assert.equal(ok.show.contact,true,'unlisted sections default to shown');
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-landing-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test'});
+ await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+app.server.address().port;
+ try{
+  const store=app.store;mpesa.setConfig(store,{env:'production',type:'paybill',shortcode:'174379',consumerKey:'a',consumerSecret:'b',passkey:'c'});
+  const hot=store.put('plans',radius.plan({name:'OFA MOTO',service:'hotspot',downloadMbps:5,uploadMbps:5,price:10,durationValue:1,durationUnit:'hours'})),home=store.put('plans',radius.plan({name:'Basic',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days'}));
+  const wallet=store.put('subscribers',radius.subscriber(store,{name:'Wallet',username:'kne-a52mde',service:'hotspot',planId:hot.id,phone:'0712345678',expiresAt:Date.now()+3600000}));radius.setPassword(store,wallet.id,'123456');
+  const jane=store.put('subscribers',radius.subscriber(store,{name:'Christine Mwikali',username:'Christine Mwikali',service:'pppoe',planId:home.id,phone:'0723632248',expiresAt:Date.now()-1000}));
+  const cfg=await (await fetch(origin+'/portal/api/config')).json();assert.deepEqual(cfg.plans.map(p=>p.name),['OFA MOTO']);assert.deepEqual(cfg.pppoePlans.map(p=>p.name),['Basic']);assert.equal(cfg.config.theme,'midnight');assert.equal(cfg.mpesa,true);
+  const post=(route,body)=>fetch(origin+'/portal/api/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());
+  // Lookups: account number inside a pasted message, a spaced PPPoE username, a phone number, unknown.
+  let a=await post('account',{query:'Dear customer, you paid KES 10 for account KNE-A52MDE. Thank you'});assert.equal(a.found,true);assert.equal(a.account,'kne-a52mde');assert.equal(a.status,'active');assert.equal(a.plan,'OFA MOTO');assert.equal(a.phone,undefined,'no contact details are returned');assert.equal(a.name,undefined);
+  a=await post('account',{query:'  christine   mwikali '});assert.equal(a.found,true);assert.equal(a.status,'expired');assert.equal(a.price,1500);
+  assert.equal((await post('account',{query:'0723 632 248'})).account,'christine mwikali');assert.deepEqual(await post('account',{query:'nobody-here'}),{found:false});
+  // Connection detection by the device the router reports.
+  assert.deepEqual(await (await fetch(origin+'/portal/api/session?mac=AA:BB:CC:DD:EE:FF')).json(),{found:false});
+  store.put('subscribers',{...store.get('subscribers',wallet.id),lastMac:'AA:BB:CC:DD:EE:FF'},store.get('subscribers',wallet.id));
+  const found=await (await fetch(origin+'/portal/api/session?mac=aa-bb-cc-dd-ee-ff')).json();assert.equal(found.found,true);assert.equal(found.account,'kne-a52mde');assert.equal((await (await fetch(origin+'/portal/api/session?mac=bad')).json()).found,false);
+  // Only an admin may change the design.
+  assert.equal((await fetch(origin+'/api/portal/landing',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(landing.DEFAULTS)})).status,401);
+  const owner=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'Kade',email:'o@example.test',password:'fixture-owner-password-123'})}),cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
+  const put=(body,token=csrf)=>fetch(origin+'/api/portal/landing',{method:'PUT',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':token},body:JSON.stringify(body)});
+  assert.equal((await put({...landing.DEFAULTS,theme:'christmas'},'wrong')).status,403);assert.equal((await put({...landing.DEFAULTS,theme:'christmas',brandName:'Kade Networks Wi-Fi'})).status,200);
+  assert.equal((await (await fetch(origin+'/portal/api/config')).json()).config.theme,'christmas');assert.equal((await (await fetch(origin+'/portal/api/config')).json()).config.brandName,'Kade Networks Wi-Fi');
  }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
 });

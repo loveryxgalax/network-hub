@@ -1,109 +1,174 @@
 <!doctype html>
-<html lang="en">
+<html lang="sw">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kade Networks Wi-Fi</title>
-<meta name="theme-color" content="#0b36e0">
-<link rel="icon" href="/img/favicon.png">
+<meta name="theme-color" content="#0a3cff">
+<link rel="icon" type="image/png" href="/img/favicon.png">
 <link rel="preload" href="/fonts/maven-pro-700.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/portal/portal.css?v=2">
-<script src="/portal/portal.js?v=2" defer></script>
+<link rel="stylesheet" href="/portal/portal.css?v=4">
+<script src="/portal/portal.js?v=4" defer></script>
 </head>
-<body>
-<div class="page">
+<body data-theme="midnight">
+<canvas id="snow"></canvas>
 
-<header class="hero">
-  <div class="hero-orb" aria-hidden="true"></div>
-  <div class="hero-orb two" aria-hidden="true"></div>
-  <div class="topbar">
-    <div class="brand">
-      <span class="brand-mark"><img src="/img/kade-mark.png" alt=""></span>
-      <span class="brand-name" id="portal-name">Kade Networks</span>
-    </div>
-    <div class="lang" role="group" aria-label="Language">
-      <button type="button" data-lang="sw">Kiswahili</button>
-      <button type="button" data-lang="en" class="active">English</button>
-    </div>
+<div id="layout">
+  <!-- Split Screen brand panel (only visible on "split") -->
+  <aside class="brandpanel">
+    <div class="bp-top"><div class="logo" data-logo></div><b class="brand-name" data-bind="brandName"></b></div>
+    <h1 data-i18n="splitHeadline"></h1>
+    <p data-bind="intro"></p>
+    <a class="otg" data-otg></a>
+    <div class="chips"><span data-i18n="chipHotspot"></span><span data-i18n="chipFiber"></span></div>
+    <div class="bp-help"><span data-i18n="needHelp"></span> <a data-phone></a></div>
+  </aside>
+
+  <div class="rightside">
+    <header class="topbar">
+      <div class="wrap">
+        <div class="logo" data-logo></div>
+        <div style="min-width:0">
+          <div class="brand-name" data-bind="brandName"></div>
+          <div class="help"><span><span data-i18n="needHelp"></span> <a data-phone></a></span><a data-whatsapp></a></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="lang" data-lang></div>
+      </div>
+    </header>
+    <div class="lights" aria-hidden="true"></div>
+    <div class="split-lang"><div class="lang" data-lang></div></div>
+
+    <main class="wrap">
+      <div id="portal-alert" class="alert" role="alert" hidden></div>
+      <section class="hero">
+        <div class="eyebrow" data-i18n-theme="eyebrow"></div>
+        <h1 data-headline></h1>
+        <p class="intro" data-bind="intro"></p>
+        <p class="sub" data-i18n="manageSub"></p>
+        <a class="otg" data-otg></a>
+      </section>
+
+      <div class="main-grid">
+        <!-- Bento-only tiles -->
+        <div class="bento-hero tile-brand">
+          <div class="logo" data-logo></div>
+          <h1 data-bind="brandName"></h1>
+          <p data-bind="intro"></p>
+        </div>
+
+        <div id="accountCol">
+          <div class="card" id="accountCard">
+            <h2 data-i18n-theme="accountTitle"></h2>
+            <p class="lead" data-i18n="accountLead"></p>
+
+            <div class="detect" id="detect"><div class="spin"></div><span data-i18n="detecting"></span></div>
+
+            <button class="find-btn" id="findBtn" type="button">
+              <svg class="i" viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01"/></svg>
+              <div data-i18n="connectFind"></div><span data-i18n="findBtn"></span>
+            </button>
+
+            <div class="howto" id="howto">
+              <b data-i18n="howTitle"></b>
+              <ul><li data-i18n="how1"></li><li data-i18n="how2"></li></ul>
+            </div>
+
+            <form id="accForm" novalidate>
+              <label class="fl" for="acc" data-i18n="accLabel"></label>
+              <textarea id="acc" class="acc" data-i18n-ph="accPh"></textarea>
+              <div class="example" data-i18n="accExample"></div>
+              <div class="detected-acc hide" id="detectedAcc"></div>
+              <button class="btn" type="submit"><span data-i18n="accessBtn"></span> <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              <div class="msg" id="accMsg"></div>
+            </form>
+            <div id="accResult" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <a class="tile-otg bento-hero" data-otg-tile></a>
+        <div class="tile-help bento-hero">
+          <small style="color:var(--muted)" data-i18n="needHelp"></small>
+          <a data-phone></a><a data-whatsapp></a>
+        </div>
+
+        <div id="packagesCol">
+          <div class="card" id="hotspotCard">
+            <div class="section-head"><h2 data-i18n="hotspotTitle"></h2><small data-i18n="hotspotSub"></small></div>
+            <div class="pkgs" id="hotspotPkgs"></div>
+          </div>
+        </div>
+        <div id="pppoeWrap">
+          <div class="card" id="pppoeCard">
+            <div class="section-head"><h2 data-i18n="pppoeTitle"></h2><small data-i18n="pppoeSub"></small></div>
+            <div class="pkgs" id="pppoePkgs"></div>
+          </div>
+        </div>
+        <div class="contactCard">
+          <div class="card">
+            <div class="section-head"><h2 data-i18n="contactTitle"></h2></div>
+            <div class="contact" id="contact"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="foot"><div class="wrap" id="footer"></div></footer>
   </div>
-  <h1 class="hero-title"><span data-i18n="welcome">Welcome to</span> <span class="js-name">Kade Networks</span></h1>
-  <p class="hero-intro" data-i18n="intro">Welcome to our hotspot service! Please select a package to get connected.</p>
-  <a class="hero-promo" href="#packages">
-    <span class="promo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 20 0M5.5 12.4a10 10 0 0 1 13 0M9 15.9a5 5 0 0 1 6 0"/><circle cx="12" cy="19.3" r="1.3" class="fill"/></svg></span>
-    <span class="promo-text"><strong data-i18n="promoTitle">Use our On-the-Go WiFi wherever you are</strong><small data-i18n="promoSub">Affordable packages at our hotspots</small></span>
-    <span class="promo-arrow" aria-hidden="true">→</span>
-  </a>
-</header>
-
-<main class="content">
-  <div id="portal-alert" class="alert" role="alert" hidden></div>
-
-  <section class="account-card" id="account">
-    <div class="seg" role="tablist">
-      <button type="button" data-tab="code" class="active" data-i18n="tabCode">I have a code</button>
-      <button type="button" data-tab="account" data-i18n="tabAccount">Pay home internet</button>
-    </div>
-
-    <form id="code-form" data-panel="code" autocomplete="off">
-      <div class="hint-row">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 20 0M5.5 12.4a10 10 0 0 1 13 0M9 15.9a5 5 0 0 1 6 0"/><circle cx="12" cy="19.3" r="1.3" class="fill"/></svg>
-        <span data-i18n="codeHint">Already paid? Log in with the code we sent you.</span>
-      </div>
-      <label><span data-i18n="codeLabel">Wi-Fi code</span><input name="username" required autocapitalize="characters" spellcheck="false" data-i18n-ph="codePh" placeholder="e.g. KN4821"></label>
-      <label><span data-i18n="passLabel">Password</span><input name="password" type="password" required data-i18n-ph="passPh" placeholder="Password from your SMS"></label>
-      <button class="btn" type="submit"><span data-i18n="connect">Connect</span> <span aria-hidden="true">→</span></button>
-    </form>
-
-    <form id="account-form" data-panel="account" hidden autocomplete="off">
-      <div class="hint-row">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/></svg>
-        <span data-i18n="accHint">Renew your home internet with M-Pesa.</span>
-      </div>
-      <label><span><span class="js-name">Kade Networks</span> <span data-i18n="accLabel">account number</span></span><input name="username" required spellcheck="false" data-i18n-ph="accPh" placeholder="Your account username"></label>
-      <label><span data-i18n="mpesaLabel">M-Pesa number</span><input name="phone" inputmode="tel" autocomplete="tel" required placeholder="0712 345 678"></label>
-      <button class="btn" type="submit"><span data-i18n="payAcc">Pay with M-Pesa</span> <span aria-hidden="true">→</span></button>
-      <p class="muted small" data-i18n="accNote">We'll send a prompt to your phone for the amount due on your plan.</p>
-    </form>
-  </section>
-
-  <section class="packages" id="packages">
-    <h2 data-i18n="pkgTitle">On-the-Go WiFi</h2>
-    <p class="muted" data-i18n="pkgSub">Connect at any of our hotspots. Tap a package to buy it.</p>
-    <div id="portal-plans" class="plan-grid" aria-live="polite">
-      <div class="plan skeleton"></div><div class="plan skeleton"></div><div class="plan skeleton"></div><div class="plan skeleton"></div>
-    </div>
-  </section>
-
-  <section class="help">
-    <h2 data-i18n="helpTitle">Need a hand?</h2>
-    <p class="muted" data-i18n="helpSub">Our team is here to help you get connected.</p>
-    <div class="help-list" id="portal-support">
-      <a class="help-item" href="mailto:info@kadenetworks.com"><span class="help-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg></span>info@kadenetworks.com</a>
-    </div>
-  </section>
-</main>
-
-<footer class="foot">
-  <p>© <span id="year">2026</span> <span class="js-name">Kade Networks</span></p>
-  <p>The Address, #8, Muthangari Dr, Nrb</p>
-</footer>
 </div>
+
+<!-- ============ ADMIN ============ -->
+<button id="adminFab" class="hide">🎨 Design</button>
+<aside id="admin" aria-label="Landing page admin">
+  <header><b>Landing page design</b><button id="closeAdmin" aria-label="Close">×</button></header>
+  <div class="body">
+    <h4>Design</h4>
+    <div class="theme-grid" id="themeGrid"></div>
+    <div class="theme-desc" id="themeDesc"></div>
+
+    <h4>Brand</h4>
+    <div class="row"><label>Business name</label></div>
+    <input type="text" id="cfgName">
+    <div class="row" style="margin-top:10px"><label>Brand colour</label><input type="color" id="cfgColor"></div>
+    <div class="colors" id="presetColors"></div>
+
+    <h4>Intro</h4>
+    <textarea id="cfgIntro" placeholder="Leave empty to use each design's own wording"></textarea>
+    <small style="color:#64748b">The line under the headline, on every design. Clear it to use each design's own wording.</small>
+
+    <h4>Contact</h4>
+    <div class="row"><label for="cfgPhone">Phone</label></div><input type="text" id="cfgPhone" placeholder="0181 820 518">
+    <div class="row"><label for="cfgWhatsapp">WhatsApp</label></div><input type="text" id="cfgWhatsapp" placeholder="same as phone if empty">
+    <div class="row"><label for="cfgEmail">Email</label></div><input type="text" id="cfgEmail" placeholder="info@kadenetworks.com">
+    <div class="row"><label for="cfgLang">Default language</label><select id="cfgLang"><option value="sw">Kiswahili</option><option value="en">English</option></select></div>
+    <div class="row"><label for="cfgPopular">Popular package (badge)</label></div><input type="text" id="cfgPopular" placeholder="e.g. NET PLUS">
+
+    <h4>Show on the landing page</h4>
+    <div class="row"><label for="tPppoe">PPPoE packages</label><span class="switch"><input type="checkbox" id="tPppoe"><span></span></span></div>
+    <div class="row"><label for="tHotspot">Hotspot packages</label><span class="switch"><input type="checkbox" id="tHotspot"><span></span></span></div>
+    <div class="row"><label for="tFind">Find my account</label><span class="switch"><input type="checkbox" id="tFind"><span></span></span></div>
+    <div class="row"><label for="tAccess">Access my account</label><span class="switch"><input type="checkbox" id="tAccess"><span></span></span></div>
+    <div class="row"><label for="tOtg">On-the-Go WiFi card</label><span class="switch"><input type="checkbox" id="tOtg"><span></span></span></div>
+    <div class="row"><label for="tContact">Contact section</label><span class="switch"><input type="checkbox" id="tContact"><span></span></span></div>
+  </div>
+  <footer><button id="copyCfg">Copy JSON</button><button id="saveCfg">Save</button></footer>
+</aside>
 
 <!-- Buy sheet -->
 <div class="sheet-backdrop" id="sheet" hidden>
   <form class="sheet" id="buy-form" role="dialog" aria-modal="true" aria-labelledby="sheet-name">
     <div class="sheet-grip" aria-hidden="true"></div>
     <button type="button" class="sheet-close" id="sheet-close" aria-label="Close">×</button>
-    <p class="sheet-kicker" data-i18n="youPicked">You picked</p>
+    <p class="sheet-kicker" id="sheet-kicker">You picked</p>
     <h3 id="sheet-name">—</h3>
     <p class="sheet-price" id="sheet-price">KES 0</p>
     <ul class="sheet-facts" id="sheet-facts"></ul>
-    <label><span data-i18n="mpesaLabel">M-Pesa number</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required></label>
-    <button class="btn" type="submit"><span data-i18n="payBuy">Pay with M-Pesa</span> <span aria-hidden="true">→</span></button>
-    <p class="muted small" data-i18n="buyNote">You'll get a prompt on your phone. Enter your M-Pesa PIN to pay.</p>
+    <label id="sheet-phone-label"><span id="sheet-phone-text">M-Pesa number</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678"></label>
+    <button class="btn" type="submit" id="sheet-pay"><span id="sheet-pay-text">Pay with M-Pesa</span> <span aria-hidden="true">→</span></button>
+    <p class="muted small" id="sheet-note"></p>
+    <div class="contact hide" id="sheet-contact"></div>
   </form>
 </div>
-
 <!-- Waiting / done -->
 <div class="overlay" id="portal-wait" hidden>
   <div class="overlay-card">
@@ -114,6 +179,6 @@
   </div>
 </div>
 <div class="overlay" id="portal-done" hidden><div class="overlay-card" id="done-card"></div></div>
-
+<div id="adminNote" class="hide" style="position:fixed;left:12px;right:12px;bottom:12px;z-index:60;background:#0f172a;color:#fff;border-radius:12px;padding:12px 16px;font-size:13px;text-align:center">To edit this page, sign in to netops as admin in this browser, then <a href="" style="color:#7dd3ff">reload</a>.</div>
 </body>
 </html>
