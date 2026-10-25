@@ -14,7 +14,7 @@ services:
 
   mongo:
     mem_limit: ${MONGO_MEMORY:-450m}
-    image: ${MONGO_IMAGE:-mongo:8.0}
+    image: ${MONGO_IMAGE:-mongo:8.2}
     restart: unless-stopped
     command: ["mongod", "--auth", "--bind_ip_all", "--wiredTigerCacheSizeGB", "${MONGO_CACHE_GB:-0.25}"]
     environment:
