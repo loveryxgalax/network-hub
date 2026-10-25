@@ -36,6 +36,12 @@ test('vouchers, manual connects, campaigns, reports, logs and nav counts',async(
   const rep=(await api('reports?days=7')).body;assert.equal(rep.total,1500);assert.equal(rep.perDay.length,7);assert.equal(rep.byPlan[0].name,'Home');assert.equal(rep.newCustomers,3);
   const prev=(await api('radius/campaign/preview','POST',{segment:'pppoe'})).body;assert.equal(prev.count,1);
   assert.equal((await api('radius/campaign','POST',{segment:'pppoe',message:'Hello {name}',confirm:1})).status,400,'needs SMS configured');
+ await api('radius/settings','PUT',{macBinding:'enforce'});
+  const bsub=(await api('radius/subscribers','POST',{name:'Bound',username:'bound',service:'pppoe',planId:ppp.id,password:'pw123456',expiresAt:Date.now()+864e5})).body;
+  const pp=mac=>rest({'User-Name':'bound','Service-Type':'Framed-User','Framed-Protocol':'PPP','Calling-Station-Id':mac});
+  assert.equal((await ask('authorize',pp('E0:37:66:9A:33:03'))).status,200);assert.equal((await ask('authorize',pp('E0:37:66:9A:33:03'))).status,200);
+  assert.equal((await ask('authorize',pp('AA:BB:CC:DD:EE:FF'))).status,401,'a different router is refused once bound');
+  await api('radius/subscribers/'+bsub.id,'PATCH',{boundMac:''});assert.equal((await ask('authorize',pp('AA:BB:CC:DD:EE:FF'))).status,200,'clearing the binding lets the next router bind');
  const st=(await api('portal/status')).body;assert.equal(st.config.design,'dashboard');
   assert.equal((await api('portal/status','PUT',{...st.config,design:'neon',accent:'#112233'})).status,200);assert.equal((await api('portal/status','PUT',{...st.config,design:'nope'})).status,400);
   const html=await (await fetch(origin+'/api/portal/status.html',{headers:{Cookie:cookie}})).text();assert.match(html,/\$\(session-time-left\)/);assert.match(html,/class="neon"/);
