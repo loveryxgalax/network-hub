@@ -7,6 +7,7 @@ RUN npm ci --omit=dev
 COPY server.cjs ./
 COPY lib ./lib
 COPY dist ./dist
+COPY portal ./portal
 RUN mkdir /data && chown node:node /data
 USER node
 VOLUME /data

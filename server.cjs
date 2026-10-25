@@ -11,6 +11,8 @@ const customers=require('./lib/customers.cjs');
 const sites=require('./lib/sites.cjs');
 const radius=require('./lib/radius.cjs');
 const billing=require('./lib/billing.cjs');
+const mpesa=require('./lib/mpesa.cjs');
+const portal=require('./lib/portal.cjs');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const error=(status,message)=>Object.assign(new Error(message),{status});
 const publicUser=u=>({id:u.id,email:u.email,name:u.name,role:u.role,active:!!u.active});
@@ -89,6 +91,12 @@ function createApp(options={}){
   if(route==='/api/customers'&&method==='GET'){if(user.role==='installer')throw error(403,'Customer discovery is not available to field installers');return json(res,200,customers.list(store,url.searchParams));}
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
   if(route==='/api/sites'&&method==='GET'){if(user.role==='installer')throw error(403,'Sites & traffic is not available to field installers');return json(res,200,{...sites.report(store,url.searchParams),setup:sites.SETUP});}
+  if(route==='/api/mpesa'){
+   if(user.role==='installer')throw error(403,'Billing is not available to field installers');
+   if(method==='GET')return json(res,200,{config:mpesa.publicConfig(store),portalUrl:(publicUrl?.origin||'http://'+req.headers.host)+'/portal/',payments:store.list('portalPayments').slice(0,300).map(({tokenHash,checkoutRequestId,...p})=>p)});
+   role(user,['admin']);if(method==='PUT'){const saved=mpesa.setConfig(store,await body(req));store.audit(user,'Updated M-Pesa settings','mpesa');return json(res,200,saved);}
+  }
+  if(route==='/api/portal/hotspot-login.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="login.html"'});return res.end(portal.hotspotLoginPage(publicUrl?.origin||'https://netops.kadenetworks.com'));}
   if(route.startsWith('/api/billing/')||route==='/api/billing'){
    if(user.role==='installer')throw error(403,'Billing is not available to field installers');
    if(route==='/api/billing'&&method==='GET')return json(res,200,billing.overview(store));
@@ -233,9 +241,24 @@ function createApp(options={}){
  }
  const server=http.createServer(async(req,res)=>{
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
-  try{const url=new URL(req.url,'http://localhost');if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(!['GET','HEAD'].includes(req.method))throw error(405,'Method not allowed');let requested;try{requested=decodeURIComponent(url.pathname);}catch{throw error(400,'Invalid URL');}const file=path.resolve(root,'.'+(requested==='/'?'/index.html':requested));if(!file.startsWith(root+path.sep))throw error(403,'Invalid path');if(!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8'};res.setHeader('Content-Type',types[path.extname(file)]||'application/octet-stream');res.statusCode=200;if(req.method==='HEAD')return res.end();fs.createReadStream(file).pipe(res);
+  try{const url=new URL(req.url,'http://localhost');if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(url.pathname.startsWith('/portal/api/'))return await portalApi(req,res,url);if(url.pathname==='/portal'){res.writeHead(301,{Location:'/portal/'+url.search});return res.end();}if(url.pathname.startsWith('/portal/')&&['GET','HEAD'].includes(req.method)){const rel=url.pathname==='/portal/'?'/index.html':url.pathname.slice('/portal'.length),file=path.resolve(portalRoot,'.'+rel);if(!file.startsWith(portalRoot+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'};res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream'});return res.end(req.method==='HEAD'?undefined:fs.readFileSync(file));}if(!['GET','HEAD'].includes(req.method))throw error(405,'Method not allowed');let requested;try{requested=decodeURIComponent(url.pathname);}catch{throw error(400,'Invalid URL');}const file=path.resolve(root,'.'+(requested==='/'?'/index.html':requested));if(!file.startsWith(root+path.sep))throw error(403,'Invalid path');if(!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8'};res.setHeader('Content-Type',types[path.extname(file)]||'application/octet-stream');res.statusCode=200;if(req.method==='HEAD')return res.end();fs.createReadStream(file).pipe(res);
   }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'Server could not complete this request'});if(!cause.status)console.error(cause.name+': server operation failed');}
  });
+ // Public captive portal (no login). Limits per client address keep the M-Pesa prompt and code checks from abuse.
+ const portalRoot=path.join(__dirname,'portal'),portalHits=new Map();
+ const limit=(req,bucket,max,windowMs)=>{const ip=String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||''),key=bucket+'|'+ip,now=Date.now(),hit=portalHits.get(key);if(!hit||now>hit.until){portalHits.set(key,{n:1,until:now+windowMs});if(portalHits.size>20000)portalHits.clear();return;}if(++hit.n>max)throw error(429,'Too many attempts. Wait a few minutes and try again.');};
+ async function portalApi(req,res,url){
+  const route=url.pathname,method=req.method,origin=publicUrl?.origin||'http://'+req.headers.host;
+  if(route==='/portal/api/info'&&method==='GET')return json(res,200,portal.info(store));
+  if(route==='/portal/api/pay'&&method==='POST'){limit(req,'pay',6,600000);return json(res,201,await portal.start(store,await body(req,4096),origin));}
+  const st=route.match(/^\/portal\/api\/pay\/([a-f0-9]{32})$/);
+  if(st&&method==='GET'){limit(req,'status',400,600000);return json(res,200,await portal.status(store,st[1],url.searchParams.get('t')));}
+  if(route==='/portal/api/login'&&method==='POST'){limit(req,'login',20,600000);return json(res,200,portal.login(store,await body(req,4096)));}
+  const cb=route.match(/^\/portal\/api\/mpesa\/([A-Za-z0-9_-]{20,64})$/);
+  // Always answer Safaricom with success so it does not retry forever; errors are logged instead.
+  if(cb&&method==='POST'){try{await portal.callback(store,cb[1],await body(req,65536));}catch(cause){if(cause.status!==404)console.warn('M-Pesa callback not applied: '+cause.message);else throw cause;}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
+  throw error(404,'Not found');
+ }
  // FreeRADIUS bridge (rlm_rest). Separate port that only the private Compose network reaches; never routed by the tunnel.
  const radiusToken=options.radiusToken??process.env.NETWORK_RADIUS_TOKEN;
  const bridge=radiusToken?http.createServer(async(req,res)=>{

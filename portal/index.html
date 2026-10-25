@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kade Networks Wi-Fi</title>
+<meta name="theme-color" content="#0b1a24"><link rel="preload" href="/fonts/maven-pro-500.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/portal/portal.css?v=1"><script src="/portal/portal.js?v=1" defer></script></head>
+<body><main class="portal">
+<header class="portal-head"><span class="portal-mark">K</span><div><h1 id="portal-name">Kade Networks</h1><p>Fast, affordable internet</p></div></header>
+<div id="portal-alert" class="portal-alert" role="alert" hidden></div>
+<nav class="portal-tabs" role="tablist"><button type="button" data-tab="buy" class="active">Buy Wi-Fi</button><button type="button" data-tab="code">I have a code</button><button type="button" data-tab="account">Pay home internet</button></nav>
+<section data-panel="buy"><h2>Choose a package</h2><div id="portal-plans" class="portal-plans"><p class="portal-muted">Loading packages…</p></div>
+ <form id="buy-form" class="portal-form" hidden><label>M-Pesa number<input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required></label><button class="portal-button" type="submit">Pay with M-Pesa</button><p class="portal-muted">You'll get a prompt on your phone. Enter your M-Pesa PIN to pay.</p></form></section>
+<section data-panel="code" hidden><h2>Log in with your code</h2><form id="code-form" class="portal-form"><label>Code / username<input name="username" autocomplete="username" autocapitalize="none" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button class="portal-button" type="submit">Connect</button></form></section>
+<section data-panel="account" hidden><h2>Pay for home internet</h2><form id="account-form" class="portal-form"><label>Account username<input name="username" autocapitalize="none" required placeholder="As on your router or receipt"></label><label>M-Pesa number<input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required></label><button class="portal-button" type="submit">Pay with M-Pesa</button><p class="portal-muted">Your package renews as soon as payment is confirmed.</p></form></section>
+<section id="portal-wait" class="portal-wait" hidden><div class="portal-spinner" aria-hidden="true"></div><h2 id="wait-title">Check your phone</h2><p id="wait-text">Enter your M-Pesa PIN on the prompt to pay.</p></section>
+<section id="portal-done" class="portal-done" hidden></section>
+<footer class="portal-foot" id="portal-support"></footer>
+</main></body></html>
