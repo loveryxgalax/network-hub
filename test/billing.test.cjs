@@ -53,6 +53,7 @@ test('custom SMS gateways (e.g. BlessedTexts) get JSON with adjustable field nam
   let r=await billing.sendSms(store,'0712345678','Hello','test',gw);
   assert.equal(r.status,'sent');assert.equal(calls[0].url,'https://sms.blessedtexts.com/api/sms/v1/sendsms');
   assert.deepEqual(JSON.parse(calls[0].o.body),{api_key:'secret-key',sender_id:'KADENET',phone:'254712345678',message:'Hello'});assert.match(r.detail,/Success/);
+  for(const code of ['1002','1004','1008','1009']){reply={status:200,body:`[{"status_code":"${code}","status_desc":"Insufficient units"}]`};r=await billing.sendSms(store,'0712345678','Hello','test',gw);assert.equal(r.status,'failed',code+' inside an HTTP 200 is a failure');assert.match(r.detail,new RegExp(code));}
   reply={status:200,body:'{"status":"error","message":"Invalid API key"}'};r=await billing.sendSms(store,'0712345678','Hello','test',gw);assert.equal(r.status,'failed');assert.match(r.detail,/Invalid API key/);
   reply={status:401,body:'Unauthorized'};assert.equal((await billing.sendSms(store,'0712345678','x','test',gw)).status,'failed');
   billing.setSmsConfig(store,{provider:'custom',url:'https://sms.blessedtexts.com/api/sms/v1/sendsms',senderId:'KADENET',format:'form',phoneFormat:'07',field_phone:'mobile',field_apiKey:'apikey'});
