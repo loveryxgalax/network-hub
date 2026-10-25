@@ -14,7 +14,8 @@ test('reports are bounded and connection endpoints validated',()=>{
  assert.throws(()=>sites.normalize({dns:new Array(sites.MAX_DNS+1).fill(line('1','10.0.0.1','a.com'))}));
  assert.throws(()=>sites.normalize({conns:new Array(sites.MAX_CONNS+1).fill({})}));
  const value=sites.normalize({conns:[{src:'10.0.0.5:51000',dst:'1.2.3.4:443',proto:'tcp',bytes:'900000',origRate:'1.5Mbps',replRate:'800kbps'},{src:'bad',dst:'1.2.3.4'}]});
- assert.equal(value.conns.length,1);assert.deepEqual(value.conns[0].dst,{ip:'1.2.3.4',port:443});assert.equal(value.conns[0].upBps,1.5e6);assert.equal(value.conns[0].downBps,8e5);
+ assert.equal(value.conns.length,1);
+ const split=sites.normalize({conns:[{src:'10.111.3.181',srcPort:'36188',dst:'23.44.131.201',dstPort:'443',proto:'tcp',bytes:450790,origRate:'0',replRate:'2400000'}]}).conns[0];assert.deepEqual(split.dst,{ip:'23.44.131.201',port:443});assert.equal(split.upBps,0);assert.equal(split.downBps,2400000);assert.deepEqual(value.conns[0].dst,{ip:'1.2.3.4',port:443});assert.equal(value.conns[0].upBps,1.5e6);assert.equal(value.conns[0].downBps,8e5);
 });
 test('ingest dedupes repeated log lines and report names subscribers from discovery',()=>{
  const store=memory([router]),now=Date.parse('2026-10-25T10:00:00Z');
@@ -36,7 +37,7 @@ test('old days expire after 30 days',()=>{
  assert.equal(store.setting('siteStats:r1:2026-09-01'),undefined);assert.deepEqual(store.setting('siteDays:r1').days,['2026-10-11']);
 });
 test('router script reads DNS logs and connections only; setup is shown, not sent',()=>{
- assert.match(sites.SCRIPT,/\/log print as-value where topics~"dns"/);assert.match(sites.SCRIPT,/\/ip firewall connection find where \(orig-bytes>131072 or repl-bytes>131072\)/);assert.doesNotMatch(sites.SCRIPT,/connection print/);
+ assert.match(sites.SCRIPT,/\/log print as-value where topics~"dns"/);assert.match(sites.SCRIPT,/\/ip firewall connection find where \(orig-bytes>1048576 or repl-bytes>1048576\)/);assert.doesNotMatch(sites.SCRIPT,/connection print/);
  assert.doesNotMatch(sites.SCRIPT,/\b(set|add|remove|disable)\b \[?\//);
  assert.ok(sites.SETUP.every(c=>/^\/(system logging|ip dns set)/.test(c)));
 });
