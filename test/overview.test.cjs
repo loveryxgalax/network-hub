@@ -37,3 +37,12 @@ test('revenue, expiries and customer states are counted in Nairobi days',()=>{
   assert.deepEqual(o.expiring.map(e=>e.username),['soon']);assert.equal(o.customers.plans[0].name,'Home');assert.equal(o.customers.plans[0].count,2);
  }finally{done();}
 });
+test('the dashboard page, chart kit and Kade logos are served, and the overview needs a login',async()=>{
+ const {createApp}=require('../server.cjs'),directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-dash-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test'});
+ await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+app.server.address().port;
+ try{
+  const html=await (await fetch(origin+'/')).text();assert.ok(html.indexOf('/workspace.js')<html.indexOf('/dashboard.js'),'dashboard.js loads after workspace.js so it replaces the old page');assert.ok(html.indexOf('/charts.js')<html.indexOf('/dashboard.js'));
+  for(const [p,type] of [['/charts.js','javascript'],['/dashboard.js','javascript'],['/dashboard.css','css'],['/img/kade-logo.png','image/png'],['/img/kade-mark.png','image/png'],['/img/favicon.png','image/png']]){const r=await fetch(origin+p);assert.equal(r.status,200,p);assert.match(r.headers.get('content-type'),new RegExp(type),p);}
+  assert.equal((await fetch(origin+'/api/overview')).status,401);
+ }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
+});
