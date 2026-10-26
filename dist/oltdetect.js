@@ -3,7 +3,7 @@
 (()=>{
 const original=window.renderDevices,H=escapeHtml;
 const seen=t=>t?stamp(t):'—';
-function row(n,primary){return `<tr><td><strong>${H(n.name||n.mac||'Unnamed device')}</strong><small>${H([n.vendor,n.model||n.platform].filter(Boolean).join(' · '))}</small></td><td>${H(n.router)}<small>port ${H(n.port||'—')}</small></td><td>${H(n.ip||'—')}<small>${H(n.mac)}</small></td><td>${n.confidence?`<span class="status ${n.confidence==='high'?'online':'warning'}">${n.confidence==='high'?'Likely OLT':'Possible OLT'}</span>`:''}<small>${H(seen(n.lastSeen))}</small></td><td>${n.added?'<span class="status online">Onboarded</span>':`<button class="ra-btn ${primary?'ra-primary':''}" data-olt-add="${H(n.routerId+'|'+n.key)}">${'+ Onboard as OLT'}</button>`}</td></tr>`;}
+function row(n,primary){return `<tr><td><strong>${H(n.name||n.mac||'Unnamed device')}</strong><small>${H([n.vendor,n.model||n.platform].filter(Boolean).join(' · '))}</small></td><td>${H(n.router)}<small>port ${H(n.port||'—')}</small></td><td>${H(n.ip||'—')}<small>${H(n.mac)}</small></td><td>${n.confidence?`<span class="status ${n.confidence==='high'?'online':'warning'}">${n.confidence==='high'?'Likely OLT':'Possible OLT'}</span>`:`<span class="status">${H(n.kind||'Other device')}</span>`}<small>${H(seen(n.lastSeen))}</small></td><td>${n.added?'<span class="status online">Onboarded</span>':`<button class="ra-btn ${primary?'ra-primary':''}" data-olt-add="${H(n.routerId+'|'+n.key)}">${(primary?'+ Onboard as OLT':'Add as OLT anyway')}</button>`}</td></tr>`;}
 async function panel(){
  const host=$('#olt-detect');if(!host)return;
  let d;try{d=await api('olts/detect');}catch(e){host.innerHTML=notice('Could not scan the routers',H(e.message),true);return;}
