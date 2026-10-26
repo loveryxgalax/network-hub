@@ -99,6 +99,6 @@ function kdPaint(animate){
  $('#kd-updated').textContent='· updated '+new Date(d.now).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Africa/Nairobi'});
 }
 const kdPalette=['#00a8ff','#0a3cff','#7c5cff','#17c98b','#f5a524','#ff5470','#2dd4bf','#a78bfa'];
-async function kdLoad(){const request=++kd.request;try{const d=await api('overview?range='+kd.range);if(request!==kd.request||state.page!=='dashboard')return;kd.data=d;kdPaint(kd.first);kd.first=false;}catch(error){if(request===kd.request&&$('#kd')&&!kd.data)$('#kd').insertAdjacentHTML('afterbegin',notice('Could not load the overview',E(error.message),true));}}
-function renderDashboard(){kd.first=true;kd.data=null;kdSkeleton();kdLoad();clearInterval(kd.timer);kd.timer=setInterval(()=>{if(state.page==='dashboard'&&!document.hidden&&!$('dialog[open]'))kdLoad();else if(state.page!=='dashboard')clearInterval(kd.timer);},30000);}
+async function kdLoad(){const request=++kd.request;try{const d=await api('overview?range='+kd.range);if(request!==kd.request||!['dashboard','trends'].includes(state.page))return;kd.data=d;kdPaint(kd.first);kd.first=false;}catch(error){if(request===kd.request&&$('#kd')&&!kd.data)$('#kd').insertAdjacentHTML('afterbegin',notice('Could not load the overview',E(error.message),true));}}
+function renderDashboard(){kd.first=true;kd.data=null;kdSkeleton();kdLoad();clearInterval(kd.timer);kd.timer=setInterval(()=>{if(['dashboard','trends'].includes(state.page)&&!document.hidden&&!$('dialog[open]'))kdLoad();else if(!['dashboard','trends'].includes(state.page))clearInterval(kd.timer);},30000);}
 setInterval(kdClock,1000);
