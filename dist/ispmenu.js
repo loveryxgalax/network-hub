@@ -23,6 +23,7 @@ const items=[
  group('comms-sms','SMS','info','COMMS'),group('comms-campaigns','Campaigns','activity')
 ];
 const at=nav.findIndex(n=>n[0]==='radius');if(at>=0)nav.splice(at,1,...items);
+const nh=nav.findIndex(n=>n[0]==='network-health');if(nh>=0)nav.splice(nh+1,0,['router-health','Router health','activity']);
 const d=nav.findIndex(n=>n[0]==='dashboard');if(d>=0)nav.splice(d+1,0,['trends','Trends','activity']);
 window.radiusPreset=id=>PRESETS[id]||null;
 const svcOf=id=>id.startsWith('hs-')?'hotspot':'pppoe',H=s=>escapeHtml(String(s??'')),csvCell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
@@ -92,6 +93,30 @@ const pages={
  },
  async customers(id){shell('Customers','Every customer in one table. Filter any column; open a row to renew, record a payment or edit.',`<button class="button secondary" id="ct-csv">Export CSV</button><button class="button primary" id="ct-new">New customer</button>`);
   const o=await api('radius');if(state.page!==id)return;radiusView.data=o;ct.data=o;ctPaint(id);},
+ async health(id){shell('Router health','Temperature, links, optics, address pools and internet quality, reported by each MikroTik every two minutes. Read-only.');
+  const d=await api('health');if(state.page!==id)return;
+  const chip=(label,value,tone)=>`<div class="rh-chip ${tone||''}"><small>${label}</small><b>${value}</b></div>`;
+  const spark=(pts,i,color)=>{const v=pts.map(p=>p[i]).filter(x=>x!=null);return v.length>2?kc.spark(v.slice(-96),{color}):'<small class="muted">no history yet</small>';};
+  const sev=a=>`<div class="notice ${a.severity==='critical'?'warning':''}">${icon('warning',20)}<div><strong>${H(a.title)}</strong><br>${H(a.details)}</div></div>`;
+  const card=r=>{const h=r.health;if(!h)return `<section class="card rh-router"><div class="card-header"><div><h2>${H(r.name)}</h2><p>No health report yet. Replace the discovery script on this router (Customer discovery → Replace discovery script) to start sending it.</p></div></div></section>`;
+   const s=h.sensors||{},temp=s.temperature??s['board-temperature1']??null,ping=(h.pings||[]),p0=ping[0],loss=p=>p&&p.sent?Math.round((1-p.received/p.sent)*100):null;
+   const drift=h.drift,hdd=h.hdd||{},gw=(h.routes||[])[0];
+   const chips=[chip('Board temp',temp!=null?temp+'°C':'—',temp>=75?'bad':temp>=65?'warn':''),chip('CPU temp',s['cpu-temperature']!=null?s['cpu-temperature']+'°C':'—',s['cpu-temperature']>=85?'bad':''),chip('Voltage',s.voltage!=null?s.voltage+' V':'—'),chip('Fan',s['fan1-speed']!=null?s['fan1-speed']+' rpm':'—'),chip('Storage free',hdd.total?Math.round(hdd.free/hdd.total*100)+'%':'—',hdd.total&&hdd.free/hdd.total<.1?'bad':''),chip('Clock',drift==null?'—':Math.abs(drift)<=120?'In sync':drift+' s off',drift!=null&&Math.abs(drift)>120?'bad':''),chip('Active uplink',gw?H(gw.gateway)+(gw.interface?'<small> '+H(gw.interface)+'</small>':''):'—')];
+   const net=ping.map(p=>`<div class="rh-ping"><b>${H(p.target)}</b><span class="${loss(p)>=34||p.avgMs>250?'bad':''}">${p.received}/${p.sent} replies${p.received?' · '+p.avgMs+' ms':''}</span></div>`).join('')||'<small class="muted">No ping data</small>';
+   const ports=table(['PORT','LINK','SPEED','ERRORS','OPTICS'],h.ethernet||[],e=>{const best=(h.ports||{})[e.name]||0,mb=(e.rate||'').includes('Gbps')?parseFloat(e.rate)*1000:parseFloat(e.rate)||0,slow=e.status==='link-ok'&&best>=1000&&mb<best;
+    return `<tr><td><strong>${H(e.name)}</strong>${e.sfpPresent?`<small>${H([e.sfpVendor,e.sfpType].filter(Boolean).join(' · '))}</small>`:''}</td><td><span class="status ${e.status==='link-ok'?'online':'offline'}">${e.status==='link-ok'?'Up':H(e.status||'Down')}</span></td><td class="${slow?'rh-bad':''}">${H(e.rate||'—')}${slow?`<small>was ${best>=1000?best/1000+'G':best+'M'}</small>`:''}</td><td>${(e.rxFcs||0)+(e.rxAlign||0)?`<span class="rh-bad">${(e.rxFcs||0)+(e.rxAlign||0)}</span>`:'0'}${e.rxDrop||e.txDrop?`<small>drops ${e.rxDrop||0}/${e.txDrop||0}</small>`:''}</td><td>${e.sfpPresent&&e.sfpRx!=null?`<span class="${e.sfpRx<-24?'rh-bad':''}">Rx ${e.sfpRx} dBm</span><small>Tx ${e.sfpTx??'—'} dBm · ${e.sfpTemp??'—'}°C</small>`:'—'}</td></tr>`;},'No ports reported.');
+   const pools=(h.pools||[]).map(p=>{const pct=p.size?Math.min(100,Math.round(p.used/p.size*100)):0;return `<li><div class="rp-row"><span>${H(p.name)}</span><b>${p.used} / ${p.size||'?'}</b></div><div class="rp-bar ${pct>=90?'bad':''}"><i style="width:${Math.max(2,pct)}%"></i></div><small>${pct}%</small></li>`;}).join('');
+   const fw=table(['RULE','HITS','TRAFFIC'],(h.firewall||[]).slice(0,8),f=>`<tr><td><strong>${H(f.comment||f.chain+' '+f.action)}</strong><small>${H(f.kind)} · ${H(f.chain)} · ${H(f.action)}</small></td><td>${Number(f.packets).toLocaleString()}</td><td>${bytesShort(f.bytes)}</td></tr>`,'No rule has matched traffic.');
+   const qs=table(['QUEUE','TARGET','RATE (UP/DOWN)'],(h.queues||[]).slice(0,10),q=>`<tr><td><strong>${H(q.name)}</strong></td><td>${H(q.target)}</td><td>${H(q.rate)}</td></tr>`,'No active queues.');
+   return `<section class="card rh-router ${r.fresh?'':'stale'}"><div class="card-header"><div><h2>${H(r.name)} <span class="status ${r.fresh?'online':'warning'}">${r.fresh?'Reporting':'Report stale'}</span></h2><p>Reported ${H(ago(r.reportedAt))}</p></div></div>
+    <div class="rh-chips">${chips.join('')}</div>
+    <div class="rh-trends"><div><small>Board temperature</small>${spark(r.history,1,'var(--kd-warn)')}</div><div><small>Internet latency (ms)</small>${spark(r.history,4,'var(--kd-cyan)')}</div><div><small>Packet loss (%)</small>${spark(r.history,5,'var(--kd-bad)')}</div><div><small>Voltage</small>${spark(r.history,3,'var(--kd-violet)')}</div></div>
+    <div class="rh-section"><h3>Internet quality</h3><div class="rh-pings">${net}</div></div>
+    <div class="rh-section"><h3>Ports and optics</h3>${ports}</div>
+    ${pools?`<div class="rh-section"><h3>Address pools</h3><ul class="rp-rank">${pools}</ul></div>`:''}
+    <div class="rh-two"><div class="rh-section"><h3>Busiest firewall rules</h3>${fw}</div><div class="rh-section"><h3>Active queues</h3>${qs}</div></div></section>`;};
+  $('#im-body').innerHTML=(d.alerts.length?`<div class="rh-alerts">${d.alerts.map(sev).join('')}</div>`:`<div class="notice">${icon('check',20)}<div><strong>No health problems</strong><br>Temperatures, links, optics, pools and internet quality are all within range.</div></div>`)+d.routers.map(card).join('');
+ },
  async reports(id){const rp=pages.rp||(pages.rp={period:'month',from:'',to:'',filter:'all'});
   const PER=[['today','Today'],['yesterday','Yesterday'],['week','This week'],['7d','Last 7 days'],['month','This month'],['lastmonth','Last month'],['3m','Last 3 months'],['ytd','Year to date'],['custom','Custom range']];
   shell('Reports & analytics','Revenue, usage and customer behaviour across your routers, packages and locations. Pick a period to filter every chart.',`<button class="button secondary" id="rp-csv">Export CSV</button>`);
@@ -141,7 +166,7 @@ function ctPaint(id){const d=ct.data,f=ct.f,rows=ctRows(),per=50,pages=Math.max(
 }
 // Payments, renewals and edits reload the radius data; on this page they refresh the table instead.
 const loadOriginal=window.loadRadius;window.loadRadius=async function(){if(state.page==='cust-table'){try{ct.data=radiusView.data=await api('radius');if(state.page==='cust-table'&&$('#ct-sort'))ctPaint('cust-table');}catch(e){toast(e.message);}return;}return loadOriginal();};
-const ROUTES={'hs-sessions':'sessions','pp-sessions':'sessions','hs-auth':'auth','pp-auth':'auth','hs-acct':'acct','pp-acct':'acct','hs-requests':'requests','hs-manual':'manual','hs-vouchers':'vouchers','comms-campaigns':'campaigns','pay-reports':'reports','captive':'captive','cust-table':'customers'};
+const ROUTES={'hs-sessions':'sessions','pp-sessions':'sessions','hs-auth':'auth','pp-auth':'auth','hs-acct':'acct','pp-acct':'acct','hs-requests':'requests','hs-manual':'manual','hs-vouchers':'vouchers','comms-campaigns':'campaigns','pay-reports':'reports','captive':'captive','cust-table':'customers','router-health':'health'};
 const original=window.render;
 window.render=function(){
  const id=state.page,preset=PRESETS[id];
