@@ -81,3 +81,8 @@
 .rh-section{padding:6px 20px 12px}.rh-section h3{margin:8px 0;font-size:14px}.rh-pings{display:flex;flex-wrap:wrap;gap:10px 24px}.rh-ping{display:flex;gap:10px;align-items:baseline}.rh-ping .bad,.rh-bad{color:var(--bad);font-weight:700}
 .rh-two{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}.rh-section .table-wrap{margin:0 -20px}.rp-bar.bad i{background:var(--bad)}
 @media(max-width:900px){.rh-two{grid-template-columns:1fr}.rh-chips,.rh-trends,.rh-section{padding-left:14px;padding-right:14px}}
+/* Customer profile dialog */
+.pf{display:grid;gap:6px;min-width:min(760px,86vw)}.pf-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.pf-head h2{margin:0}.pf h3{margin:14px 0 4px;font-size:14px}
+.pf-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.pf-usage{display:flex;gap:5px;align-items:flex-end;height:90px;padding:8px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}.pf-usage div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}.pf-usage i{display:block;width:100%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#00a8ff,#0a3cff)}.pf-usage small{font-size:9px;color:var(--muted)}
+.pf .table-wrap{margin:0}.link-button strong{color:var(--teal)}
+@media(max-width:720px){.pf{min-width:0}}

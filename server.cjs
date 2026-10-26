@@ -10,7 +10,7 @@ const routerAgent=require('./lib/router-agent.cjs');
 const customers=require('./lib/customers.cjs');
 const sites=require('./lib/sites.cjs');
 const radius=require('./lib/radius.cjs');
-const health=require('./lib/health.cjs'),oltDetect=require('./lib/oltdetect.cjs'),vouchers=require('./lib/vouchers.cjs'),campaigns=require('./lib/campaigns.cjs'),reports=require('./lib/reports.cjs');
+const receipts=require('./lib/receipts.cjs'),revenue=require('./lib/revenue.cjs'),health=require('./lib/health.cjs'),oltDetect=require('./lib/oltdetect.cjs'),vouchers=require('./lib/vouchers.cjs'),campaigns=require('./lib/campaigns.cjs'),reports=require('./lib/reports.cjs');
 const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
@@ -132,13 +132,21 @@ function createApp(options={}){
    role(user,['admin']);
    if(route==='/api/billing/settings'&&method==='PUT'){const saved=billing.updateSettings(store,await body(req));store.audit(user,'Updated SMS reminders','billing');return json(res,200,saved);}
    if(route==='/api/billing/sms'&&method==='PUT'){const saved=billing.setSmsConfig(store,await body(req));store.audit(user,'Updated SMS provider','billing');return json(res,200,saved);}
+   if(route==='/api/billing/sms/send'&&method==='POST'){role(user,['admin','manager','operator']);const input=await body(req),sub=store.get('subscribers',String(input.subscriberId||''));if(!sub)throw error(404,'Subscriber not found');const text=String(input.message||'').trim();if(!text||text.length>459)throw error(400,'The message must be 1–459 characters');if(!billing.phone(sub.phone))throw error(400,'This customer has no valid phone number');const r=await billing.sendSms(store,sub.phone,billing.fill(text,billing.values(store,sub)),'manual');store.audit(user,'Sent SMS to customer',sub.id);return json(res,200,r);}
    if(route==='/api/billing/sms/test'&&method==='POST'){const input=await body(req);const result=await billing.sendSms(store,input.to,String(input.message||'Test message from Kade Networks netops.').slice(0,459),'test');store.audit(user,'Sent test SMS','billing');return json(res,200,result);}
    throw error(404,'API endpoint not found');
   }
+  const receiptRoute=route.match(/^\/api\/receipt\/([a-f0-9-]{36})$/);
+  if(receiptRoute&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');const sub=store.get('subscribers',receiptRoute[1]);if(!sub)throw error(404,'Subscriber not found');const inf=portal.info(store),cfg=landing.get(store);
+   res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(receipts.build(store,sub,{kind:url.searchParams.get('kind')==='invoice'?'invoice':'receipt',ref:String(url.searchParams.get('ref')||'').slice(0,40),cfg:{phone:cfg.phone||inf.support,email:cfg.email}}));}
+  if(route==='/api/overdue'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,revenue.overdue(store));}
+  if(route==='/api/portal-payments'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,revenue.payments(store));}
+  const profileRoute=route.match(/^\/api\/customers\/([a-f0-9-]{36})\/profile$/);
+  if(profileRoute&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,revenue.profile(store,profileRoute[1]));}
   if(route==='/api/health'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,health.overview(store));}
   if(route==='/api/olts/detect'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,oltDetect.detect(store));}
   if(route==='/api/reports'&&method==='GET'){if(user.role==='installer')throw error(403,'Reports are not available to field installers');return json(res,200,reports.build(store,{period:url.searchParams.get('period')||'month',from:url.searchParams.get('from'),to:url.searchParams.get('to')}));}
-  if(route==='/api/nav-counts'&&method==='GET'){const o=user.role==='installer'?null:radius.overview(store);return json(res,200,o?{customers:o.counts.subscribers,hotspot:o.subscribers.filter(x=>x.service==='hotspot').length,pppoe:o.subscribers.filter(x=>x.service==='pppoe').length,inactive:o.counts.expired,online:o.counts.online,onlineHotspot:o.sessions.filter(x=>x.service==='hotspot').length,onlinePppoe:o.sessions.filter(x=>x.service==='pppoe').length,requests:store.list('portalPayments').filter(x=>x.status==='pending').length}:{});}
+  if(route==='/api/nav-counts'&&method==='GET'){const o=user.role==='installer'?null:radius.overview(store);return json(res,200,o?{customers:o.counts.subscribers,hotspot:o.subscribers.filter(x=>x.service==='hotspot').length,pppoe:o.subscribers.filter(x=>x.service==='pppoe').length,inactive:o.counts.expired,online:o.counts.online,onlineHotspot:o.sessions.filter(x=>x.service==='hotspot').length,onlinePppoe:o.sessions.filter(x=>x.service==='pppoe').length,requests:store.list('portalPayments').filter(x=>x.status==='failed'||(x.status==='pending'&&Date.now()-x.createdAt>180000)).length,overdue:o.subscribers.filter(x=>x.state==='expired').length}:{});}
   if(route.startsWith('/api/radius')){
    if(user.role==='installer')throw error(403,'Subscribers are not available to field installers');
    const write=()=>role(user,['admin','operator','manager']);

@@ -36,6 +36,14 @@ test('vouchers, manual connects, campaigns, reports, logs and nav counts',async(
   const rep=(await api('reports?period=7d')).body;assert.equal(rep.total,1500);assert.equal(rep.perDay.length,7);assert.equal(rep.byPlan[0].name,'Home');assert.equal(rep.newCustomers,3);assert.equal(rep.vouchers.total,50,'redeemed vouchers count at their package price');assert.equal(rep.usage.top[0].username,code.toLowerCase());assert.equal(rep.usage.down,0);assert.equal(rep.customers.active,1);assert.equal((await api('reports?period=today')).body.days,1);
   const prev=(await api('radius/campaign/preview','POST',{segment:'pppoe'})).body;assert.equal(prev.count,1);
   assert.equal((await api('radius/campaign','POST',{segment:'pppoe',message:'Hello {name}',confirm:1})).status,400,'needs SMS configured');
+  await api('radius/subscribers/'+sub.id,'PATCH',{expiresAt:Date.now()-3*864e5});
+  const od=(await api('overdue')).body;assert.equal(od.items.find(x=>x.id===sub.id).daysOverdue,3);assert.equal(od.items.find(x=>x.id===sub.id).paidTotal,1500);assert.ok(od.atRiskMonthly>0);
+  const pf=(await api('customers/'+sub.id+'/profile')).body;assert.equal(pf.subscriber.username,'ann');assert.equal(pf.payments.length,1);assert.equal(pf.usage.length,14);
+  assert.equal((await api('customers/00000000-0000-4000-8000-000000000000/profile')).status,404);
+  assert.equal((await api('portal-payments')).body.attention,0);
+  const rc=await fetch(origin+'/api/receipt/'+sub.id,{headers:{Cookie:cookie}});assert.equal(rc.status,200);const rt=await rc.text();assert.match(rt,/RCT-RPT0001/);assert.match(rt,/PAID/);
+  const iv=await (await fetch(origin+'/api/receipt/'+sub.id+'?kind=invoice',{headers:{Cookie:cookie}})).text();assert.match(iv,/INVOICE/);assert.match(iv,/Amount due/);
+  assert.equal((await api('radius/campaign/preview','POST',{segment:'expired7'})).body.count,1);
  await api('radius/settings','PUT',{macBinding:'enforce'});
   const bsub=(await api('radius/subscribers','POST',{name:'Bound',username:'bound',service:'pppoe',planId:ppp.id,password:'pw123456',expiresAt:Date.now()+864e5})).body;
   const pp=mac=>rest({'User-Name':'bound','Service-Type':'Framed-User','Framed-Protocol':'PPP','Calling-Station-Id':mac});
