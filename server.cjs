@@ -10,7 +10,7 @@ const routerAgent=require('./lib/router-agent.cjs');
 const customers=require('./lib/customers.cjs');
 const sites=require('./lib/sites.cjs');
 const radius=require('./lib/radius.cjs');
-const vouchers=require('./lib/vouchers.cjs'),campaigns=require('./lib/campaigns.cjs'),reports=require('./lib/reports.cjs');
+const oltDetect=require('./lib/oltdetect.cjs'),vouchers=require('./lib/vouchers.cjs'),campaigns=require('./lib/campaigns.cjs'),reports=require('./lib/reports.cjs');
 const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
@@ -124,6 +124,7 @@ function createApp(options={}){
    if(route==='/api/billing/sms/test'&&method==='POST'){const input=await body(req);const result=await billing.sendSms(store,input.to,String(input.message||'Test message from Kade Networks netops.').slice(0,459),'test');store.audit(user,'Sent test SMS','billing');return json(res,200,result);}
    throw error(404,'API endpoint not found');
   }
+  if(route==='/api/olts/detect'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,oltDetect.detect(store));}
   if(route==='/api/reports'&&method==='GET'){if(user.role==='installer')throw error(403,'Reports are not available to field installers');return json(res,200,reports.build(store,url.searchParams.get('days')));}
   if(route==='/api/nav-counts'&&method==='GET'){const o=user.role==='installer'?null:radius.overview(store);return json(res,200,o?{customers:o.counts.subscribers,hotspot:o.subscribers.filter(x=>x.service==='hotspot').length,pppoe:o.subscribers.filter(x=>x.service==='pppoe').length,inactive:o.counts.expired,online:o.counts.online,onlineHotspot:o.sessions.filter(x=>x.service==='hotspot').length,onlinePppoe:o.sessions.filter(x=>x.service==='pppoe').length,requests:store.list('portalPayments').filter(x=>x.status==='pending').length}:{});}
   if(route.startsWith('/api/radius')){

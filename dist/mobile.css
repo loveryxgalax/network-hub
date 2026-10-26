@@ -42,3 +42,4 @@
  .table-toolbar input,.table-toolbar select,.subscriber-toolbar input,.subscriber-toolbar select,.sites-toolbar input,.sites-toolbar select{height:46px!important;min-height:0}
  .subscriber-toolbar label{display:grid;gap:4px}
 }
+@media(min-width:721px) and (max-width:1500px){.ra-btn:not(.ra-primary) span{display:none}.ra-btn:not(.ra-primary){width:34px;padding:0;justify-content:center}}
