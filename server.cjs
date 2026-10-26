@@ -145,6 +145,8 @@ function createApp(options={}){
   if(promoRoute){role(user,['admin','manager']);const ex=store.get('promoCodes',promoRoute[1]);if(!ex)throw error(404,'Promo code not found');
    if(method==='PATCH'){const saved=store.put('promoCodes',promoCodes.validate(await body(req),ex),ex);store.audit(user,'Updated promo code '+ex.code,ex.id);return json(res,200,saved);}
    if(method==='DELETE'){store.remove('promoCodes',ex.id);store.audit(user,'Deleted promo code '+ex.code,ex.id);return json(res,200,{ok:true});}}
+  if(route==='/api/loyalty'&&method==='GET'){role(user,['admin','manager']);return json(res,200,billing.loyalty(store));}
+  if(route==='/api/loyalty'&&method==='PUT'){role(user,['admin']);const saved=billing.setLoyalty(store,await body(req));store.audit(user,'Updated loyalty points','billing');return json(res,200,saved);}
   if(route==='/api/summary'&&method==='GET'){role(user,['admin','manager']);return json(res,200,{settings:summary.settings(store),preview:summary.build(store)});}
   if(route==='/api/summary'&&method==='PUT'){role(user,['admin']);const saved=summary.update(store,await body(req));store.audit(user,'Updated daily summary','billing');return json(res,200,{settings:saved,preview:summary.build(store)});}
   if(route==='/api/summary/send'&&method==='POST'){role(user,['admin']);const s=summary.settings(store);if(!s.phone)throw error(400,'Save a phone number first');const r=await billing.sendSms(store,s.phone,summary.build(store),'summary');return json(res,200,r);}
@@ -181,11 +183,12 @@ function createApp(options={}){
     if(method==='PATCH'){const saved=store.put('plans',radius.plan(await body(req),existing),existing);store.audit(user,'Updated plan',saved.id);return json(res,200,saved);}
     if(method==='DELETE'){if(store.list('subscribers').some(s=>s.planId===existing.id))throw error(409,'Move this plan\'s subscribers to another plan first');store.remove('plans',existing.id);store.audit(user,'Deleted plan',existing.id);return json(res,200,{ok:true});}}
    if(route==='/api/radius/subscribers'&&method==='POST'){write();const input=await body(req);let saved,secret;store.transaction(()=>{saved=store.put('subscribers',radius.subscriber(store,input));secret=radius.setPassword(store,saved.id,input.password);});store.audit(user,'Created subscriber',saved.id);return json(res,201,{...saved,password:secret});}
-   const subRoute=route.match(/^\/api\/radius\/subscribers\/([a-f0-9-]{36})(?:\/(renew|password|payments))?$/);
+   const subRoute=route.match(/^\/api\/radius\/subscribers\/([a-f0-9-]{36})(?:\/(renew|password|payments|points))?$/);
    if(subRoute){const existing=store.get('subscribers',subRoute[1]);if(!existing)throw error(404,'Subscriber not found');
     if(subRoute[2]==='password'&&method==='GET'){role(user,['admin','operator','manager']);store.audit(user,'Viewed subscriber password',existing.id);return json(res,200,{password:radius.password(store,existing.id)});}
     write();
     if(subRoute[2]==='payments'&&method==='POST'){const result=billing.pay(store,existing.id,await body(req));store.audit(user,'Recorded payment '+result.payment.reference,existing.id);const sms=await billing.receipt(store,result);return json(res,201,{...result,sms});}
+    if(subRoute[2]==='points'&&method==='POST'){const saved=billing.redeemPoints(store,existing.id,(await body(req)).points);store.audit(user,'Redeemed loyalty points',existing.id);return json(res,200,saved);}
     if(subRoute[2]==='renew'&&method==='POST'){const saved=radius.renew(store,existing.id,(await body(req)).periods||1);store.audit(user,'Renewed subscriber',existing.id);return json(res,200,saved);}
     if(!subRoute[2]&&method==='PATCH'){const input=await body(req);let saved,secret;store.transaction(()=>{saved=store.put('subscribers',radius.subscriber(store,input,existing),existing);if(input.password)secret=radius.setPassword(store,existing.id,input.password);});store.audit(user,'Updated subscriber',existing.id);return json(res,200,secret?{...saved,password:secret}:saved);}
     if(!subRoute[2]&&method==='DELETE'){store.transaction(()=>{store.remove('subscribers',existing.id);store.db.prepare('DELETE FROM secrets WHERE device_id=?').run('subscriber:'+existing.id);});store.audit(user,'Deleted subscriber',existing.id);return json(res,200,{ok:true});}}
