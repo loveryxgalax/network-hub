@@ -44,6 +44,7 @@ test('vouchers, manual connects, campaigns, reports, logs and nav counts',async(
   const rc=await fetch(origin+'/api/receipt/'+sub.id,{headers:{Cookie:cookie}});assert.equal(rc.status,200);const rt=await rc.text();assert.match(rt,/RCT-RPT0001/);assert.match(rt,/PAID/);
   const iv=await (await fetch(origin+'/api/receipt/'+sub.id+'?kind=invoice',{headers:{Cookie:cookie}})).text();assert.match(iv,/INVOICE/);assert.match(iv,/Amount due/);
   assert.equal((await api('radius/campaign/preview','POST',{segment:'expired7'})).body.count,1);
+ {const au=(await api('audit?q=promo')).body.items;assert.ok(au.length===0||au[0].user);assert.ok((await api('audit')).body.items.some(x=>/Recorded payment/.test(x.action)),'payments appear in the activity log');}
  {assert.equal((await api('loyalty','PUT',{enabled:true,pointsPer100:1,pointValue:10})).status,200);const lp=await api('radius/subscribers/'+sub.id+'/payments','POST',{amount:1500,reference:'LOY0001',method:'cash'});assert.equal(lp.body.subscriber.points,15);
   assert.equal((await api('radius/subscribers/'+sub.id+'/points','POST',{points:100})).status,400);const rd=await api('radius/subscribers/'+sub.id+'/points','POST',{points:10});assert.equal(rd.body.points,5);assert.ok(rd.body.balance>=100);}
  {const sm=(await api('summary')).body;assert.match(sm.preview,/Revenue KSh 3,000 \(2 payments\)/);assert.equal((await api('summary','PUT',{enabled:true,phone:'bad',hour:20})).status,400);assert.equal((await api('summary','PUT',{enabled:true,phone:'0712345678',hour:20})).body.settings.enabled,true);

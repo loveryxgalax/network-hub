@@ -46,7 +46,7 @@ const STR={
   paid:'Malipo yamepokelewa',accActive:'Akaunti <strong>{u}</strong> iko hai hadi <strong>{d}</strong>.',restart:'Usipounganishwa ndani ya dakika moja, zima na uwashe router yako.',wifiActive:'Wi-Fi yako iko hai hadi <strong>{d}</strong>. Hifadhi hizi uingie kwenye kifaa kingine:',
   code:'Msimbo',password:'Nenosiri',connecting:'Tunakuunganisha sasa…',joinWifi:'Jiunge na Wi-Fi ya {b} na uingie kwa msimbo huu.',ok:'Sawa',valid:'Msimbo huu ni sahihi. Jiunge na Wi-Fi ya {b} kuutumia.',
   statusActive:'Iko hai',statusExpired:'Imeisha muda',statusSuspended:'Imezimwa',until:'Hadi {d}',expiredOn:'Iliisha {d}',suspendedMsg:'Akaunti hii imezimwa. Wasiliana nasi.',passLabel:'Nenosiri',connect:'Unganisha',
-  renew:'Lipia {a}',mpesaLabel:'Nambari ya M-Pesa',promo:'Msimbo wa punguzo (hiari)'},
+  renew:'Lipia {a}',mpesaLabel:'Nambari ya M-Pesa',promo:'Msimbo wa punguzo (hiari)',wallet:'Akiba',dataMonth:'Data mwezi huu'},
  en:{needHelp:'Need help?',manageSub:'Enter your account details to manage your connection',otgTitle:'Use our On-the-Go WiFi wherever you are',otgSub:'Affordable packages at our hotspots',
   accountLead:'Enter your account number or paste a message from us.',detecting:'Looking for your connection on this network…',notFound:"We couldn't find a connection on this device. Use your account number below.",found:'Found you!',
   connectFind:'Connect to your {brand} account.',findBtn:'Find my account',howTitle:'How to access your account',how1:'Enter your account number or username',how2:'Or paste any message from us (payment confirmation, SMS notification, etc.)',
@@ -60,7 +60,7 @@ const STR={
   paid:'Payment received',accActive:'Account <strong>{u}</strong> is active until <strong>{d}</strong>.',restart:'If you are not online within a minute, restart your router.',wifiActive:'Your Wi-Fi is active until <strong>{d}</strong>. Save these to log in on another device:',
   code:'Code',password:'Password',connecting:'Connecting you now…',joinWifi:'Join the {b} Wi-Fi and log in with this code.',ok:'OK',valid:'This code is valid. Join the {b} Wi-Fi to use it.',
   statusActive:'Active',statusExpired:'Expired',statusSuspended:'Deactivated',until:'Until {d}',expiredOn:'Expired {d}',suspendedMsg:'This account is deactivated. Please contact us.',passLabel:'Password',connect:'Connect',
-  renew:'Renew {a}',mpesaLabel:'M-Pesa number',promo:'Promo code (optional)'}
+  renew:'Renew {a}',mpesaLabel:'M-Pesa number',promo:'Promo code (optional)',wallet:'Wallet',dataMonth:'Data this month'}
 };
 
 /* ===================== STATE ===================== */
@@ -127,6 +127,7 @@ function renderAccount(a){
  showMsg('');
  const label={active:t('statusActive'),expired:t('statusExpired'),suspended:t('statusSuspended')}[a.status],when2=a.status==='active'?t('until',{d:when(a.expiresAt)}):a.status==='expired'?(a.expiresAt?t('expiredOn',{d:when(a.expiresAt)}):''):'';
  let html=`<div class="acc-result"><div class="top"><b>${esc(a.account.toUpperCase())}</b><span class="badge ${esc(a.status)}">${esc(label)}</span></div><div class="facts">${esc([a.plan,when2].filter(Boolean).join(' · '))}</div>`;
+ if(a.verified)html+=`<div class="facts">${esc(t('wallet'))}: ${kes(a.balance||0)}${a.points?' · '+a.points+' pts':''}${a.monthDown||a.monthUp?' · '+esc(t('dataMonth'))+': '+(((a.monthDown||0)+(a.monthUp||0))/1073741824).toFixed(1)+' GB':''}</div>`;
  if(a.status==='suspended')html+=`<p class="muted small">${esc(t('suspendedMsg'))}</p>`;
  else{
   if(a.service==='hotspot'&&a.status==='active')html+=`<form id="login-form" autocomplete="off"><label class="fl">${esc(t('passLabel'))}<input name="password" type="password" required autocomplete="current-password"></label><button class="btn" type="submit"><span>${esc(t('connect'))}</span> ${ICON.arrow}</button></form>`;
