@@ -125,14 +125,14 @@ function createApp(options={}){
    throw error(404,'API endpoint not found');
   }
   if(route==='/api/olts/detect'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,oltDetect.detect(store));}
-  if(route==='/api/reports'&&method==='GET'){if(user.role==='installer')throw error(403,'Reports are not available to field installers');return json(res,200,reports.build(store,url.searchParams.get('days')));}
+  if(route==='/api/reports'&&method==='GET'){if(user.role==='installer')throw error(403,'Reports are not available to field installers');return json(res,200,reports.build(store,{period:url.searchParams.get('period')||'month',from:url.searchParams.get('from'),to:url.searchParams.get('to')}));}
   if(route==='/api/nav-counts'&&method==='GET'){const o=user.role==='installer'?null:radius.overview(store);return json(res,200,o?{customers:o.counts.subscribers,hotspot:o.subscribers.filter(x=>x.service==='hotspot').length,pppoe:o.subscribers.filter(x=>x.service==='pppoe').length,inactive:o.counts.expired,online:o.counts.online,onlineHotspot:o.sessions.filter(x=>x.service==='hotspot').length,onlinePppoe:o.sessions.filter(x=>x.service==='pppoe').length,requests:store.list('portalPayments').filter(x=>x.status==='pending').length}:{});}
   if(route.startsWith('/api/radius')){
    if(user.role==='installer')throw error(403,'Subscribers are not available to field installers');
    const write=()=>role(user,['admin','operator','manager']);
    if(route==='/api/radius'&&method==='GET')return json(res,200,radius.overview(store));
    if(route==='/api/radius/manual-connect'&&method==='POST'){write();const input=await body(req);const plan=store.get('plans',String(input.planId||''));if(!plan||plan.service==='pppoe')throw error(400,'Choose a hotspot plan');
-    const code=require('./lib/vouchers.cjs').generate(store,{planId:plan.id,count:1,length:6,name:'Manual connects'},user).codes[0],sub=require('./lib/vouchers.cjs').redeem(store,code);
+    const code=require('./lib/vouchers.cjs').generate(store,{planId:plan.id,count:1,length:6,name:'Manual connects',manual:true},user).codes[0],sub=require('./lib/vouchers.cjs').redeem(store,code);
     store.put('subscribers',{...sub,name:String(input.name||'').trim().slice(0,80)||sub.name,phone:String(input.phone||'').trim().slice(0,20)},sub);store.audit(user,'Manual connect '+code,sub.id);
     let sms=null;if(input.sms===true&&billing.phone(input.phone))sms=await billing.sendSms(store,input.phone,'Your Kade Networks '+plan.name+' code: '+code+'. Enter it on the WiFi page.','manual');
     return json(res,201,{code,plan:plan.name,expiresAt:sub.expiresAt,sms});}

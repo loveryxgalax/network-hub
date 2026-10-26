@@ -33,7 +33,7 @@ test('vouchers, manual connects, campaigns, reports, logs and nav counts',async(
   const counts=(await api('nav-counts')).body;assert.equal(counts.hotspot,2);assert.equal(counts.pppoe,0);assert.equal(counts.customers,2);
   const sub=(await api('radius/subscribers','POST',{name:'Ann',username:'ann',service:'pppoe',planId:ppp.id,password:'pw123456',phone:'0722000111'})).body;
   const pay=await api('radius/subscribers/'+sub.id+'/payments','POST',{amount:1500,reference:'RPT0001',method:'cash'});assert.equal(pay.status,201);
-  const rep=(await api('reports?days=7')).body;assert.equal(rep.total,1500);assert.equal(rep.perDay.length,7);assert.equal(rep.byPlan[0].name,'Home');assert.equal(rep.newCustomers,3);
+  const rep=(await api('reports?period=7d')).body;assert.equal(rep.total,1500);assert.equal(rep.perDay.length,7);assert.equal(rep.byPlan[0].name,'Home');assert.equal(rep.newCustomers,3);assert.equal(rep.vouchers.total,50,'redeemed vouchers count at their package price');assert.equal(rep.usage.top[0].username,code.toLowerCase());assert.equal(rep.usage.down,0);assert.equal(rep.customers.active,1);assert.equal((await api('reports?period=today')).body.days,1);
   const prev=(await api('radius/campaign/preview','POST',{segment:'pppoe'})).body;assert.equal(prev.count,1);
   assert.equal((await api('radius/campaign','POST',{segment:'pppoe',message:'Hello {name}',confirm:1})).status,400,'needs SMS configured');
  await api('radius/settings','PUT',{macBinding:'enforce'});
