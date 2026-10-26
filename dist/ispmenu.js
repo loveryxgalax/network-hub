@@ -154,7 +154,24 @@ window.render=function(){
 // Counts beside the menu items.
 let counts={};
 function badges(){for(const [id,key] of Object.entries({radius:'customers','cust-inactive':'inactive','cust-hotspot':'hotspot','cust-pppoe':'pppoe','hs-sessions':'onlineHotspot','pp-sessions':'onlinePppoe'})){const a=document.querySelector(`#navigation a[href="#${id}"]`),n=counts[key];if(a&&n&&!a.querySelector('.nav-number'))a.insertAdjacentHTML('beforeend',`<span class="nav-number">${n}</span>`);}}
-const chromeOriginal=window.chrome;window.chrome=function(){chromeOriginal();badges();};
+// Sidebar: collapsible groups (the one holding the current page stays open) and a menu search box.
+const NAVKEY='kd-nav-open';let openGroups=new Set();try{openGroups=new Set(JSON.parse(localStorage.getItem(NAVKEY)||'[]'));}catch{}
+let navQuery='';
+function organise(){const nav=document.querySelector('#navigation');if(!nav||document.body.classList.contains('nav-collapsed'))return;
+ const kids=[...nav.children].filter(e=>!e.classList.contains('nav-search'));const groups=[];let cur={label:null,items:[]};groups.push(cur);
+ for(const e of kids){if(e.classList.contains('nav-group-label')){cur={label:e,items:[]};groups.push(cur);}else cur.items.push(e);}
+ const q=navQuery.trim().toLowerCase();
+ for(const g of groups){if(!g.label)continue;const name=g.label.textContent.trim(),hasActive=g.items.some(a=>a.classList.contains('active'));
+  const open=q?true:openGroups.has(name)||hasActive;g.label.classList.add('nav-toggle');g.label.dataset.group=name;g.label.classList.toggle('open',open);
+  let shown=0;for(const a of g.items){const match=!q||a.textContent.toLowerCase().includes(q);a.hidden=!(open&&match);if(match)shown++;}
+  g.label.hidden=!!q&&!shown;}
+ for(const a of groups[0].items)a.hidden=!!q&&!a.textContent.toLowerCase().includes(q);
+ if(!nav.querySelector('.nav-search')){nav.insertAdjacentHTML('afterbegin','<div class="nav-search"><input type="search" placeholder="Search menu…" aria-label="Search menu" autocomplete="off"></div>');const input=nav.querySelector('.nav-search input');input.oninput=e=>{navQuery=e.target.value;organise();};}
+}
+document.addEventListener('click',e=>{const l=e.target.closest('#navigation .nav-toggle');if(!l)return;const n=l.dataset.group;if(openGroups.has(n))openGroups.delete(n);else openGroups.add(n);try{localStorage.setItem(NAVKEY,JSON.stringify([...openGroups]));}catch{}
+ // a group that holds the page you are on cannot be closed, so remember the click but keep it open
+ organise();});
+const chromeOriginal=window.chrome;window.chrome=function(){const q=document.querySelector('#navigation .nav-search input'),had=q&&document.activeElement===q;chromeOriginal();organise();badges();if(had){const n=document.querySelector('#navigation .nav-search input');if(n){n.value=navQuery;n.focus();}}};
 async function loadCounts(){if(!state.session?.user||state.session.user.role==='installer'||document.hidden)return;try{counts=await api('nav-counts');badges();}catch{}}
 setInterval(loadCounts,60000);setTimeout(loadCounts,1500);
 })();
