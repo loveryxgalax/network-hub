@@ -55,7 +55,7 @@ test('customer discovery credentials are isolated from router monitoring, user s
   const enrolled=await api('customer-agent/enroll','POST',{deviceId:a.device.id});assert.equal(enrolled.status,201);const token=enrolled.body.script.match(/Authorization:Bearer ([A-Za-z0-9_-]{43})/)[1];assert.match(enrolled.body.script,/interval=2m/);assert.match(enrolled.body.script,/check-certificate=yes/);assert.ok(!/\/system reboot|\/system package|\/import|\/ppp secret|\/ip firewall(?! connection (find|get)| (filter|nat) print)|\/radius|\/system logging|\/ip dns set/.test(enrolled.body.script));
   assert.equal((await api('customer-agent/enroll','POST',{deviceId:a.device.id})).status,409);
   {const get=(route,auth)=>fetch(origin+'/api/'+route,{headers:auth?{Authorization:'Bearer '+auth}:{}});
-   const fresh=await get('customer-agent/script/'+a.device.id,token);assert.equal(fresh.status,200);const text=await fresh.text();assert.ok(text.includes('Bearer '+token),'the upgrade keeps the router\'s own token');assert.match(text,/health monitoring v7/);
+   const fresh=await get('customer-agent/script/'+a.device.id,token);assert.equal(fresh.status,200);const text=await fresh.text();assert.ok(text.includes('Bearer '+token),'the upgrade keeps the router\'s own token');assert.match(text,/backup monitoring v8/);
    assert.equal((await get('customer-agent/script/'+a.device.id,'x'.repeat(43))).status,401);assert.equal((await get('customer-agent/script/'+a.device.id)).status,401);
    const up=await (await get('customer-agent/upgrade.rsc')).text();assert.match(up,/check-in\//);assert.ok(!/Bearer [A-Za-z0-9_-]{43}/.test(up),'the upgrade file holds no token');}
   const push=(id,credential,payload)=>api('customer-agent/check-in/'+id,'POST',payload,{Cookie:'','X-CSRF-Token':'',Authorization:'Bearer '+credential});
@@ -71,7 +71,7 @@ test('customer discovery credentials are isolated from router monitoring, user s
  }finally{await app.close();assert.equal(path.dirname(path.resolve(directory)),path.resolve(os.tmpdir()));fs.rmSync(directory,{recursive:true,force:true});}
 });
 test('RADIUS timeouts and management login failures raise specific router alerts',()=>{
-const script=customers.generate('https://netops.example.test','00000000-0000-4000-8000-000000000000','x'.repeat(43));assert.ok(script.includes('[Rr][Aa][Dd][Ii][Uu][Ss] (server is not responding|timeout)'));assert.match(script,/monitoring v7/);assert.ok(!script.includes('/log print as-value'),'the script never walks the whole log');assert.ok(script.includes('/log find where topics~"dns"')&&script.includes('[/log get $id message]'));
+const script=customers.generate('https://netops.example.test','00000000-0000-4000-8000-000000000000','x'.repeat(43));assert.ok(script.includes('[Rr][Aa][Dd][Ii][Uu][Ss] (server is not responding|timeout)'));assert.match(script,/monitoring v8/);assert.ok(!script.includes('/log print as-value'),'the script never walks the whole log');assert.ok(script.includes('/log find where topics~"dns"')&&script.includes('[/log get $id message]'));
  const classes=['<pppoe-a>: user a authentication failed: radius timeout','login failed: RADIUS server is not responding','login failure for user ispman from 10.124.0.171 via winbox'];
  const keys=classes.map(message=>customers.eventKeyForTest({topics:'system,error,critical',message}));
  assert.deepEqual(keys,['radius-unreachable','radius-unreachable','management-login-failed']);
