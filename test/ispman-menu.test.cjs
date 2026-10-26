@@ -44,6 +44,8 @@ test('vouchers, manual connects, campaigns, reports, logs and nav counts',async(
   const rc=await fetch(origin+'/api/receipt/'+sub.id,{headers:{Cookie:cookie}});assert.equal(rc.status,200);const rt=await rc.text();assert.match(rt,/RCT-RPT0001/);assert.match(rt,/PAID/);
   const iv=await (await fetch(origin+'/api/receipt/'+sub.id+'?kind=invoice',{headers:{Cookie:cookie}})).text();assert.match(iv,/INVOICE/);assert.match(iv,/Amount due/);
   assert.equal((await api('radius/campaign/preview','POST',{segment:'expired7'})).body.count,1);
+ {const sm=(await api('summary')).body;assert.match(sm.preview,/Revenue KSh 1,500 \(1 payments\)/);assert.equal((await api('summary','PUT',{enabled:true,phone:'bad',hour:20})).status,400);assert.equal((await api('summary','PUT',{enabled:true,phone:'0712345678',hour:20})).body.settings.enabled,true);
+  const pc=await api('promos','POST',{code:'save10',type:'percent',value:10,maxUses:5});assert.equal(pc.status,201);assert.equal((await api('promos','POST',{code:'SAVE10',type:'percent',value:10})).status,409);assert.equal((await api('promos','POST',{code:'x',type:'percent',value:10})).status,400);assert.equal((await api('promos/'+pc.body.id,'PATCH',{active:false})).body.active,false);assert.equal((await api('promos/'+pc.body.id,'DELETE')).status,200);}
  await api('radius/settings','PUT',{macBinding:'enforce'});
   const bsub=(await api('radius/subscribers','POST',{name:'Bound',username:'bound',service:'pppoe',planId:ppp.id,password:'pw123456',expiresAt:Date.now()+864e5})).body;
   const pp=mac=>rest({'User-Name':'bound','Service-Type':'Framed-User','Framed-Protocol':'PPP','Calling-Station-Id':mac});

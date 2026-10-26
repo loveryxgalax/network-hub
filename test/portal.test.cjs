@@ -169,3 +169,19 @@ test('landing page settings are validated, admin-only to change, and public to r
   assert.equal((await (await fetch(origin+'/portal/api/config')).json()).config.theme,'christmas');assert.equal((await (await fetch(origin+'/portal/api/config')).json()).config.brandName,'Kade Networks Wi-Fi');
  }finally{await app.close();fs.rmSync(directory,{recursive:true,force:true});}
 });
+test('promo codes: percent off, bonus days, limits, and the full package value still renews the customer',async()=>{
+ const promos=require('../lib/promos.cjs');
+ const {store,home,daily,secret,done}=fixture(),d=daraja();try{
+  const sub=store.put('subscribers',radius.subscriber(store,{name:'Ann',username:'ann',service:'pppoe',planId:home.id,phone:'+254712345678',expiresAt:Date.now()-1000}));radius.setPassword(store,sub.id,'pw123456');
+  store.put('promoCodes',promos.validate({code:'welcome20',type:'percent',value:20,maxUses:1}));store.put('promoCodes',promos.validate({code:'EXTRA7',type:'days',value:7}));
+  await assert.rejects(portal.start(store,{kind:'account',username:'ann',phone:'0712345678',promo:'NOPE'},'https://netops.example',d.fetchImpl),/not valid/);
+  const s=await portal.start(store,{kind:'account',username:'ann',phone:'0712345678',promo:'welcome-20'},'https://netops.example',d.fetchImpl);assert.equal(s.amount,2000,'20% off KSh 2,500');
+  d.answers.set(d.pushes[0].id,'0');await portal.callback(store,secret,callbackBody(d.pushes[0].id,0,'TPROMO0001',2000),d.fetchImpl);
+  const after=store.get('subscribers',sub.id);assert.ok(after.expiresAt>Date.now()+29*864e5,'the discounted payment still buys the whole month');assert.equal(after.balance,0);assert.equal(store.list('subscriberPayments')[0].amount,2000,'the cash received is what is recorded');
+  assert.equal(promos.find(store,'WELCOME20').used,1);
+  await assert.rejects(portal.start(store,{kind:'account',username:'ann',phone:'0712345678',promo:'WELCOME20'},'https://netops.example',d.fetchImpl,Date.now()+61000),/fully used/);
+  const before=after.expiresAt,b=await portal.start(store,{kind:'account',username:'ann',phone:'0712345678',promo:'EXTRA7'},'https://netops.example',d.fetchImpl,Date.now()+120000);assert.equal(b.amount,2500);
+  d.answers.set(d.pushes[1].id,'0');await portal.callback(store,secret,callbackBody(d.pushes[1].id,0,'TPROMO0002',2500),d.fetchImpl);
+  assert.ok(store.get('subscribers',sub.id).expiresAt>=before+37*864e5,'one more month plus 7 bonus days');
+ }finally{done();}
+});

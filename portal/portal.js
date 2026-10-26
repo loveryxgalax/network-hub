@@ -46,7 +46,7 @@ const STR={
   paid:'Malipo yamepokelewa',accActive:'Akaunti <strong>{u}</strong> iko hai hadi <strong>{d}</strong>.',restart:'Usipounganishwa ndani ya dakika moja, zima na uwashe router yako.',wifiActive:'Wi-Fi yako iko hai hadi <strong>{d}</strong>. Hifadhi hizi uingie kwenye kifaa kingine:',
   code:'Msimbo',password:'Nenosiri',connecting:'Tunakuunganisha sasa…',joinWifi:'Jiunge na Wi-Fi ya {b} na uingie kwa msimbo huu.',ok:'Sawa',valid:'Msimbo huu ni sahihi. Jiunge na Wi-Fi ya {b} kuutumia.',
   statusActive:'Iko hai',statusExpired:'Imeisha muda',statusSuspended:'Imezimwa',until:'Hadi {d}',expiredOn:'Iliisha {d}',suspendedMsg:'Akaunti hii imezimwa. Wasiliana nasi.',passLabel:'Nenosiri',connect:'Unganisha',
-  renew:'Lipia {a}',mpesaLabel:'Nambari ya M-Pesa'},
+  renew:'Lipia {a}',mpesaLabel:'Nambari ya M-Pesa',promo:'Msimbo wa punguzo (hiari)'},
  en:{needHelp:'Need help?',manageSub:'Enter your account details to manage your connection',otgTitle:'Use our On-the-Go WiFi wherever you are',otgSub:'Affordable packages at our hotspots',
   accountLead:'Enter your account number or paste a message from us.',detecting:'Looking for your connection on this network…',notFound:"We couldn't find a connection on this device. Use your account number below.",found:'Found you!',
   connectFind:'Connect to your {brand} account.',findBtn:'Find my account',howTitle:'How to access your account',how1:'Enter your account number or username',how2:'Or paste any message from us (payment confirmation, SMS notification, etc.)',
@@ -60,7 +60,7 @@ const STR={
   paid:'Payment received',accActive:'Account <strong>{u}</strong> is active until <strong>{d}</strong>.',restart:'If you are not online within a minute, restart your router.',wifiActive:'Your Wi-Fi is active until <strong>{d}</strong>. Save these to log in on another device:',
   code:'Code',password:'Password',connecting:'Connecting you now…',joinWifi:'Join the {b} Wi-Fi and log in with this code.',ok:'OK',valid:'This code is valid. Join the {b} Wi-Fi to use it.',
   statusActive:'Active',statusExpired:'Expired',statusSuspended:'Deactivated',until:'Until {d}',expiredOn:'Expired {d}',suspendedMsg:'This account is deactivated. Please contact us.',passLabel:'Password',connect:'Connect',
-  renew:'Renew {a}',mpesaLabel:'M-Pesa number'}
+  renew:'Renew {a}',mpesaLabel:'M-Pesa number',promo:'Promo code (optional)'}
 };
 
 /* ===================== STATE ===================== */
@@ -130,11 +130,11 @@ function renderAccount(a){
  if(a.status==='suspended')html+=`<p class="muted small">${esc(t('suspendedMsg'))}</p>`;
  else{
   if(a.service==='hotspot'&&a.status==='active')html+=`<form id="login-form" autocomplete="off"><label class="fl">${esc(t('passLabel'))}<input name="password" type="password" required autocomplete="current-password"></label><button class="btn" type="submit"><span>${esc(t('connect'))}</span> ${ICON.arrow}</button></form>`;
-  if(a.price&&mpesaOn)html+=`<form id="renew-form"><label class="fl">${esc(t('mpesaLabel'))}<input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required></label><button class="btn ${a.service==='hotspot'&&a.status==='active'?'ghost':''}" type="submit"><span>${esc(t('renew',{a:kes(a.price)}))}</span> ${ICON.arrow}</button></form>`;
+  if(a.price&&mpesaOn)html+=`<form id="renew-form"><label class="fl">${esc(t('mpesaLabel'))}<input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required></label><label class="fl">${esc(t('promo'))}<input name="promo" autocomplete="off" maxlength="24" autocapitalize="characters"></label><button class="btn ${a.service==='hotspot'&&a.status==='active'?'ghost':''}" type="submit"><span>${esc(t('renew',{a:kes(a.price)}))}</span> ${ICON.arrow}</button></form>`;
  }
  box.innerHTML=html+'</div>';
  const lf=$('#login-form');if(lf)lf.onsubmit=async e=>{e.preventDefault();const btn=lf.querySelector('button');btn.disabled=true;alertBox('');try{if(!(await routerLogin(a.account,lf.password.value)))alertBox(t('valid',{b:CFG.brandName}),true);}catch(error){alertBox(error.message);}finally{btn.disabled=false;}};
- const rf=$('#renew-form');if(rf)rf.onsubmit=e=>{e.preventDefault();pay({kind:'account',username:a.account,phone:rf.phone.value});};
+ const rf=$('#renew-form');if(rf)rf.onsubmit=e=>{e.preventDefault();pay({kind:'account',username:a.account,phone:rf.phone.value,promo:rf.promo?rf.promo.value:''});};
 }
 $('#acc').addEventListener('input',e=>{const v=e.target.value,acc=extractAccount(v),box=$('#detectedAcc');if(acc&&acc!==v.trim().toUpperCase()){box.textContent=t('accFound')+acc;box.classList.remove('hide');}else box.classList.add('hide');});
 $('#accForm').addEventListener('submit',async e=>{e.preventDefault();const raw=$('#acc').value.trim();if(!raw){$('#accResult').innerHTML='';return showMsg(t('accEmpty'),true);}
@@ -229,7 +229,7 @@ document.addEventListener('click',e=>{
  if(e.target.closest('#sheet-close')||e.target.id==='sheet')closeSheet();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet();});
-$('#buy-form').addEventListener('submit',e=>{e.preventDefault();if(!selected||selected.kind==='pppoe')return;pay({kind:'hotspot',planId:selected.id,phone:e.target.phone.value});});
+$('#buy-form').addEventListener('submit',e=>{e.preventDefault();if(!selected||selected.kind==='pppoe')return;pay({kind:'hotspot',planId:selected.id,phone:e.target.phone.value,promo:e.target.promo.value});});
 async function boot(){
  render();
  const q=params.get('theme');
