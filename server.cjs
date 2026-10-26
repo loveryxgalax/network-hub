@@ -74,6 +74,17 @@ function createApp(options={}){
    let accepted;try{accepted=customers.receive(store,device,report,customerUploads);}catch(cause){if(cause.status===400){store.setting('customerDiscoveryError:'+device.id,{time:Date.now(),message:cause.message});console.warn('Customer discovery report rejected for '+device.name+': '+cause.message);}throw cause;}
    if(accepted.completed){agentAccepted.set(credentialId,Date.now());store.setting('customerDiscoveryError:'+device.id,null);}return json(res,200,accepted);
   }
+  // Upgrade path: a router that already has discovery installed fetches the current script with its own token (no new token issued).
+  const scriptRoute=route.match(/^\/api\/customer-agent\/script\/([a-f0-9-]{36})$/);
+  if(scriptRoute&&method==='GET'){
+   const device=store.get('devices',scriptRoute[1]),token=String(req.headers.authorization||'').replace(/^Bearer /,'');
+   if(!publicUrl||!device||device.type!=='router'||!routerAgent.validToken(token,store.secret('discovery:'+device.id)))throw error(401,'Customer discovery enrollment denied');
+   limit(req,'agent-script',20,600000,device.id);res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8'});return res.end(customers.generate(publicUrl.origin,device.id,token));
+  }
+  if(route==='/api/customer-agent/upgrade.rsc'&&method==='GET'){
+   if(!publicUrl)throw error(409,'Configure the HTTPS public origin first');
+   res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':'attachment; filename="netops-upgrade.rsc"'});return res.end(customers.upgradeScript(publicUrl.origin));
+  }
   if(checkIn&&method==='POST'){
    const device=store.get('devices',checkIn[1]),token=String(req.headers.authorization||'').replace(/^Bearer /,'');
    if(!device||device.driver!=='routeros-script'||!routerAgent.validToken(token,store.secret('agent:'+device.id)))throw error(401,'Router enrollment denied');
