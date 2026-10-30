@@ -462,3 +462,4 @@ html:has(body.phone-frame){scrollbar-width:none}html:has(body.phone-frame)::-web
 body.phone-frame .pkgs{scrollbar-width:none}body.phone-frame .pkgs::-webkit-scrollbar{display:none}
 
 body[data-layout=swipe] .pkgs{scrollbar-width:none}body[data-layout=swipe] .pkgs::-webkit-scrollbar{display:none}
+.pkg.off{opacity:.55;cursor:not-allowed}.pkg.off:hover{transform:none}

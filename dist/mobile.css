@@ -87,3 +87,9 @@
 .pf .table-wrap{margin:0}.link-button strong{color:var(--teal)}
 @media(max-width:720px){.pf{min-width:0}}
 .bk-text,.bk-diff{max-height:360px;overflow:auto;white-space:pre;font-size:12px}.bk-diff{max-height:240px}
+/* Package editor */
+dialog.pk-editor{width:min(820px,96vw);max-width:none}.pk-tabs{display:flex!important;flex-direction:row!important;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:14px}.pk-tabs button{width:auto!important;flex:0 0 auto;display:inline-block;margin:0;border-radius:0;box-shadow:none;border:0;background:none;padding:9px 12px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer}.pk-tabs button.active{color:var(--teal);border-bottom-color:var(--teal)}
+.pk-switch{display:flex!important;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:12px 0;cursor:pointer;font-weight:400}.pk-switch input{width:18px!important;height:18px;margin:0;flex:none}.pk-switch span{display:none}.pk-switch b{font-size:14px}.pk-switch small{flex-basis:100%;padding-left:28px;color:var(--muted)}
+.pk-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.pk-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px}.pk-chip:has(input:checked){border-color:var(--teal);background:var(--teal-soft)}
+.pk-order{white-space:nowrap}.pk-order .ra-btn{width:28px;height:28px;padding:0;justify-content:center;font-size:10px}
+.pk-chip input,.pk-switch input{width:16px!important;height:16px!important;min-height:0!important;padding:0!important;margin:0!important;flex:none;box-shadow:none}.pk-chip{flex-direction:row}
