@@ -79,11 +79,11 @@ bash deployment/docker/install-backup.sh
 sudo systemctl start netops-backup && journalctl -u netops-backup -n 20   # expect: backup … uploaded
 ```
 
-**Test a restore once** (on your computer): download the newest `network-hub-*.tar.age` from your backup storage, then
+**Test a restore once** (on your computer): download the newest `network-hub-*.tar.gz.age` from your backup storage, then
 
 ```
-age -d -i kade-netops-backup-key.txt network-hub-XXXX.tar.age > restore.tar
-tar -tf restore.tar     # must list b/network.sqlite b/master.key b/env b/cpes.json b/genieacs.archive.gz (and b/wg0.conf)
+age -d -i kade-netops-backup-key.txt network-hub-XXXX.tar.gz.age > restore.tar.gz
+tar -tzf restore.tar.gz     # must list b/network.sqlite b/master.key b/env b/cpes.json b/genieacs.archive.gz (and b/wg0.conf)
 ```
 
 ## 5. Cut-over (about 15 minutes; choose a quiet hour, e.g. 02:00)

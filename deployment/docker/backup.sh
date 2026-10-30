@@ -20,7 +20,8 @@ docker compose cp acs:/private/cpes.json "$work/b/cpes.json"
 cp .env "$work/b/env"
 if [ -r /etc/wireguard/wg0.conf ]; then cp /etc/wireguard/wg0.conf "$work/b/wg0.conf"; elif sudo -n test -f /etc/wireguard/wg0.conf 2>/dev/null; then sudo -n cat /etc/wireguard/wg0.conf > "$work/b/wg0.conf"; fi
 docker compose exec -T mongo mongodump --quiet --username "$MONGO_ROOT_USER" --password "$MONGO_ROOT_PASSWORD" --authenticationDatabase admin --db genieacs --archive --gzip > "$work/b/genieacs.archive.gz"
-tar -C "$work" -cf - b | age -r "$AGE_RECIPIENT" > "$work/network-hub-$stamp.tar.age"
-rclone copyto "$work/network-hub-$stamp.tar.age" "$OFFSITE_PATH/network-hub-$stamp.tar.age"
+# Compressed first (the database shrinks about 6x), then encrypted.
+tar -C "$work" -czf - b | age -r "$AGE_RECIPIENT" > "$work/network-hub-$stamp.tar.gz.age"
+rclone copyto "$work/network-hub-$stamp.tar.gz.age" "$OFFSITE_PATH/network-hub-$stamp.tar.gz.age"
 rclone delete --min-age "${KEEP_DAYS:-30}d" "$OFFSITE_PATH"
-echo "backup $stamp uploaded ($(du -h "$work/network-hub-$stamp.tar.age" | cut -f1))"
+echo "backup $stamp uploaded ($(du -h "$work/network-hub-$stamp.tar.gz.age" | cut -f1))"
