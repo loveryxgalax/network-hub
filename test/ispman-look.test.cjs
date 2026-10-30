@@ -105,3 +105,17 @@ test('recently deleted: a deleted customer can be restored with the same id, pas
   trash.remove(store,back,{});assert.equal(trash.purge(store,Date.now()+91*864e5),1);assert.equal(radius.password(store,s.id),null,'password forgotten after 90 days');
  }finally{done();}
 });
+test('PPPoE pool: off by default; when on, RADIUS gives each customer a fixed address, kept across logins; reassign',()=>{
+ const {store,done}=fx();try{const pool=require('../lib/pppoepool.cjs'),r=store.put('devices',{name:'CCR',type:'router'});
+  store.setting('staticSettings:'+r.id,{network:'10.27.0.0/16',gateway:'10.27.0.1',iface:'bridge'});
+  const plan=store.put('plans',radius.plan({name:'H',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days'}));
+  const mk=u=>{const s=store.put('subscribers',{...radius.subscriber(store,{name:u,username:u,service:'pppoe',planId:plan.id,expiresAt:Date.now()+864e5}),status:'active'});radius.setPassword(store,s.id,'pw-'+u+'-123');return s;};
+  const a=mk('ann'),b=mk('ben');assert.equal(pool.assign(store,a),null,'off by default');
+  assert.throws(()=>pool.save(store,{network:'10.27.0.0/16'}),/overlaps the static IP network of CCR/);
+  pool.save(store,{network:'10.40.0.0/16'});assert.equal(pool.settings(store).next,'10.40.0.2');pool.save(store,{enabled:true,next:'10.40.0.20'});
+  assert.equal(pool.assign(store,store.get('subscribers',a.id)),'10.40.0.20');assert.equal(pool.assign(store,store.get('subscribers',a.id)),'10.40.0.20','kept');assert.equal(pool.assign(store,store.get('subscribers',b.id)),'10.40.0.21');
+  assert.throws(()=>pool.save(store,{next:'10.41.0.1'}),/inside/);
+  const auth=radius.authorize(store,{'User-Name':'ann','Service-Type':'Framed-User','Framed-Protocol':'PPP'});assert.equal(auth.status,200);assert.equal(auth.attributes['reply:Framed-IP-Address'],'10.40.0.20');
+  const r2=pool.reassignAll(store);assert.deepEqual(r2,{cleared:2,assigned:2});assert.deepEqual(['ann','ben'].map(u=>store.subscriberByUsername(u).pppoeIp).sort(),['10.40.0.2','10.40.0.3']);
+ }finally{done();}
+});

@@ -216,3 +216,12 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 @media (max-width:640px){.da-tiles{grid-template-columns:1fr}}
 .da-tabs button small{display:inline;margin-left:4px}.da-act .button{padding:6px 12px;font-size:12.5px}
 .del-q{max-width:360px;margin:0 0 14px;display:block}
+/* Settings hub and PPPoE network page */
+.set-hub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:22px}
+.set-card{display:flex;justify-content:space-between;gap:14px;padding:16px 18px!important;text-decoration:none;color:var(--ink)!important}.set-card:hover{box-shadow:0 4px 14px #0032fd1f!important}
+.set-card h2{margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid var(--border);font-size:17px}.set-card p{margin:0;color:var(--muted);font-size:13px}.set-card>span{color:var(--primary);flex:none}
+.set-sys{font-size:15px;color:var(--muted)!important;margin:6px 0 12px;text-transform:uppercase;letter-spacing:.6px}
+@media (max-width:760px){.set-hub{grid-template-columns:1fr}}
+.pn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.pn{padding:18px 20px!important}.pn h2{margin:0 0 6px}.pn-dl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px}.pn-dl dt{font-size:12px;color:var(--muted)}.pn-dl dd{margin:2px 0 0;font-weight:600}
+.pn-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:10px 0}.pn-row label{flex:1;min-width:180px;display:grid;gap:6px}.notice.error{background:#fdecec;border:1px solid #f6c4c4;color:#a32020;padding:10px 12px;border-radius:8px;margin:10px 0}
+@media (max-width:900px){.pn-grid{grid-template-columns:1fr}}
