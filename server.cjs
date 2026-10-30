@@ -271,6 +271,7 @@ function createApp(options={}){
    const saved=store.put('alerts',{...a,...next},a);store.audit(user,(act==='resolve'?'Resolved':act==='acknowledge'?'Acknowledged':'Reopened')+' alert: '+a.title,a.id);return json(res,200,saved);}
   if(route==='/api/pppoe-pool'){role(user,['admin']);if(method==='GET')return json(res,200,pppoePool.overview(store));if(method==='PUT'){const saved=pppoePool.save(store,await body(req));store.audit(user,'Updated PPPoE network '+saved.network+(saved.enabled?' (on)':' (off)'),'pppoe-pool');return json(res,200,pppoePool.overview(store));}}
   if(route==='/api/pppoe-pool/reassign'&&method==='POST'){role(user,['admin']);const input=await body(req);if(input.confirm!=='REASSIGN')throw error(400,'Type REASSIGN to confirm');const r=pppoePool.reassignAll(store);store.audit(user,'Reassigned all PPPoE addresses ('+r.cleared+' customers)','pppoe-pool');return json(res,200,r);}
+  if(route==='/api/router-audit'&&method==='GET'){if(user.role==='installer')throw error(403,'Not allowed');return json(res,200,{items:require('./lib/audit-routers.cjs').audit(store)});}
   if(route==='/api/deleted'&&method==='GET'){role(user,['admin','manager']);return json(res,200,{items:trash.list(store),keepDays:90});}
   const restoreRoute=route.match(/^\/api\/deleted\/([a-f0-9-]{36})\/restore$/);
   if(restoreRoute&&method==='POST'){role(user,['admin','manager']);const s=trash.restore(store,restoreRoute[1],user);try{statics.sync(store,jobs,radius.stateOf,user);}catch{}store.audit(user,'Restored deleted subscriber '+s.username,s.id);return json(res,200,s);}

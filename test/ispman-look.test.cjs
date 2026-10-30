@@ -119,3 +119,13 @@ test('PPPoE pool: off by default; when on, RADIUS gives each customer a fixed ad
   const r2=pool.reassignAll(store);assert.deepEqual(r2,{cleared:2,assigned:2});assert.deepEqual(['ann','ben'].map(u=>store.subscriberByUsername(u).pppoeIp).sort(),['10.40.0.2','10.40.0.3']);
  }finally{done();}
 });
+test('router config audit: confirms check-in, RADIUS accounting, job runner and backup from what netops receives',()=>{
+ const {store,done}=fx();try{const {audit}=require('../lib/audit-routers.cjs'),now=Date.now(),r=store.put('devices',{name:'CCR2004',type:'router',ip:'10.99.0.2',lastSeen:now-30000});
+  store.db.prepare("INSERT INTO records(kind,id,body,created,updated) VALUES('radiusSessions','s1',?,?,?)").run(JSON.stringify({username:'ann',nas:'10.99.0.2',nasName:'CCR2004',startedAt:now-6e4,updatedAt:now-6e4}),now,now);
+  let a=audit(store,now)[0];const ok=k=>a.checks.find(c=>c.key===k).ok;
+  assert.equal(ok('checkin'),true);assert.equal(ok('radius'),true);assert.equal(ok('runner'),false);assert.match(a.checks.find(c=>c.key==='runner').fix,/Router jobs/);
+  assert.ok(!a.checks.some(c=>c.key==='static'),'static check only when the router has static customers');
+  require('../lib/jobs.cjs').enroll(store,r.id);store.put('subscribers',{name:'S',username:'s',service:'static',routerId:r.id,staticIp:'10.27.0.5'});
+  a=audit(store,now)[0];assert.equal(a.checks.find(c=>c.key==='runner').ok,true);assert.equal(a.checks.find(c=>c.key==='static').ok,false);assert.equal(a.total,7);
+ }finally{done();}
+});

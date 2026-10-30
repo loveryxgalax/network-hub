@@ -225,3 +225,8 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .pn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.pn{padding:18px 20px!important}.pn h2{margin:0 0 6px}.pn-dl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px}.pn-dl dt{font-size:12px;color:var(--muted)}.pn-dl dd{margin:2px 0 0;font-weight:600}
 .pn-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:10px 0}.pn-row label{flex:1;min-width:180px;display:grid;gap:6px}.notice.error{background:#fdecec;border:1px solid #f6c4c4;color:#a32020;padding:10px 12px;border-radius:8px;margin:10px 0}
 @media (max-width:900px){.pn-grid{grid-template-columns:1fr}}
+/* Routers: config audit column */
+.audit-cell{white-space:nowrap}.audit-btn{padding:3px 10px!important;font-size:12px!important;margin-left:4px}
+.audit-list{list-style:none;padding:0;margin:10px 0;display:grid;gap:8px}.audit-list li{display:flex;gap:10px;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.audit-list li>span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:12px;color:#fff}.audit-list li.ok>span{background:#17a35b}.audit-list li.bad>span{background:#e5252a}
+.audit-list small{display:block;color:var(--muted)}.audit-list p{margin:4px 0 0;font-size:12.5px;color:#a32020}
