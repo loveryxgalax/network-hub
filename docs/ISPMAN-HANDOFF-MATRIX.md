@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Staff M-Pesa payment request (STK) from the customer profile, rate-limited and audited; renews on Safaricom confirmation | `test/ispman-menu.test.cjs` |
 | 2026-10-30 | Package policy: tabbed editor (Details, Burst, Fair usage, Notifications, Time & day of purchase, Other), RADIUS burst/FUP/idle/interim enforcement, purchase windows on the portal, per-package expiry SMS, package ordering, hidden/off-sale | `test/packages.test.cjs` |
 
 ## Matrix
@@ -32,7 +33,8 @@ Update this file with every increment.
 | PPPoE create/edit (name, username, password, phone, email, package, static IP, notes) | Done | router/installation fee/location fields missing |
 | Customer profile: details, payments, sessions, usage, SMS, auth log, tickets | Done | profile dialog |
 | Actions: renew, payment, edit, SMS, password reveal, points | Done | |
-| Actions: STK request from profile, connect/disconnect, reset, flight speed, speed override, max connections, PIN | Missing | disconnect needs RADIUS CoA (not set up) |
+| Actions: STK request from profile | Done | uses the same confirmed-payment path as the portal |
+| Actions: connect/disconnect, reset, flight speed, speed override, max connections, PIN | Missing | disconnect needs RADIUS CoA (not set up) |
 | Hotspot profile extras: device/browser/OS, recent MACs, child/family accounts | Missing | |
 | Roaming events | Missing | |
 | Connect requests | Done | Payment requests page (portal STK attempts) |
@@ -125,7 +127,7 @@ Update this file with every increment.
 | Activity log (who changed what) | Done | admin only |
 
 ## Next increments (in order)
-1. Customer actions from the profile: STK payment request, change package, change password, deactivate/reactivate with reasons and audit.
+1. Customer actions: deactivate/reactivate with a reason, package change with proration rules (STK request done; package/password/suspend exist through Edit).
 2. Outage compensation: preview + idempotent grant per outage/customer.
 3. Distinct "unpaid" and "provisioning failed" states in filters and reports.
 4. Speed override (raise slower / cut faster / exact) at ISP and customer level with an explanation of the effective rate.
