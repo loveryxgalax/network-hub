@@ -68,7 +68,7 @@ function kdPaint(animate){
  // Throughput chart
  const series=[{name:'Download',color:'var(--kd-cyan)',points:[]},{name:'Upload',color:'var(--kd-violet)',points:[]}],src=kd.router?pick[0]?.series.map(p=>[p[0],p[1],p[2]])||[]:d.totals.series;
  series[0].points=src.map(p=>[p[0],p[1]]);series[1].points=src.map(p=>[p[0],p[2]]);
- const peak=series[0].points.reduce((m,p)=>p[1]!=null&&p[1]>m[1]?p:m,[0,0]);$('#kd-peak').textContent=peak[1]?`Peak ${kc.fmtRate(peak[1])} at ${d.['7d','30d','90d'].includes(range)?kc.dayHour(peak[0]):kc.hhmm(peak[0])}`:'';
+ const peak=series[0].points.reduce((m,p)=>p[1]!=null&&p[1]>m[1]?p:m,[0,0]);$('#kd-peak').textContent=peak[1]?`Peak ${kc.fmtRate(peak[1])} at ${['7d','30d','90d'].includes(d.range)?kc.dayHour(peak[0]):kc.hhmm(peak[0])}`:'';
  kc.area($('#kd-throughput'),{series,height:340,unit:kc.fmtRate,axis:v=>v>=1000?(v/1000)+'G':v>=1?Math.round(v*10)/10:Math.round(v*1000)+'k',animate,label:'Network throughput',empty:'No throughput history yet',emptyHint:'Routers report every 30 seconds; the graph fills as data arrives.'});
  // Router health cards
  $('#kd-routers').innerHTML=routers.length?routers.map(r=>`<div class="kd-router ${r.status}"><div class="kd-router-head"><span class="kd-dot ${r.status}"></span><div><strong>${E(r.name)}</strong><small>${E([r.model,r.version&&'RouterOS '+r.version].filter(Boolean).join(' · ')||'Waiting for a report')}</small></div><span class="kd-state ${r.status}">${r.status==='online'?'Online':'Offline'}</span></div>

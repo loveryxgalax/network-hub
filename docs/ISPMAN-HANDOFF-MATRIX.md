@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | WireGuard page: routers and time-limited staff laptops on 10.99.0.0/24, keys generated and shown once, host sync script applies peers to wg0 every minute, limits staff to routers' management ports (Winbox jump box) and reports handshakes back. Fixed a dashboard script error from the previous increment | `test/wireguard.test.cjs` |
 | 2026-10-30 | Daily rollups (hourly average/peak traffic, CPU, customers online per router) kept 400 days; dashboard 30-day and 3-month ranges; weekday × hour heatmaps of traffic and customers online in Reports. Per-person permissions (allow / do not allow on top of the role) and router scope enforced on customers, profiles, changes, bulk, statics and router jobs; router choice on every customer | `test/rollup.test.cjs`, `test/access.test.cjs` |
 | 2026-10-30 | WiFi page: loading screen designs (spinner, dots, name, progress, none) applied before the page script runs; terms of service; French alongside Swahili and English; expired-PPPoE renewal page with the router rules; adverts (views, clicks, schedule, weight, free minutes after the full viewing time with a signed ticket) and daily quizzes (answer never sent to the page, one attempt per device per day) | `test/engage.test.cjs` |
 | 2026-10-30 | Onboarding board (Leads → Site survey → Installation scheduled → Installed → Completed / Lost; scheduling creates the installation work order; customer account made from the lead); stock requests with approve/issue and FIFO costing, stock receipts with unit cost; tickets linked to the customer account; email provider (Resend, Brevo, SendGrid) with customer copies and log; alert escalation in up to three levels by SMS/email | `test/ops.test.cjs`, `test/comms.test.cjs` |
@@ -95,9 +96,9 @@ Update this file with every increment.
 | Topology/neighbour map | Done | |
 | OLT list and detection from neighbours | Partial | no vendor operations |
 | TR-069 (GenieACS) | Partial | inventory/refresh/reboot/Wi-Fi exist; customer CPE enrolment pending |
-| WireGuard management UI | Missing | tunnels made with `deployment/wireguard/*.sh` |
+| WireGuard management UI | Done | Operations → WireGuard & Winbox access; needs `sudo bash deployment/wireguard/sync-peers.sh --install` once on the server |
 | Free mode | Done | Speed rules & free mode page |
-| Winbox jumpbox | Missing | |
+| Winbox jumpbox | Done | staff WireGuard access (1–168 h) to routers' 8291/22/80/443/8728/8729 only |
 
 ### Inventory and onboarding (§8)
 | Item | Status | Notes |

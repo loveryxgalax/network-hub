@@ -83,3 +83,6 @@ Never print, commit, or paste secrets from those files. The live database and `d
 - Do not mark devices healthy or sessions connected from stale, partial, failed, or truncated reports.
 - Run the focused test file for a small change; run the full suite before a release or deployment package.
 
+
+## WireGuard peers (managed in netops)
+Peers live in the netops database; `deployment/wireguard/sync-peers.sh` (run on the host, usually by its systemd timer) applies them to `wg0`, keeps the `NETOPS-WG` forwarding chain (staff laptops → routers' management ports only) and reports handshakes. It never sends the interface line of `wg show dump` (private key) into the container. Do not run it or change wg0 on the live server without the user's go-ahead.
