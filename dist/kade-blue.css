@@ -233,3 +233,5 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 /* Pages built on the subscribers screen (SMS, M-Pesa, payments, packages) show only what belongs to them */
 #main:is([data-tab=sms],[data-tab=mpesa],[data-tab=payments]) #radius-metrics{display:none!important}
 #main:is([data-tab=sms],[data-tab=mpesa],[data-tab=payments]) .page-heading .heading-actions{display:none!important}
+/* One ISP, not a multi-business platform: no workspace switcher */
+.sidebar .workspace{display:none!important}

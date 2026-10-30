@@ -129,3 +129,15 @@ test('router config audit: confirms check-in, RADIUS accounting, job runner and 
   a=audit(store,now)[0];assert.equal(a.checks.find(c=>c.key==='runner').ok,true);assert.equal(a.checks.find(c=>c.key==='static').ok,false);assert.equal(a.total,7);
  }finally{done();}
 });
+test('sign-ins are logged with the visitor address from Cloudflare, and the lockout is per visitor, not per tunnel',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'il-ac-')),{createApp}=require('../server.cjs'),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://network.example.test',radiusToken:'bridge-token-for-tests-0123456789',radiusPort:0});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+app.server.address().port;
+ const post=(route,input,ip)=>fetch(origin+'/api/'+route,{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':ip},body:JSON.stringify(input)});
+ try{const owner=await post('setup',{name:'Owner',workspace:'QA',email:'ac@example.test',password:'fixture-owner-password-123'},'1.1.1.1');const cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
+  for(let i=0;i<8;i++)assert.equal((await post('login',{email:'ac@example.test',password:'wrong-guess-'+i},'6.6.6.6')).status,401);
+  assert.equal((await post('login',{email:'ac@example.test',password:'fixture-owner-password-123'},'6.6.6.6')).status,429,'the guesser is blocked');
+  assert.equal((await post('login',{email:'ac@example.test',password:'fixture-owner-password-123'},'7.7.7.7')).status,200,'other staff behind the same tunnel can still sign in');
+  const log=(await (await fetch(origin+'/api/access-log',{headers:{Cookie:cookie,'X-CSRF-Token':csrf}})).json()).items;
+  assert.equal(log[0].status,'success');assert.equal(log[0].ip,'7.7.7.7');assert.equal(log[1].status,'blocked');assert.equal(log[2].reason,'Wrong password');
+ }finally{await new Promise(r=>app.server.close(r));fs.rmSync(dir,{recursive:true,force:true});}
+});
