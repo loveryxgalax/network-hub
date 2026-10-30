@@ -230,3 +230,6 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .audit-list{list-style:none;padding:0;margin:10px 0;display:grid;gap:8px}.audit-list li{display:flex;gap:10px;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
 .audit-list li>span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:12px;color:#fff}.audit-list li.ok>span{background:#17a35b}.audit-list li.bad>span{background:#e5252a}
 .audit-list small{display:block;color:var(--muted)}.audit-list p{margin:4px 0 0;font-size:12.5px;color:#a32020}
+/* Pages built on the subscribers screen (SMS, M-Pesa, payments, packages) show only what belongs to them */
+#main:is([data-tab=sms],[data-tab=mpesa],[data-tab=payments]) #radius-metrics{display:none!important}
+#main:is([data-tab=sms],[data-tab=mpesa],[data-tab=payments]) .page-heading .heading-actions{display:none!important}
