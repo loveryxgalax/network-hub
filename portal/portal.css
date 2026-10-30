@@ -468,3 +468,29 @@ input.acc-pin{width:100%;max-width:180px;border:1.5px solid var(--line);border-r
 #sheet-qty-label select{width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
 #sheet-trial{margin-top:8px;width:100%}
 #sheet-card{margin-top:8px}#sheet-card label{display:block;margin-bottom:8px}#sheet-card-pay{width:100%}
+
+/* Loading screen (design chosen in Captive experience) */
+.boot{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--bg,#050a1f);color:var(--ink,#fff);transition:opacity .35s}
+.boot.gone{opacity:0;pointer-events:none}body[data-loading=none] .boot{display:none}
+.boot-text{margin:0;font-weight:700;font-size:20px;letter-spacing:.02em}.boot-text:empty{display:none}
+.boot-mark,.boot-bar{display:none}
+body[data-loading=spinner] .boot-mark{display:block;width:44px;height:44px;border-radius:50%;border:4px solid color-mix(in srgb,var(--brand,#0a3cff) 25%,transparent);border-top-color:var(--brand,#0a3cff);animation:bootspin .8s linear infinite}
+body[data-loading=spinner] .boot-mark span{display:none}
+body[data-loading=dots] .boot-mark{display:flex;gap:8px}body[data-loading=dots] .boot-mark span{width:12px;height:12px;border-radius:50%;background:var(--brand,#0a3cff);animation:bootdot 1s ease-in-out infinite}
+body[data-loading=dots] .boot-mark span:nth-child(2){animation-delay:.15s}body[data-loading=dots] .boot-mark span:nth-child(3){animation-delay:.3s}
+body[data-loading=logo] .boot-text{font-size:30px;animation:bootpulse 1.4s ease-in-out infinite;color:var(--brand,#0a3cff)}
+body[data-loading=progress] .boot-bar{display:block;width:min(240px,70vw);height:4px;border-radius:4px;background:color-mix(in srgb,var(--brand,#0a3cff) 20%,transparent);overflow:hidden}
+body[data-loading=progress] .boot-bar i{display:block;height:100%;width:40%;background:var(--brand,#0a3cff);border-radius:4px;animation:bootbar 1.1s ease-in-out infinite}
+@keyframes bootspin{to{transform:rotate(360deg)}}@keyframes bootdot{0%,100%{transform:scale(.6);opacity:.5}50%{transform:scale(1);opacity:1}}
+@keyframes bootpulse{0%,100%{opacity:.45;transform:scale(.97)}50%{opacity:1;transform:scale(1)}}@keyframes bootbar{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@media (prefers-reduced-motion:reduce){.boot *{animation:none!important}}
+/* Expired banner, terms, adverts and quiz */
+.expired-banner{display:flex;flex-direction:column;gap:4px;margin:0 0 14px;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,#e5484d 14%,transparent);border:1px solid color-mix(in srgb,#e5484d 45%,transparent)}
+.expired-banner b{font-size:17px}
+.terms-dialog{max-width:640px;width:calc(100% - 32px);border:0;border-radius:16px;padding:20px;background:var(--surface,#fff);color:var(--ink,#111)}
+.terms-dialog::backdrop{background:rgba(0,0,0,.55)}.terms-text{white-space:pre-wrap;max-height:60vh;overflow:auto;margin:10px 0 16px;font-size:14px;line-height:1.55}
+.engage{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+.ad-card{display:flex;flex-direction:column;gap:8px}.ad-card img{width:100%;max-height:220px;object-fit:cover;border-radius:12px}.ad-card p{margin:0;opacity:.85}
+.ad-label{text-transform:uppercase;letter-spacing:.08em;font-size:11px;opacity:.65}.ad-actions{display:flex;gap:8px;flex-wrap:wrap}.ad-actions .btn{flex:1 1 160px}
+.ad-card.watching{outline:2px solid var(--brand,#0a3cff);outline-offset:2px}
+.quiz-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;margin:0 0 8px;cursor:pointer}.quiz-opt input{width:18px;height:18px}

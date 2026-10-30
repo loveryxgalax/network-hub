@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | WiFi page: loading screen designs (spinner, dots, name, progress, none) applied before the page script runs; terms of service; French alongside Swahili and English; expired-PPPoE renewal page with the router rules; adverts (views, clicks, schedule, weight, free minutes after the full viewing time with a signed ticket) and daily quizzes (answer never sent to the page, one attempt per device per day) | `test/engage.test.cjs` |
 | 2026-10-30 | Onboarding board (Leads → Site survey → Installation scheduled → Installed → Completed / Lost; scheduling creates the installation work order; customer account made from the lead); stock requests with approve/issue and FIFO costing, stock receipts with unit cost; tickets linked to the customer account; email provider (Resend, Brevo, SendGrid) with customer copies and log; alert escalation in up to three levels by SMS/email | `test/ops.test.cjs`, `test/comms.test.cjs` |
 | 2026-10-30 | Money: append-only ledger in whole cents with a hash chain and CSV export; payment reversal (typed reference, undoes days/wallet/installation fee/points exactly once); wallet loaded vs pending and staff adjustments with reasons; refunds and withdrawals with request → approve (second admin when there is one) → paid by hand or M-Pesa B2C with result callback and hold release on failure; Paystack card/mobile-money checkout with server-side verification and signed webhooks; revenue figures exclude reversed payments | `test/money.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | Static IP service (per-router networks, automatic addresses, ARP pinning, speed queue, expired → blocked address list, Save only / Save & apply, PPPoE↔static conversion); family accounts; customer PINs and PIN dispatch; device/OS/browser per MAC and portal visits by hour/OS/device; roaming log; bulk actions with preview, count+version check and typed delete; free trial per device; buy several units with bulk discounts | `test/services.test.cjs`, `test/services-http.test.cjs` |
@@ -67,7 +68,7 @@ Update this file with every increment.
 | Time & day of purchase (overnight windows) | Done | blocks new sales only; active packages keep working |
 | Off sale / hide from landing page | Done | |
 | Free trial | Done | one per device per N days |
-| Earned-by-ad/quiz packages | Missing | planned in group F |
+| Earned-by-ad/quiz packages | Done | Hotspot → Adverts & quizzes |
 | Customize (quantity pricing, bulk discount) | Done | up to 3 discount steps; validity multiplies |
 | Speed override (raise slower / cut faster / exact), schedules | Done | Speed rules page; profile shows the effective speed and why |
 | Router-scoped packages | Done | RADIUS refuses the package on other routers |
@@ -109,7 +110,7 @@ Update this file with every increment.
 | Vouchers: batches, CSV, redeem at first login | Done | no single-customer assignment, no voucher expiry |
 | Campaigns with discount codes | Done | promo codes (percent/amount/bonus days, limits) |
 | Loyalty points (earn on payment, redeem to wallet) | Done | no referral/visit points |
-| Advertising, quizzes | Skip | not requested |
+| Advertising, quizzes | Done | Hotspot → Adverts & quizzes; images must be https |
 
 ### Communications and alerts (§10)
 | Item | Status | Notes |
@@ -125,7 +126,7 @@ Update this file with every increment.
 |---|---|---|
 | Landing page: 9 designs, list/grid/swipe, contacts, show/hide sections | Done | Captive experience page |
 | Status page designs + status.html download | Done | |
-| Loading screen, expired-PPPoE page, terms & languages beyond EN/SW | Missing | |
+| Loading screen, expired-PPPoE page, terms & languages beyond EN/SW | Done | Captive experience (loading, terms, French); PPPoE → Expired page has the router rules |
 | Push design to routers with per-router results | Done | Captive experience → Push to routers; results in Router jobs |
 
 ### Team and audit (§12)

@@ -7,10 +7,11 @@
 <meta name="theme-color" content="#0a3cff">
 <link rel="icon" type="image/png" href="/img/favicon.png">
 <link rel="preload" href="/fonts/maven-pro-700.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/portal/portal.css?v=10">
-<script src="/portal/portal.js?v=12" defer></script>
+<link rel="stylesheet" href="/portal/portal.css?v=11">
+<script src="/portal/portal.js?v=13" defer></script>
 </head>
 <body data-theme="midnight">
+<div id="boot" class="boot" role="status"><div class="boot-mark" aria-hidden="true"><span></span><span></span><span></span></div><p class="boot-text"><!--loading-text--></p><div class="boot-bar" aria-hidden="true"><i></i></div></div>
 <canvas id="snow"></canvas>
 
 <div id="layout">
@@ -141,7 +142,7 @@
     <div class="row"><label for="cfgPhone">Phone</label></div><input type="text" id="cfgPhone" placeholder="0181 820 518">
     <div class="row"><label for="cfgWhatsapp">WhatsApp</label></div><input type="text" id="cfgWhatsapp" placeholder="same as phone if empty">
     <div class="row"><label for="cfgEmail">Email</label></div><input type="text" id="cfgEmail" placeholder="info@kadenetworks.com">
-    <div class="row"><label for="cfgLang">Default language</label><select id="cfgLang"><option value="sw">Kiswahili</option><option value="en">English</option></select></div>
+    <div class="row"><label for="cfgLang">Default language</label><select id="cfgLang"><option value="sw">Kiswahili</option><option value="en">English</option><option value="fr">Français</option></select></div>
     <div class="row"><label for="cfgPopular">Popular package (badge)</label></div><input type="text" id="cfgPopular" placeholder="e.g. NET PLUS">
 
     <h4>Show on the landing page</h4>
