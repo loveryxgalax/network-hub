@@ -190,3 +190,16 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .rp-hbars{list-style:none;margin:0 18px;padding:0;display:grid;gap:10px}.rp-hbars li{display:grid;grid-template-columns:230px 1fr 110px;gap:12px;align-items:center;font-size:13px}
 .rp-hbars li>div{height:22px;background:#f1f3f8;border-radius:4px}.rp-hbars li i{display:block;height:100%;background:var(--primary);border-radius:4px}.rp-hbars b{text-align:right}
 @media (max-width:640px){.rp-hbars li{grid-template-columns:1fr 90px}.rp-hbars li>div{grid-column:1/-1;order:3}}
+/* Customer profile: ISPman's Actions card, info cards and router sync card */
+.pf-actcard{border:1px solid var(--primary-line);border-radius:var(--radius);padding:14px 16px;margin:14px 0}.pf-actcard h3{margin:0;color:var(--primary)}.pf-actcard>p{margin:2px 0 10px;font-size:12.5px}
+.pf-actcard .pf-actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:0 0 10px}.pf-actcard .pf-actions:last-child{margin:0}
+.pf-actcard .pf-actions .button{justify-content:center;width:100%}
+.button.danger{background:#ef5350!important;border-color:#ef5350!important;color:#fff!important}.button.danger:hover{filter:brightness(1.05)}
+@media (max-width:900px){.pf-actcard .pf-actions{grid-template-columns:repeat(3,minmax(0,1fr))}}@media (max-width:520px){.pf-actcard .pf-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pf-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}.pf-info{border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13px}
+.pf-info h4{margin:0 0 6px;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}.pf-info p{margin:2px 0}
+@media (max-width:760px){.pf-cards{grid-template-columns:1fr}}
+.pf-sync{display:flex;gap:12px;border:1px solid #9fdcb9;background:#f2fbf6;border-radius:10px;padding:14px;margin-bottom:12px}.pf-sync>span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#dff5e8;color:#11804f;flex:none}
+.pf-sync strong{color:#11804f}.pf-sync p{margin:2px 0 8px;font-size:13px}.pf-sync dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0}.pf-sync dt{font-size:11px;color:var(--muted)}.pf-sync dd{margin:0}
+.pf-sync.warn{border-color:#f3d36b;background:#fffbe6}.pf-sync.warn>span{background:#fff1bf;color:#9a6b00}.pf-sync.warn strong{color:#9a6b00}
+.pf-sync.off{border-color:var(--border);background:var(--input)}.pf-sync.off>span{background:#eceef2;color:var(--muted)}.pf-sync.off strong{color:var(--ink)}

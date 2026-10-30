@@ -56,3 +56,23 @@ test('static IP list: connection state and a warning when one address is given t
   assert.equal(o.duplicates.length,1);assert.equal(o.duplicates[0].ip,'10.27.0.13');assert.deepEqual(o.duplicates[0].customers.map(x=>x.name).sort(),['Church','Kyandula HT']);
  }finally{done();}
 });
+test('static customer actions: Connect now re-sends, deactivate blocks, delete removes router entries',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'il-app-')),{createApp}=require('../server.cjs'),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://network.example.test',radiusToken:'bridge-token-for-tests-0123456789',radiusPort:0});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+app.server.address().port;let cookie='',csrf='';
+ const api=async(route,method='GET',input)=>{const r=await fetch(origin+'/api/'+route,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},...(input===undefined?{}:{body:JSON.stringify(input)})});const t=await r.text();return {status:r.status,body:t?JSON.parse(t):null,response:r};};
+ try{const owner=await api('setup','POST',{name:'Owner',workspace:'QA',email:'st@example.test',password:'fixture-owner-password-123'});cookie=owner.response.headers.get('set-cookie').split(';')[0];csrf=owner.body.csrf;
+  const dev=(await api('records/devices','POST',{name:'CCR',type:'router',driver:'none'})).body;
+  const plan=(await api('radius/plans','POST',{name:'B',service:'pppoe',downloadMbps:20,uploadMbps:20,price:3000,durationValue:30,durationUnit:'days',devices:1})).body;
+  assert.equal((await api('statics/settings/'+dev.id,'PUT',{network:'10.27.0.0/16',gateway:'10.27.0.1',iface:'bridge',arpPinning:true})).status,200);
+  const sub=(await api('radius/subscribers','POST',{name:'Church',username:'church',service:'static',planId:plan.id,routerId:dev.id,staticIp:'10.27.0.14'})).body;
+  assert.equal((await api('radius/subscribers/'+sub.id+'/reapply','POST',{})).status,409,'no job runner yet');
+  assert.equal((await api('router-jobs/enroll','POST',{deviceId:dev.id})).status,201);
+  const re=await api('radius/subscribers/'+sub.id+'/reapply','POST',{});assert.equal(re.status,200);assert.equal(re.body.queued,true);
+  const prof=(await api('customers/'+sub.id+'/profile')).body.staticInfo;assert.equal(prof.netmask,'255.255.0.0');assert.equal(prof.gateway,'10.27.0.1');assert.equal(prof.lastJob.type,'static-apply');
+  assert.equal((await api('radius/subscribers/'+sub.id+'/deactivate','POST',{reason:''})).status,400,'needs a reason');
+  const de=await api('radius/subscribers/'+sub.id+'/deactivate','POST',{reason:'Moved away'});assert.equal(de.body.subscriber.status,'suspended');
+  const jobsNow=(await api('router-jobs')).body.jobs||[];assert.ok(jobsNow.some(j=>j.type==='static-apply'&&j.params.enabled==='no'),'blocked on the router');
+  const del=await api('radius/subscribers/'+sub.id,'DELETE');assert.equal(del.status,200);assert.ok(del.body.routerJob);
+  assert.ok(((await api('router-jobs')).body.jobs||[]).some(j=>j.type==='static-remove'&&j.params.ip==='10.27.0.14'));
+ }finally{await new Promise(r=>app.server.close(r));app.close?.();fs.rmSync(dir,{recursive:true,force:true});}
+});
