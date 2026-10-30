@@ -464,3 +464,6 @@ body.phone-frame .pkgs{scrollbar-width:none}body.phone-frame .pkgs::-webkit-scro
 body[data-layout=swipe] .pkgs{scrollbar-width:none}body[data-layout=swipe] .pkgs::-webkit-scrollbar{display:none}
 .pkg.off{opacity:.55;cursor:not-allowed}.pkg.off:hover{transform:none}
 .free-banner{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;background:#13895f;color:#fff;font-size:14px}.free-banner .btn{background:#fff;color:#13895f;padding:8px 16px;width:auto}
+input.acc-pin{width:100%;max-width:180px;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface);color:var(--ink);letter-spacing:.3em;margin:0 0 12px}
+#sheet-qty-label select{width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
+#sheet-trial{margin-top:8px;width:100%}

@@ -46,7 +46,7 @@ const STR={
   paid:'Malipo yamepokelewa',accActive:'Akaunti <strong>{u}</strong> iko hai hadi <strong>{d}</strong>.',restart:'Usipounganishwa ndani ya dakika moja, zima na uwashe router yako.',wifiActive:'Wi-Fi yako iko hai hadi <strong>{d}</strong>. Hifadhi hizi uingie kwenye kifaa kingine:',
   code:'Msimbo',password:'Nenosiri',connecting:'Tunakuunganisha sasa…',joinWifi:'Jiunge na Wi-Fi ya {b} na uingie kwa msimbo huu.',ok:'Sawa',valid:'Msimbo huu ni sahihi. Jiunge na Wi-Fi ya {b} kuutumia.',
   statusActive:'Iko hai',statusExpired:'Imeisha muda',statusSuspended:'Imezimwa',until:'Hadi {d}',expiredOn:'Iliisha {d}',suspendedMsg:'Akaunti hii imezimwa. Wasiliana nasi.',passLabel:'Nenosiri',connect:'Unganisha',
-  renew:'Lipia {a}',mpesaLabel:'Nambari ya M-Pesa',promo:'Msimbo wa punguzo (hiari)',freeTitle:'WiFi ya bure sasa!',freeUntil:'Mpaka saa {t}.',freeGo:'Unganisha bure',freeNeedWifi:'Fungua ukurasa huu ukiwa kwenye WiFi yetu.',wallet:'Akiba',dataMonth:'Data mwezi huu'},
+  renew:'Lipia {a}',qty:'Ngapi',qtyOpt:'{n} × ({p})',trialBtn:'Jaribu bure kwa dakika {n}',trialUsed:'Kifaa hiki kimeshajaribu bure.',pinLabel:'PIN (hiari, kuona salio na matumizi)',pinWrong:'PIN si sahihi.',mpesaLabel:'Nambari ya M-Pesa',promo:'Msimbo wa punguzo (hiari)',freeTitle:'WiFi ya bure sasa!',freeUntil:'Mpaka saa {t}.',freeGo:'Unganisha bure',freeNeedWifi:'Fungua ukurasa huu ukiwa kwenye WiFi yetu.',wallet:'Akiba',dataMonth:'Data mwezi huu'},
  en:{needHelp:'Need help?',manageSub:'Enter your account details to manage your connection',otgTitle:'Use our On-the-Go WiFi wherever you are',otgSub:'Affordable packages at our hotspots',
   accountLead:'Enter your account number or paste a message from us.',detecting:'Looking for your connection on this network…',notFound:"We couldn't find a connection on this device. Use your account number below.",found:'Found you!',
   connectFind:'Connect to your {brand} account.',findBtn:'Find my account',howTitle:'How to access your account',how1:'Enter your account number or username',how2:'Or paste any message from us (payment confirmation, SMS notification, etc.)',
@@ -60,7 +60,7 @@ const STR={
   paid:'Payment received',accActive:'Account <strong>{u}</strong> is active until <strong>{d}</strong>.',restart:'If you are not online within a minute, restart your router.',wifiActive:'Your Wi-Fi is active until <strong>{d}</strong>. Save these to log in on another device:',
   code:'Code',password:'Password',connecting:'Connecting you now…',joinWifi:'Join the {b} Wi-Fi and log in with this code.',ok:'OK',valid:'This code is valid. Join the {b} Wi-Fi to use it.',
   statusActive:'Active',statusExpired:'Expired',statusSuspended:'Deactivated',until:'Until {d}',expiredOn:'Expired {d}',suspendedMsg:'This account is deactivated. Please contact us.',passLabel:'Password',connect:'Connect',
-  renew:'Renew {a}',mpesaLabel:'M-Pesa number',promo:'Promo code (optional)',freeTitle:'Free WiFi now!',freeUntil:'Until {t}.',freeGo:'Connect free',freeNeedWifi:'Open this page while connected to our WiFi.',wallet:'Wallet',dataMonth:'Data this month'}
+  renew:'Renew {a}',qty:'How many',qtyOpt:'{n} × ({p})',trialBtn:'Try free for {n} minutes',trialUsed:'This device has already had a free trial.',pinLabel:'PIN (optional, to see balance and usage)',pinWrong:'Wrong PIN.',mpesaLabel:'M-Pesa number',promo:'Promo code (optional)',freeTitle:'Free WiFi now!',freeUntil:'Until {t}.',freeGo:'Connect free',freeNeedWifi:'Open this page while connected to our WiFi.',wallet:'Wallet',dataMonth:'Data this month'}
 };
 
 /* ===================== STATE ===================== */
@@ -126,8 +126,8 @@ function alertBox(text,ok=false){const el=$('#portal-alert');if(!el)return;el.te
 function renderAccount(a){
  const box=$('#accResult');
  if(!a.found){box.innerHTML='';return showMsg(t('noAccount'),true);}
- showMsg('');
- const label={active:t('statusActive'),expired:t('statusExpired'),suspended:t('statusSuspended')}[a.status],when2=a.status==='active'?t('until',{d:when(a.expiresAt)}):a.status==='expired'?(a.expiresAt?t('expiredOn',{d:when(a.expiresAt)}):''):'';
+ showMsg(a.pinError?t('pinWrong'):'',!!a.pinError);
+ const label={active:t('statusActive'),expired:t('statusExpired'),suspended:t('statusSuspended'),unpaid:t('statusExpired')}[a.status]||a.status,when2=a.status==='active'?t('until',{d:when(a.expiresAt)}):a.status==='expired'?(a.expiresAt?t('expiredOn',{d:when(a.expiresAt)}):''):'';
  let html=`<div class="acc-result"><div class="top"><b>${esc(a.account.toUpperCase())}</b><span class="badge ${esc(a.status)}">${esc(label)}</span></div><div class="facts">${esc([a.plan,when2].filter(Boolean).join(' · '))}</div>`;
  if(a.verified)html+=`<div class="facts">${esc(t('wallet'))}: ${kes(a.balance||0)}${a.points?' · '+a.points+' pts':''}${a.monthDown||a.monthUp?' · '+esc(t('dataMonth'))+': '+(((a.monthDown||0)+(a.monthUp||0))/1073741824).toFixed(1)+' GB':''}</div>`;
  if(a.status==='suspended')html+=`<p class="muted small">${esc(t('suspendedMsg'))}</p>`;
@@ -141,7 +141,7 @@ function renderAccount(a){
 }
 $('#acc').addEventListener('input',e=>{const v=e.target.value,acc=extractAccount(v),box=$('#detectedAcc');if(acc&&acc!==v.trim().toUpperCase()){box.textContent=t('accFound')+acc;box.classList.remove('hide');}else box.classList.add('hide');});
 $('#accForm').addEventListener('submit',async e=>{e.preventDefault();const raw=$('#acc').value.trim();if(!raw){$('#accResult').innerHTML='';return showMsg(t('accEmpty'),true);}
- showMsg(t('searching'));try{renderAccount(await call('account',{method:'POST',body:JSON.stringify({query:extractAccount(raw)||raw})}));}catch(error){showMsg(error.message,true);}});
+ showMsg(t('searching'));try{const pin=($('#acc-pin')?.value||'').trim();renderAccount(await call('account',{method:'POST',body:JSON.stringify({query:extractAccount(raw)||raw,pin:pin||undefined})}));}catch(error){showMsg(error.message,true);}});
 async function detectSession(){
  const box=$('#detect');box.className='detect';box.innerHTML=`<div class="spin"></div><span>${esc(t('detecting'))}</span>`;
  const notFound=()=>{box.innerHTML=`<span>${ICON.wifi}</span><span>${esc(t('notFound'))}</span>`;};
@@ -156,6 +156,8 @@ function openSheet(id,kind){
  const p=(kind==='pppoe'?pppoePlans:plans).find(x=>x.id===id);if(!p)return;selected={id,kind};
  const home=kind==='pppoe';$('#sheet-kicker').textContent=home?t('homeInternet'):t('youPicked');$('#sheet-name').textContent=p.name;$('#sheet-price').textContent=kes(p.price);
  $('#sheet-facts').innerHTML=(home?[t('upTo',{n:p.downloadMbps}),t('unlimited'),p.duration]:[p.duration,t('upTo',{n:p.downloadMbps}),p.devices>1?t('devices',{n:p.devices}):t('device')]).map(f=>`<li>${esc(f)}</li>`).join('');
+ const qs=$('#sheet-qty'),ql=$('#sheet-qty-label'),cu=!home&&p.custom;ql.classList.toggle('hide',!cu);if(cu){const price=n=>{const d=[...(p.custom.discounts||[])].reverse().find(x=>n>=x.minQty);return n===1?p.price:Math.max(1,Math.ceil(p.price*n*(1-(d?d.percent:0)/100)));};qs.innerHTML=Array.from({length:p.custom.maxQty},(_,i)=>i+1).map(n=>`<option value="${n}">${esc(t('qtyOpt',{n,p:kes(price(n))}))}</option>`).join('');qs.value='1';qs.onchange=()=>{$('#sheet-price').textContent=kes(price(Number(qs.value)));};}else qs.innerHTML='<option value="1">1</option>';
+ const tb=$('#sheet-trial'),tr=!home&&p.trial;tb.classList.toggle('hide',!tr);if(tr){tb.textContent=t('trialBtn',{n:p.trial.minutes});tb.onclick=async()=>{alertBox('');if(!router.login||!router.mac){alertBox(t('freeNeedWifi'),true);return;}tb.disabled=true;try{const r=await call('trial',{method:'POST',body:JSON.stringify({planId:p.id,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});closeSheet();const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}catch(e){closeSheet();alertBox(e.message);}finally{tb.disabled=false;}};}
  $('#sheet-phone-label').classList.toggle('hide',home);$('#sheet-pay').classList.toggle('hide',home);$('#sheet-note').textContent=home?t('pppoeNote'):t('buyNote');
  $('#sheet-phone-text').textContent=t('mpesaLabel');$('#sheet-pay-text').textContent=t('payBuy');
  const c=$('#sheet-contact');c.classList.toggle('hide',!home);c.innerHTML=home?[CFG.phone&&`<a href="tel:${esc(CFG.phone.replace(/\s/g,''))}"><span class="ico">${ICON.phone}</span><span><b>${t('call')}</b><small>${esc(CFG.phone)}</small></span></a>`,CFG.whatsapp&&`<a href="https://wa.me/${esc(intl(CFG.whatsapp))}" rel="noopener"><span class="ico">${ICON.chat}</span><span><b>${t('whatsapp')}</b><small>${esc(CFG.whatsapp)}</small></span></a>`].filter(Boolean).join(''):'';
@@ -236,12 +238,12 @@ document.addEventListener('click',e=>{
  if(e.target.closest('#sheet-close')||e.target.id==='sheet')closeSheet();
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden)closeSheet();});
-$('#buy-form').addEventListener('submit',e=>{e.preventDefault();if(!selected||selected.kind==='pppoe')return;pay({kind:'hotspot',planId:selected.id,phone:e.target.phone.value,promo:e.target.promo.value});});
+$('#buy-form').addEventListener('submit',e=>{e.preventDefault();if(!selected||selected.kind==='pppoe')return;pay({kind:'hotspot',planId:selected.id,qty:Number(e.target.qty?.value||1),phone:e.target.phone.value,promo:e.target.promo.value});});
 async function boot(){
  render();
  const q=params.get('theme');
  try{
-  const d=await call('config');CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;freeMode=d.freeMode||null;state='ok';
+  const d=await call('config'+(router.mac?'?mac='+encodeURIComponent(router.mac):''));CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;freeMode=d.freeMode||null;state='ok';
   try{if(!localStorage.getItem('portal-lang'))LANG=CFG.defaultLang||LANG;}catch{LANG=CFG.defaultLang||LANG;}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;

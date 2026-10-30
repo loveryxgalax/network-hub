@@ -44,13 +44,17 @@ function planEditor(id){
  <section data-pk="other" hidden>
   ${chk('offSale',p.active===false,'Package disabled (off sale)','Not sold on the portal; existing customers keep it')}
   ${chk('hidden',p.hidden,'Hide from the landing page','Still usable for vouchers, manual connects and staff renewals')}
+  <h3>Free trial</h3>${chk('trial.enabled',p.trial?.enabled,'Offer a free trial on the WiFi page','One trial per device, then the customer must wait before another')}
+  <div class="form-grid"><label>Trial length (minutes)<input name="trial.minutes" type="number" min="1" max="1440" value="${p.trial?.minutes||10}"></label><label>Days before the same device can try again<input name="trial.everyDays" type="number" min="1" max="365" value="${p.trial?.everyDays||30}"></label></div>
+  <h3>Customize (buy several)</h3>${chk('custom.enabled',p.custom?.enabled,'Let customers buy several units at once','For example 3 × daily = 3 days. The validity and price are multiplied.')}
+  <div class="form-grid"><label>Most units per purchase<input name="custom.maxQty" type="number" min="2" max="100" value="${p.custom?.maxQty||7}"></label></div><div class="form-grid">${[0,1,2].map(i=>`<label>Discount ${i+1}: from units<input name="custom.d${i}qty" type="number" min="2" max="100" value="${p.custom?.discounts?.[i]?.minQty??''}"></label><label>Discount ${i+1}: percent off<input name="custom.d${i}pct" type="number" min="0" max="90" step="0.5" value="${p.custom?.discounts?.[i]?.percent??''}"></label>`).join('')}</div>
   ${id?`<h3>Version history</h3><p class="muted small">This is version ${p.version||1}. Payments record the version they were made under.</p><div id="pk-versions"><button type="button" class="button secondary" id="pk-load-versions">Show earlier versions</button></div>`:''}</section>`;
  radiusForm(id?'Edit package':'New package','Changes apply at each customer\'s next login.',html,id?'Save package':'Create package',()=>{
-  const form=$('#editor-form'),fd=new FormData(form),out={burst:{},fup:{},window:{},notices:{}};
-  for(const [k,v] of fd.entries()){if(['notices.before','notices.usage','window.weekdays','routerIds'].includes(k)||/^fup\.t\d/.test(k))continue;const [a,c]=k.split('.');if(c)out[a][c]=v;else out[k]=v;}
-  for(const k of ['burst.enabled','fup.enabled','window.hours','window.days','notices.expired','popular','hidden'])if(!fd.has(k)){const [a,c]=k.split('.');if(c)out[a][c]=false;else out[k]=false;}
+  const form=$('#editor-form'),fd=new FormData(form),out={burst:{},fup:{},window:{},notices:{},trial:{},custom:{}};
+  for(const [k,v] of fd.entries()){if(['notices.before','notices.usage','window.weekdays','routerIds'].includes(k)||/^fup\.t\d/.test(k)||/^custom\.d\d/.test(k))continue;const [a,c]=k.split('.');if(c)out[a][c]=v;else out[k]=v;}
+  for(const k of ['burst.enabled','fup.enabled','window.hours','window.days','notices.expired','popular','hidden','trial.enabled','custom.enabled'])if(!fd.has(k)){const [a,c]=k.split('.');if(c)out[a][c]=false;else out[k]=false;}
   out.notices.before=fd.getAll('notices.before').map(Number);out.notices.usage=fd.getAll('notices.usage').map(Number);out.routerIds=fd.getAll('routerIds');
-  out.fup.tiers=[0,1].map(i=>({downCapMB:fd.get(`fup.t${i}cap`),afterDownMbps:fd.get(`fup.t${i}down`),afterUpMbps:fd.get(`fup.t${i}up`)})).filter(t=>t.downCapMB);out.window.weekdays=fd.getAll('window.weekdays').map(Number);
+  out.fup.tiers=[0,1].map(i=>({downCapMB:fd.get(`fup.t${i}cap`),afterDownMbps:fd.get(`fup.t${i}down`),afterUpMbps:fd.get(`fup.t${i}up`)})).filter(t=>t.downCapMB);out.window.weekdays=fd.getAll('window.weekdays').map(Number);out.custom.discounts=[0,1,2].map(i=>({minQty:fd.get(`custom.d${i}qty`),percent:fd.get(`custom.d${i}pct`)||0})).filter(d=>d.minQty);
   out.active=!fd.has('offSale');delete out.offSale;out.features=String(out.features||'').split('\n').map(s=>s.trim()).filter(Boolean);
   return api(id?'radius/plans/'+id:'radius/plans',id?'PATCH':'POST',out);});
  $('#editor').classList.add('pk-editor');$('#editor').addEventListener('close',()=>$('#editor').classList.remove('pk-editor'),{once:true});

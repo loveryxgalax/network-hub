@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Static IP service (per-router networks, automatic addresses, ARP pinning, speed queue, expired → blocked address list, Save only / Save & apply, PPPoE↔static conversion); family accounts; customer PINs and PIN dispatch; device/OS/browser per MAC and portal visits by hour/OS/device; roaming log; bulk actions with preview, count+version check and typed delete; free trial per device; buy several units with bulk discounts | `test/services.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | Opt-in router job runner (whitelisted jobs, scoped token, retries with backoff, timeouts, typed confirmation for reboot/upgrade); customer Connect/Disconnect/Reset device/Flight speed; push portal pages to routers; provisioning-failed state | `test/jobs.test.cjs` |
 | 2026-10-30 | Speed rules (raise/cut/exact; ISP, router, package, customer; schedules; end time = flight speed) with explanation; free mode (routers, package, end time, portal button); daily FUP and adaptive steps; fair-usage SMS 50/80/100%; packages limited to routers; package version history and payment version | `test/speed.test.cjs`, `test/packages.test.cjs` |
 | 2026-10-30 | Outage compensation (preview, fixed cut-off, idempotent grants with before/after), never-paid state, PPPoE deactivation grace, installation fee default/override/waive settled before the package, per-customer device limit | `test/accounts.test.cjs` |
@@ -25,7 +26,7 @@ Update this file with every increment.
 | Dashboard counters, router health, revenue, expiring | Done | `dist/dashboard.js`, `lib/overview.cjs` |
 | Distinct states: paid online/offline, online-expired, expired, unpaid, deactivated, provisioning failed | Done | provisioning shown separately from the account state |
 | Reports: revenue by package/location/method, vouchers, usage, visits by time, heavy users, CSV | Done | `lib/reports.cjs`; Excel export is CSV |
-| Portal visits by device/OS | Missing | needs user-agent capture on the portal |
+| Portal visits by device/OS | Done | captured when the WiFi page loads; Reports shows by hour, system and device |
 | Trends: 24h/7d/30d, heatmaps, fair-usage view | Partial | 1h/24h/7d only; no heatmaps |
 | Metric definitions, "last updated", data completeness | Partial | freshness shown on routers; not on every chart |
 
@@ -33,18 +34,18 @@ Update this file with every increment.
 | Item | Status | Notes |
 |---|---|---|
 | One customer table with filters, saved filters, CSV | Done | Customers page |
-| PPPoE create/edit (name, username, password, phone, email, package, static IP, notes) | Done | router/installation fee/location fields missing |
+| PPPoE create/edit (name, username, password, phone, email, package, static IP, notes) | Done | installation fee and device limit on the form; location field missing |
 | Customer profile: details, payments, sessions, usage, SMS, auth log, tickets | Done | profile dialog |
 | Actions: renew, payment, edit, SMS, password reveal, points | Done | |
 | Actions: STK request from profile | Done | uses the same confirmed-payment path as the portal |
 | Actions: connect/disconnect, reset, flight speed, max connections | Done | through the opt-in router job runner; flight speed also works without it at next login |
-| Actions: PIN | Missing | |
-| Hotspot profile extras: device/browser/OS, recent MACs, child/family accounts | Missing | |
-| Roaming events | Missing | |
+| Actions: PIN | Done | set/reset from the profile (optional SMS), bulk dispatch with count confirmation; unlocks balance/usage on the portal |
+| Hotspot profile extras: device/browser/OS, recent MACs, child/family accounts | Done | family accounts share package/expiry and count toward the device limit |
+| Roaming events | Done | Hotspot → Roaming, from RADIUS accounting |
 | Connect requests | Done | Payment requests page (portal STK attempts) |
 | Manual connects with actor/before/after | Partial | creates voucher-backed entitlement and audit entry; no before/after expiry record |
-| Static IP service (customers, per-router pools, ARP pinning, expiring) | Missing | static IP is only a field on PPPoE customers |
-| Bulk actions with explicit scope | Missing | campaigns only |
+| Static IP service (customers, per-router pools, ARP pinning, expiring) | Done | router changes go through the job runner; without it the state shows "Not applied". Needs one firewall rule per router (shown on the settings page) |
+| Bulk actions with explicit scope | Done | add days, change package, deactivate, activate, delete (admin, typed) |
 | Outage compensation (preview + idempotent grant) | Done | |
 | MAC binding (PPPoE) | Done | per-ISP switch; roaming scopes/strict router assignment missing |
 | Installation fee default/override | Done | settled from the first payment |
@@ -63,8 +64,9 @@ Update this file with every increment.
 | Usage-threshold notifications | Done | 50/80/100% of the download cap |
 | Time & day of purchase (overnight windows) | Done | blocks new sales only; active packages keep working |
 | Off sale / hide from landing page | Done | |
-| Free trial, earned-by-ad/quiz packages | Missing | |
-| Customize (quantity pricing, bulk discount) | Missing | |
+| Free trial | Done | one per device per N days |
+| Earned-by-ad/quiz packages | Missing | planned in group F |
+| Customize (quantity pricing, bulk discount) | Done | up to 3 discount steps; validity multiplies |
 | Speed override (raise slower / cut faster / exact), schedules | Done | Speed rules page; profile shows the effective speed and why |
 | Router-scoped packages | Done | RADIUS refuses the package on other routers |
 | Policy versioning / snapshot on purchase | Done | version history per package; payments store version, name and price |

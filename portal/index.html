@@ -7,8 +7,8 @@
 <meta name="theme-color" content="#0a3cff">
 <link rel="icon" type="image/png" href="/img/favicon.png">
 <link rel="preload" href="/fonts/maven-pro-700.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/portal/portal.css?v=8">
-<script src="/portal/portal.js?v=10" defer></script>
+<link rel="stylesheet" href="/portal/portal.css?v=9">
+<script src="/portal/portal.js?v=11" defer></script>
 </head>
 <body data-theme="midnight">
 <canvas id="snow"></canvas>
@@ -79,6 +79,7 @@
               <textarea id="acc" class="acc" data-i18n-ph="accPh"></textarea>
               <div class="example" data-i18n="accExample"></div>
               <div class="detected-acc hide" id="detectedAcc"></div>
+              <label class="fl" for="acc-pin"><span data-i18n="pinLabel">PIN (optional, to see balance and usage)</span></label><input id="acc-pin" class="acc-pin" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{4,6}">
               <button class="btn" type="submit"><span data-i18n="accessBtn"></span> <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
               <div class="msg" id="accMsg"></div>
             </form>
@@ -163,9 +164,11 @@
     <h3 id="sheet-name">—</h3>
     <p class="sheet-price" id="sheet-price">KES 0</p>
     <ul class="sheet-facts" id="sheet-facts"></ul>
+    <label id="sheet-qty-label" class="hide"><span data-i18n="qty">How many</span><select name="qty" id="sheet-qty"></select></label>
     <label id="sheet-phone-label"><span id="sheet-phone-text">M-Pesa number</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678"></label>
     <label id="sheet-promo-label"><span data-i18n="promo">Promo code (optional)</span><input name="promo" autocomplete="off" autocapitalize="characters" maxlength="24" placeholder="e.g. WELCOME20"></label>
     <button class="btn" type="submit" id="sheet-pay"><span id="sheet-pay-text">Pay with M-Pesa</span> <span aria-hidden="true">→</span></button>
+    <button type="button" class="btn ghost hide" id="sheet-trial"></button>
     <p class="muted small" id="sheet-note"></p>
     <div class="contact hide" id="sheet-contact"></div>
   </form>
