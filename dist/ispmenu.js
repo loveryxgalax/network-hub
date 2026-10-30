@@ -29,6 +29,15 @@ const nm=nav.findIndex(n=>n[0]==='network-map');if(nm>=0)nav.splice(nm+1,0,['nbr
 const st2=nav.findIndex(n=>n[0]==='settings');if(st2>=0)nav.splice(st2,0,['system-logs','System logs','shield'],['audit','Activity log','info']);
 const mk=nav.findIndex(n=>n[0]==='mikrotiks');if(mk>=0)nav.splice(mk+1,0,['router-jobs','Router jobs','settings'],['config-backups','Config backups','server'],['upgrades','Upgrade tracker','refresh']);
 const d=nav.findIndex(n=>n[0]==='dashboard');if(d>=0)nav.splice(d+1,0,['trends','Trends','activity']);
+// ISPman's menu shape: a few top-level pages, then the business groups (customers, services, payments) before the
+// network groups. Each item keeps its page; only the order, headings and icons change.
+{const TOP=['dashboard','trends','team','wallet','settings','ai'],ORDER=['CUSTOMERS','HOTSPOT','PPPOE','STATIC IP','PAYMENTS','COMMS','MIKROTIK','OLTS & ONUS','MONITORING','FIBRE','OPERATIONS','TASKS','ACCOUNT'];
+ const LABEL={dashboard:'Home',wallet:'Billing'},ICON={dashboard:'house',trends:'chart',team:'users',wallet:'receipt',settings:'settings',ai:'chat','cust-table':'users','cust-new':'userplus','cust-hotspot':'wifi','cust-pppoe':'house','hs-packages':'box','pp-packages':'box','st-customers':'network','pay-received':'arrowdown','pay-payouts':'arrowup','pay-reports':'chart','pay-ledger':'file','pay-card':'card','pay-mpesa':'wallet','comms-sms':'chat','comms-email':'chat','comms-campaigns':'bolt','hs-roaming':'globe','captive':'wifi','wireguard':'shield','tickets':'headset','system-logs':'shield','sites':'globe','mikrotiks':'router','olts':'server','hs-requests':'card','promos':'receipt','outages':'warning','overdue':'clock','radius':'settings'};
+ const blocks=[];let cur=null;for(const n of nav){if(n[3]){cur={head:n[3],items:[]};blocks.push(cur);}else if(!cur){cur={head:'',items:[]};blocks.push(cur);}cur.items.push(n.slice(0,3));}
+ const top=[];for(const id of TOP)for(const b of blocks){const i=b.items.findIndex(n=>n[0]===id);if(i>=0)top.push(...b.items.splice(i,1));}
+ const rest=blocks.filter(b=>b.items.length).sort((a,b)=>(ORDER.indexOf(a.head)+1||99)-(ORDER.indexOf(b.head)+1||99));
+ const out=[...top,...rest.flatMap(b=>b.items.map((n,i)=>i?n:[...n,b.head==='WORKSPACE'?'TOOLS':b.head]))].map(n=>{const x=[...n];if(LABEL[x[0]])x[1]=LABEL[x[0]];if(ICON[x[0]])x[2]=ICON[x[0]];return x;});
+ nav.splice(0,nav.length,...out);}
 window.radiusPreset=id=>PRESETS[id]||null;
 const svcOf=id=>id.startsWith('hs-')?'hotspot':'pppoe',H=s=>escapeHtml(String(s??'')),csvCell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
 function shell(title,desc,actions=''){$('#main').innerHTML=heading(title,desc,actions)+'<div id="im-body"><div class="card"><p class="muted" style="padding:20px">Loading…</p></div></div>';}
@@ -512,15 +521,21 @@ window.render=function(){
 };
 // Counts beside the menu items.
 let counts={};
-function badges(){for(const [id,key] of Object.entries({radius:'customers','cust-inactive':'inactive','cust-hotspot':'hotspot','cust-pppoe':'pppoe','overdue':'overdue','hs-requests':'requests','hs-sessions':'onlineHotspot','pp-sessions':'onlinePppoe'})){const a=document.querySelector(`#navigation a[href="#${id}"]`),n=counts[key];if(a&&n&&!a.querySelector('.nav-number'))a.insertAdjacentHTML('beforeend',`<span class="nav-number">${n}</span>`);}}
+function badges(){for(const [id,key] of Object.entries({'cust-table':'customers',radius:'customers','cust-inactive':'inactive','cust-hotspot':'hotspot','cust-pppoe':'pppoe','st-customers':'statics','overdue':'overdue','hs-requests':'requests','hs-sessions':'onlineHotspot','pp-sessions':'onlinePppoe','system-logs':'syslog'})){const a=document.querySelector(`#navigation a[href="#${id}"]`),n=counts[key];if(!a)continue;let b=a.querySelector('.nav-number');if(!n){b?.remove();continue;}if(!b){a.insertAdjacentHTML('beforeend','<span class="nav-number"></span>');b=a.querySelector('.nav-number');}b.textContent=n;b.classList.toggle('alert',id==='system-logs'||id==='hs-requests');}
+ // Group headings carry the size of the group, like ISPman's "CUSTOMERS (3542)".
+ for(const [g,key] of Object.entries({CUSTOMERS:'customers',HOTSPOT:'hotspot',PPPOE:'pppoe','STATIC IP':'statics'})){const l=document.querySelector(`#navigation .nav-group-label[data-group="${g}"]`);if(!l)continue;let c=l.querySelector('.nav-group-n');if(!c){l.insertAdjacentHTML('beforeend','<span class="nav-group-n"></span>');c=l.querySelector('.nav-group-n');}c.textContent=counts[key]?`(${counts[key]})`:'';}}
 // Sidebar: collapsible groups (the one holding the current page stays open) and a menu search box.
 const NAVKEY='kd-nav-open';let openGroups=new Set();try{openGroups=new Set(JSON.parse(localStorage.getItem(NAVKEY)||'[]'));}catch{}
 let navQuery='';
+// Alerts and the assistant stay at the bottom of the sidebar, as in ISPman.
+function pins(){const side=document.querySelector('#sidebar'),bottom=side?.querySelector('.sidebar-bottom');if(!bottom||state.session?.user?.role==='installer')return;let p=side.querySelector('.sidebar-pins');
+ if(!p){p=document.createElement('div');p.className='sidebar-pins';bottom.before(p);}
+ p.innerHTML=`<a href="#notifications" class="${state.page==='notifications'?'active':''}" title="Alerts">${icon('bell')}<span class="nav-label">Alerts</span>${counts.alerts?`<span class="pin-badge">${counts.alerts}</span>`:''}</a><a href="#ai" class="${state.page==='ai'?'active':''}" title="Assistant">${icon('chat')}<span class="nav-label">Assistant</span></a>`;}
 function organise(){const nav=document.querySelector('#navigation');if(!nav||document.body.classList.contains('nav-collapsed'))return;
  const kids=[...nav.children].filter(e=>!e.classList.contains('nav-search'));const groups=[];let cur={label:null,items:[]};groups.push(cur);
  for(const e of kids){if(e.classList.contains('nav-group-label')){cur={label:e,items:[]};groups.push(cur);}else cur.items.push(e);}
  const q=navQuery.trim().toLowerCase();
- for(const g of groups){if(!g.label)continue;const name=g.label.textContent.trim(),hasActive=g.items.some(a=>a.classList.contains('active'));
+ for(const g of groups){if(!g.label)continue;const name=g.label.dataset.group||g.label.textContent.trim(),hasActive=g.items.some(a=>a.classList.contains('active'));
   const open=q?true:openGroups.has(name)||hasActive;g.label.classList.add('nav-toggle');g.label.dataset.group=name;g.label.classList.toggle('open',open);
   let shown=0;for(const a of g.items){const match=!q||a.textContent.toLowerCase().includes(q);a.hidden=!(open&&match);if(match)shown++;}
   g.label.hidden=!!q&&!shown;}
@@ -530,7 +545,7 @@ function organise(){const nav=document.querySelector('#navigation');if(!nav||doc
 document.addEventListener('click',e=>{const l=e.target.closest('#navigation .nav-toggle');if(!l)return;const n=l.dataset.group;if(openGroups.has(n))openGroups.delete(n);else openGroups.add(n);try{localStorage.setItem(NAVKEY,JSON.stringify([...openGroups]));}catch{}
  // a group that holds the page you are on cannot be closed, so remember the click but keep it open
  organise();});
-const chromeOriginal=window.chrome;window.chrome=function(){const q=document.querySelector('#navigation .nav-search input'),had=q&&document.activeElement===q;chromeOriginal();organise();badges();if(had){const n=document.querySelector('#navigation .nav-search input');if(n){n.value=navQuery;n.focus();}}};
-async function loadCounts(){if(!state.session?.user||state.session.user.role==='installer'||document.hidden)return;try{counts=await api('nav-counts');badges();}catch{}}
+const chromeOriginal=window.chrome;window.chrome=function(){const q=document.querySelector('#navigation .nav-search input'),had=q&&document.activeElement===q;chromeOriginal();organise();badges();pins();if(had){const n=document.querySelector('#navigation .nav-search input');if(n){n.value=navQuery;n.focus();}}};
+async function loadCounts(){if(!state.session?.user||state.session.user.role==='installer'||document.hidden)return;try{counts={...counts,...await api('nav-counts')};badges();pins();refreshSysBadge();}catch{}}
 setInterval(loadCounts,60000);setTimeout(loadCounts,1500);
 })();

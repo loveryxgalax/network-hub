@@ -144,3 +144,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)!important;bo
 .im-log p{margin:6px 0 8px}.im-log dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:12px;margin:0}.im-log dt{font-size:11.5px;color:var(--muted);font-weight:600}.im-log dd{margin:2px 0 0}
 .im-log footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px}
 @media (max-width:640px){.im-log dl{grid-template-columns:1fr}}
+
+/* Sidebar like ISPman: counts in brackets after the label, red badges where something needs attention,
+   Alerts and Assistant pinned at the bottom. */
+#navigation .nav-number{background:none!important;color:#ffffffb3!important;font-weight:500;padding:0!important;margin-left:4px;min-width:0!important;font-size:12px}
+#navigation .nav-number::before{content:"("}#navigation .nav-number::after{content:")"}
+#navigation .nav-number.alert{background:#e5252a!important;color:#fff!important;border-radius:999px;padding:0 6px!important;margin-left:auto}
+#navigation .nav-number.alert::before,#navigation .nav-number.alert::after{content:none}
+#navigation a.active .nav-number{color:var(--primary)!important}
+.nav-group-n{margin-left:6px;font-weight:500;opacity:.85}
+#navigation a[href="#ai"]{display:none!important}
+.sidebar-pins{border-top:1px solid #ffffff33;padding:8px 10px;display:grid;gap:2px}
+.sidebar-pins a{display:flex;align-items:center;gap:10px;color:#fff!important;text-decoration:none;padding:8px 12px;border-radius:10px;font-weight:600;font-size:14px;position:relative}
+.sidebar-pins a:hover{background:#ffffff1f}.sidebar-pins a.active{background:#fff;color:var(--primary)!important}
+.pin-badge{position:absolute;left:24px;top:2px;background:#e5252a;color:#fff;border-radius:999px;font-size:10px;min-width:16px;height:16px;display:grid;place-items:center;padding:0 4px}
+body.nav-collapsed .sidebar-pins .nav-label{display:none}
