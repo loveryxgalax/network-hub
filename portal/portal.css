@@ -494,3 +494,8 @@ body[data-loading=progress] .boot-bar i{display:block;height:100%;width:40%;back
 .ad-label{text-transform:uppercase;letter-spacing:.08em;font-size:11px;opacity:.65}.ad-actions{display:flex;gap:8px;flex-wrap:wrap}.ad-actions .btn{flex:1 1 160px}
 .ad-card.watching{outline:2px solid var(--brand,#0a3cff);outline-offset:2px}
 .quiz-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;margin:0 0 8px;cursor:pointer}.quiz-opt input{width:18px;height:18px}
+/* Picture questions: answers as a row of tappable images */
+.quiz-pics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:8px 0}
+.quiz-pics .quiz-opt{display:grid;gap:6px;justify-items:center;text-align:center;border:2px solid transparent;border-radius:12px;padding:6px;cursor:pointer}
+.quiz-pics .quiz-opt img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}.quiz-pics .quiz-opt input{position:absolute;opacity:0}
+.quiz-pics .quiz-opt:has(input:checked){border-color:var(--brand)}

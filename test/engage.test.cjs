@@ -19,7 +19,7 @@ test('adverts: https only, views give a ticket, free minutes only after the full
 });
 test('quiz: answer hidden from the page, one attempt per device per day, right answer grants minutes',()=>{
  const {store,done}=fx();try{const plan=store.put('plans',radius.plan({name:'Quiz speed',service:'hotspot',downloadMbps:2,uploadMbps:1,price:10,durationValue:1,durationUnit:'hours'}));
-  assert.throws(()=>engage.saveQuiz(store,{question:'Q',options:'only one',answer:0,earn:{planId:plan.id,minutes:5}}),/2 to 5/);
+  assert.throws(()=>engage.saveQuiz(store,{question:'Q',options:'only one',answer:0,earn:{planId:plan.id,minutes:5}}),/2 to 6/);
   const q=engage.saveQuiz(store,{question:'Capital of Kenya?',options:'Mombasa\nNairobi\nKisumu',answer:1,active:true,earn:{planId:plan.id,minutes:5}});
   const pv=engage.forPortal(store).quiz;assert.equal(pv.id,q.id);assert.equal(pv.answer,undefined);
   assert.deepEqual(engage.answer(store,portal.grantFree,q.id,{choice:0,mac:'AA:BB:CC:DD:EE:02'}),{correct:false});
@@ -33,5 +33,16 @@ test('landing: loading screen, terms and French are saved and validated',()=>{
   const saved=landing.save(store,{...base,defaultLang:'fr',loadingStyle:'progress',loadingText:'Kade',terms:'1. Be fair.\n2. No abuse.'});assert.equal(saved.defaultLang,'fr');assert.equal(saved.loadingStyle,'progress');assert.match(saved.terms,/No abuse/);
   assert.throws(()=>landing.save(store,{...base,terms:'<script>x</script>'}),/plain text/);
   assert.equal(landing.save(store,{...base,loadingStyle:'weird'}).loadingStyle,'spinner');
+ }finally{done();}
+});
+test('picture questions: images on answers, and opinion questions where any pick connects and picks are counted',()=>{
+ const {store,done}=fx();try{const plan=store.put('plans',radius.plan({name:'Quiz speed',service:'hotspot',downloadMbps:2,uploadMbps:1,price:10,durationValue:1,durationUnit:'hours'}));
+  assert.throws(()=>engage.saveQuiz(store,{question:'Q',options:'Coke | http://x.test/c.jpg\nFanta',answer:'any',earn:{planId:plan.id,minutes:5}}),/https/);
+  const q=engage.saveQuiz(store,{question:'Which drink do you like?',options:'Coke | https://img.example/coke.jpg\nFanta | https://img.example/fanta.jpg\nSprite',answer:'any',active:true,earn:{planId:plan.id,minutes:5}});
+  assert.equal(q.answer,-1);assert.deepEqual(q.options,['Coke','Fanta','Sprite']);assert.deepEqual(q.images,['https://img.example/coke.jpg','https://img.example/fanta.jpg','']);
+  assert.deepEqual(engage.forPortal(store).quiz.images,q.images);
+  const r=engage.answer(store,portal.grantFree,q.id,{choice:1,mac:'AA:BB:CC:DD:EE:31'});assert.equal(r.correct,true,'any pick connects');
+  assert.throws(()=>engage.answer(store,portal.grantFree,q.id,{choice:9,mac:'AA:BB:CC:DD:EE:32'}),/Choose an answer/);
+  assert.deepEqual(store.get('quizzes',q.id).picks,[0,1,0]);
  }finally{done();}
 });
