@@ -23,10 +23,12 @@ test('persistent workspace, authorization and operational workflows',async t=>{
   if(url.pathname.startsWith('/v1/devices/')){
    if(req.headers.authorization!=='Bearer gateway-secret-value'){res.writeHead(401).end('{}');return;}
    if(url.pathname.endsWith('/snapshot')){if(!gatewayUp){res.writeHead(503).end('{}');return;}res.end(JSON.stringify({online:true,onus:authorized?[{serial:'QAONU0001',pon:'1/1',name:'QA subscriber',online:true,power:-20.1,oltPower:-21.3}]:[],unconfigured:authorized?[]:[{serial:'QAONU0001',pon:'1/1'}]}));return;}
+   {const m=url.pathname.match(/\/onus\/([^/]+)\/(reboot|disable|enable|deauthorize)$/);if(m){let body='';for await(const chunk of req)body+=chunk;const r=JSON.parse(body);assert.ok(r.idempotencyKey);onuOps.push(m[2]);res.end(JSON.stringify(onuConfirm?{done:true,serial:decodeURIComponent(m[1]),action:m[2]}:{}));return;}}
    if(url.pathname.endsWith('/authorize')){authCalls++;let body='';for await(const chunk of req)body+=chunk;const request=JSON.parse(body);assert.equal(request.profile.vlan,100);assert.ok(request.idempotencyKey);if(gatewayConfirmed){authorized=true;res.end(JSON.stringify({authorized:true,serial:request.serial}));}else res.end('{}');return;}
   }
   res.writeHead(404).end('{}');
  });
+ let onuOps=[],onuConfirm=true;
  const deviceOrigin=await listen(fixture);
  async function api(route,method='GET',input,overrides={}){const response=await fetch(origin+'/api/'+route,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf,...overrides},...(input===undefined?{}:{body:JSON.stringify(input)})});return {status:response.status,body:await response.json(),response};}
  const create=async(kind,input)=>{const result=await api('records/'+kind,'POST',input);assert.equal(result.status,201,JSON.stringify(result.body));return result.body;};
@@ -80,6 +82,11 @@ test('persistent workspace, authorization and operational workflows',async t=>{
   const discovery=await api('records/devices/'+olt.id+'/discover');assert.equal(discovery.body.onus[0].serial,'QAONU0001');profile=await create('profiles',{name:'100M',vendor:'Fixture',vlan:100,download:100,upload:100});const payload={serial:'QAONU0001',pon:'1/1',profileId:profile.id};
   gatewayConfirmed=false;assert.equal((await api('records/devices/'+olt.id+'/authorize','POST',payload)).status,502);assert.equal(authCalls,1);assert.equal((await api('records/devices/'+olt.id+'/authorize','POST',payload)).status,409);assert.equal(authCalls,1);
   const alert=(await api('records/alerts')).body.find(a=>a.source==='provisioning');await patch('alerts',alert,{status:'Resolved'});gatewayConfirmed=true;const response=await api('records/devices/'+olt.id+'/authorize','POST',payload);assert.equal(response.body.authorized,true);const onu=(await api('records/devices')).body.find(d=>d.serial==='QAONU0001');assert.equal(onu.metrics.power,-20.1);assert.equal(onu.status,'online');
+  assert.equal((await api('records/devices/'+onu.id+'/onu-action','POST',{action:'reboot'})).body.done,true);assert.deepEqual(onuOps,['reboot']);
+  assert.equal((await api('records/devices/'+onu.id+'/onu-action','POST',{action:'deauthorize',confirm:'WRONG'})).status,400);
+  assert.equal((await api('records/devices/'+onu.id+'/onu-action','POST',{action:'disable'})).status,200);assert.equal((await api('records/devices')).body.find(d=>d.id===onu.id).onuState,'disabled');
+  onuConfirm=false;assert.equal((await api('records/devices/'+onu.id+'/onu-action','POST',{action:'enable'})).status,502);assert.equal((await api('records/devices/'+onu.id+'/onu-action','POST',{action:'enable'})).status,409,'unverified operation blocks a retry until reconciled');
+  {const al=(await api('records/alerts')).body.find(x=>x.source==='onu-operation'&&x.status!=='Resolved');await patch('alerts',al,{status:'Resolved'});}onuConfirm=true;
   const job=await create('jobs',{title:'Verify ONU service',deviceId:onu.id});gatewayUp=false;assert.equal((await patch('jobs',job,{status:'Done'})).status,409,'A previously online ONU must not pass when the current OLT check fails');gatewayUp=true;assert.equal((await patch('jobs',job,{status:'Done'})).status,200);
  });
  await t.test('team permissions enforce viewer boundaries and session revocation',async()=>{

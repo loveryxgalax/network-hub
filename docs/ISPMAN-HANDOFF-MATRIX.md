@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | TR-069 customer CPE enrolment (CPE PPPoE login read from the ACS, link to a customer, write the customer's PPPoE login with setParameterValues; linked CPE on the profile); ONU reboot/disable/enable/remove through the OLT gateway contract with verification and reconciliation | `test/acs-enroll.test.cjs`, `test/workspace.test.cjs` |
 | 2026-10-30 | Customer address and map coordinates; roaming lock (ISP-wide or per customer: only through the router on the account); manual connect for existing customers with reason, actor and expiry before/after; vouchers with a last day to use, single named vouchers with SMS, apply a voucher to an account; referral and daily-visit loyalty points; data completeness and metric definitions on the dashboard and Reports | `test/extras.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | WireGuard page: routers and time-limited staff laptops on 10.99.0.0/24, keys generated and shown once, host sync script applies peers to wg0 every minute, limits staff to routers' management ports (Winbox jump box) and reports handshakes back. Fixed a dashboard script error from the previous increment | `test/wireguard.test.cjs` |
 | 2026-10-30 | Daily rollups (hourly average/peak traffic, CPU, customers online per router) kept 400 days; dashboard 30-day and 3-month ranges; weekday × hour heatmaps of traffic and customers online in Reports. Per-person permissions (allow / do not allow on top of the role) and router scope enforced on customers, profiles, changes, bulk, statics and router jobs; router choice on every customer | `test/rollup.test.cjs`, `test/access.test.cjs` |
@@ -95,8 +96,8 @@ Update this file with every increment.
 | Config backups with diffs | Done | nightly export over existing channel; not encrypted separately from DB |
 | Device jobs (reboot, upgrade, backup, push pages, static apply) | Done | opt-in runner; reboot/upgrade typed confirmation, admin only |
 | Topology/neighbour map | Done | |
-| OLT list and detection from neighbours | Partial | no vendor operations |
-| TR-069 (GenieACS) | Partial | inventory/refresh/reboot/Wi-Fi exist; customer CPE enrolment pending |
+| OLT list, detection, ONU operations | Done | ONU reboot/disable/enable/remove via the vendor gateway (docs/OLT-GATEWAY.md); the gateway itself is per vendor and must be built for your OLT |
+| TR-069 (GenieACS) | Done | inventory, refresh, reboot, Wi-Fi, customer CPE enrolment with PPPoE login push |
 | WireGuard management UI | Done | Operations → WireGuard & Winbox access; needs `sudo bash deployment/wireguard/sync-peers.sh --install` once on the server |
 | Free mode | Done | Speed rules & free mode page |
 | Winbox jumpbox | Done | staff WireGuard access (1–168 h) to routers' 8291/22/80/443/8728/8729 only |
