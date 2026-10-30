@@ -46,3 +46,11 @@ test('picture questions: images on answers, and opinion questions where any pick
   assert.deepEqual(store.get('quizzes',q.id).picks,[0,1,0]);
  }finally{done();}
 });
+test('quiz results for a period: attempts, passed and picks per answer',()=>{
+ const {store,done}=fx();try{const plan=store.put('plans',radius.plan({name:'Q',service:'hotspot',downloadMbps:2,uploadMbps:1,price:10,durationValue:1,durationUnit:'hours'}));
+  const q=engage.saveQuiz(store,{question:'Capital?',options:'Mombasa\nNairobi',answer:1,active:true,earn:{planId:plan.id,minutes:5}});
+  engage.answer(store,portal.grantFree,q.id,{choice:0,mac:'AA:BB:CC:DD:EE:41'});engage.answer(store,portal.grantFree,q.id,{choice:1,mac:'AA:BB:CC:DD:EE:42'});engage.answer(store,portal.grantFree,q.id,{choice:1,mac:'AA:BB:CC:DD:EE:43'});
+  const r=engage.results(store,7);assert.deepEqual([r.attempts,r.passed,r.passRate],[3,2,67]);assert.deepEqual(r.quizzes[0].picks,[1,2]);
+  assert.equal(engage.results(store,7,Date.now()+8*864e5).attempts,0,'older answers drop out of the period');
+ }finally{done();}
+});

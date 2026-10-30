@@ -216,7 +216,7 @@ function createApp(options={}){
   const wgRoute=route.match(/^\/api\/wireguard\/([a-f0-9-]{36})$/);
   if(wgRoute&&method==='PATCH'){role(user,['admin']);const saved=wireguard.setEnabled(store,wgRoute[1],(await body(req)).enabled===true);store.audit(user,(saved.enabled?'Enabled':'Disabled')+' WireGuard peer '+saved.name,saved.id);return json(res,200,saved);}
   if(wgRoute&&method==='DELETE'){role(user,['admin']);const p=wireguard.remove(store,wgRoute[1]);store.audit(user,'Removed WireGuard peer '+p.name,p.id);return json(res,200,{removed:true});}
-  if(route==='/api/engage'&&method==='GET'){role(user,['admin','manager','operator']);return json(res,200,{ads:store.list('ads'),quizzes:store.list('quizzes')});}
+  if(route==='/api/engage'&&method==='GET'){role(user,['admin','manager','operator']);const days=[7,30,90].includes(Number(url.searchParams.get('days')))?Number(url.searchParams.get('days')):30;return json(res,200,{ads:store.list('ads'),quizzes:store.list('quizzes'),results:engage.results(store,days)});}
   const enRoute=route.match(/^\/api\/engage\/(ads|quizzes)(?:\/([a-f0-9-]{36}))?$/);
   if(enRoute&&['POST','PATCH','DELETE'].includes(method)){role(user,['admin','manager']);const kind=enRoute[1],existing=enRoute[2]?store.get(kind,enRoute[2]):null;if(enRoute[2]&&!existing)throw error(404,'Not found');
    if(method==='DELETE'){if(!existing)throw error(400,'Select one');store.remove(kind,existing.id);store.audit(user,'Removed '+(kind==='ads'?'advert':'quiz'),existing.id);return json(res,200,{removed:true});}

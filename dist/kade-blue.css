@@ -235,3 +235,6 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 #main:is([data-tab=sms],[data-tab=mpesa],[data-tab=payments]) .page-heading .heading-actions{display:none!important}
 /* One ISP, not a multi-business platform: no workspace switcher */
 .sidebar .workspace{display:none!important}
+/* Quiz results */
+.qr-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:0 18px 14px}.qr-tiles>div{border:1px solid var(--border);border-radius:8px;padding:12px 14px}.qr-tiles b{display:block;font-size:22px}.qr-tiles small{color:var(--muted)}
+.qr-list{display:grid;gap:14px;padding:0 18px 18px}.qr-q>small{display:block;color:var(--muted);margin:2px 0 8px}.qr-q .rp-hbars{margin:0}.qr-q .rp-hbars li{grid-template-columns:200px 1fr 60px}
