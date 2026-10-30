@@ -463,3 +463,4 @@ body.phone-frame .pkgs{scrollbar-width:none}body.phone-frame .pkgs::-webkit-scro
 
 body[data-layout=swipe] .pkgs{scrollbar-width:none}body[data-layout=swipe] .pkgs::-webkit-scrollbar{display:none}
 .pkg.off{opacity:.55;cursor:not-allowed}.pkg.off:hover{transform:none}
+.free-banner{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;background:#13895f;color:#fff;font-size:14px}.free-banner .btn{background:#fff;color:#13895f;padding:8px 16px;width:auto}

@@ -13,7 +13,7 @@ test('package policy validates burst, FUP and purchase windows, and old packages
  assert.throws(()=>radius.plan({...base,fup:{enabled:true,downCapMB:500,afterDownMbps:6,afterUpMbps:1}}),/must be lower/);
  assert.throws(()=>radius.plan({...base,window:{days:true,weekdays:[]}}),/at least one day/);
  assert.throws(()=>radius.plan({...base,features:Array(9).fill('x')}),/Up to 8 features/);
- const n=radius.plan({...base,notices:{expired:'on',before:'5,60,999'}});assert.deepEqual(n.notices,{expired:true,before:[5,60]});
+ const n=radius.plan({...base,notices:{expired:'on',before:'5,60,999'}});assert.deepEqual(n.notices,{usage:[],expired:true,before:[5,60]});
 });
 test('purchase windows stop new sales only; overnight windows wrap; hidden packages leave the portal',async()=>{
  const {store,done}=fx();try{
@@ -45,5 +45,16 @@ test('package notices: minutes before expiry and on expiry, once each, at any ho
   await billing.runReminders(store,night,fetchImpl);await billing.runReminders(store,night+60000,fetchImpl);assert.equal(sent.length,1,'60-minute notice once');
   await billing.runReminders(store,night+41*60000,fetchImpl);assert.equal(sent.length,2,'10-minute notice');
   await billing.runReminders(store,night+51*60000,fetchImpl);await billing.runReminders(store,night+52*60000,fetchImpl);assert.equal(sent.length,3,'expired notice once');
+ }finally{done();}
+});
+test('fair-usage SMS at 50% and 100% of the cap, once each per period',async()=>{
+ const {store,done}=fx();try{const sent=[],MB=1048576,now=Date.UTC(2026,9,26,9,0);
+  billing.setSmsConfig(store,{provider:'custom',url:'https://sms.example/send',apiKey:'k',senderId:'KADE'});
+  const fetchImpl=async(url,o)=>{sent.push(String(o.body));return {ok:true,status:200,text:async()=>JSON.stringify({status_code:1000})};};
+  const p=store.put('plans',radius.plan({...base,fup:{enabled:true,downCapMB:100,afterDownMbps:1,afterUpMbps:0.5},notices:{usage:[50,100]}}));
+  store.put('subscribers',radius.subscriber(store,{name:'Cee Dee',username:'c1',service:'hotspot',planId:p.id,phone:'0712345678',expiresAt:now+12*36e5}));
+  const add=(id,bytes)=>store.db.prepare("INSERT INTO records(kind,id,body,created,updated) VALUES('radiusSessions',?,?,?,?)").run(id,JSON.stringify({username:'c1',startedAt:now-36e5,updatedAt:now-60000,downloadBytes:bytes}),now,now);
+  add('u1',60*MB);await billing.runReminders(store,now,fetchImpl);await billing.runReminders(store,now+60000,fetchImpl);assert.equal(sent.length,1);assert.match(sent[0],/50%/);
+  add('u2',45*MB);await billing.runReminders(store,now+120000,fetchImpl);assert.equal(sent.length,2);assert.match(sent[1],/100%/);
  }finally{done();}
 });

@@ -93,3 +93,4 @@ dialog.pk-editor{width:min(820px,96vw);max-width:none}.pk-tabs{display:flex!impo
 .pk-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.pk-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px}.pk-chip:has(input:checked){border-color:var(--teal);background:var(--teal-soft)}
 .pk-order{white-space:nowrap}.pk-order .ra-btn{width:28px;height:28px;padding:0;justify-content:center;font-size:10px}
 .pk-chip input,.pk-switch input{width:16px!important;height:16px!important;min-height:0!important;padding:0!important;margin:0!important;flex:none;box-shadow:none}.pk-chip{flex-direction:row}
+.pf-steps{margin:6px 0;padding-left:20px;font-size:13px}

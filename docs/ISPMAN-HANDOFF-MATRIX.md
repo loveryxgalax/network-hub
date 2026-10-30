@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Speed rules (raise/cut/exact; ISP, router, package, customer; schedules; end time = flight speed) with explanation; free mode (routers, package, end time, portal button); daily FUP and adaptive steps; fair-usage SMS 50/80/100%; packages limited to routers; package version history and payment version | `test/speed.test.cjs`, `test/packages.test.cjs` |
 | 2026-10-30 | Outage compensation (preview, fixed cut-off, idempotent grants with before/after), never-paid state, PPPoE deactivation grace, installation fee default/override/waive settled before the package, per-customer device limit | `test/accounts.test.cjs` |
 | 2026-10-30 | Staff M-Pesa payment request (STK) from the customer profile, rate-limited and audited; renews on Safaricom confirmation | `test/ispman-menu.test.cjs` |
 | 2026-10-30 | Package policy: tabbed editor (Details, Burst, Fair usage, Notifications, Time & day of purchase, Other), RADIUS burst/FUP/idle/interim enforcement, purchase windows on the portal, per-package expiry SMS, package ordering, hidden/off-sale | `test/packages.test.cjs` |
@@ -55,16 +56,16 @@ Update this file with every increment.
 | Features list, popular badge, order/reorder | Done | portal shows features and badge |
 | Burst (limit, threshold, averaging time) with validation | Done | `Mikrotik-Rate-Limit` burst form |
 | FUP: upload/download caps, online-time cap, reduced speed | Done | evaluated per paid period at login; takes effect on reconnect (no CoA) |
-| Adaptive FUP, daily FUP reset | Missing | |
+| Adaptive FUP, daily FUP reset | Done | up to 2 extra steps; daily resets at Nairobi midnight |
 | Notifications: on expiry and minutes/hours/days before | Done | per-package; deduplicated; runs every minute |
-| Usage-threshold notifications | Missing | |
+| Usage-threshold notifications | Done | 50/80/100% of the download cap |
 | Time & day of purchase (overnight windows) | Done | blocks new sales only; active packages keep working |
 | Off sale / hide from landing page | Done | |
 | Free trial, earned-by-ad/quiz packages | Missing | |
 | Customize (quantity pricing, bulk discount) | Missing | |
-| Speed override (raise slower / cut faster / exact), schedules | Missing | |
-| Router-scoped packages / hotspot configurations | Missing | packages are global |
-| Policy versioning / snapshot on purchase | Missing | edits apply at next login; payments record amount paid |
+| Speed override (raise slower / cut faster / exact), schedules | Done | Speed rules page; profile shows the effective speed and why |
+| Router-scoped packages | Done | RADIUS refuses the package on other routers |
+| Policy versioning / snapshot on purchase | Done | version history per package; payments store version, name and price |
 
 ### Payments, wallets, invoices (§6)
 | Item | Status | Notes |
@@ -87,7 +88,8 @@ Update this file with every increment.
 | OLT list and detection from neighbours | Partial | no vendor operations |
 | TR-069 (GenieACS) | Partial | inventory/refresh/reboot/Wi-Fi exist; customer CPE enrolment pending |
 | WireGuard management UI | Missing | tunnels made with `deployment/wireguard/*.sh` |
-| Winbox jumpbox, free mode | Missing | |
+| Free mode | Done | Speed rules & free mode page |
+| Winbox jumpbox | Missing | |
 
 ### Inventory and onboarding (§8)
 | Item | Status | Notes |

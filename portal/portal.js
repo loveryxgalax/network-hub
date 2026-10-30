@@ -46,7 +46,7 @@ const STR={
   paid:'Malipo yamepokelewa',accActive:'Akaunti <strong>{u}</strong> iko hai hadi <strong>{d}</strong>.',restart:'Usipounganishwa ndani ya dakika moja, zima na uwashe router yako.',wifiActive:'Wi-Fi yako iko hai hadi <strong>{d}</strong>. Hifadhi hizi uingie kwenye kifaa kingine:',
   code:'Msimbo',password:'Nenosiri',connecting:'Tunakuunganisha sasa…',joinWifi:'Jiunge na Wi-Fi ya {b} na uingie kwa msimbo huu.',ok:'Sawa',valid:'Msimbo huu ni sahihi. Jiunge na Wi-Fi ya {b} kuutumia.',
   statusActive:'Iko hai',statusExpired:'Imeisha muda',statusSuspended:'Imezimwa',until:'Hadi {d}',expiredOn:'Iliisha {d}',suspendedMsg:'Akaunti hii imezimwa. Wasiliana nasi.',passLabel:'Nenosiri',connect:'Unganisha',
-  renew:'Lipia {a}',mpesaLabel:'Nambari ya M-Pesa',promo:'Msimbo wa punguzo (hiari)',wallet:'Akiba',dataMonth:'Data mwezi huu'},
+  renew:'Lipia {a}',mpesaLabel:'Nambari ya M-Pesa',promo:'Msimbo wa punguzo (hiari)',freeTitle:'WiFi ya bure sasa!',freeUntil:'Mpaka saa {t}.',freeGo:'Unganisha bure',freeNeedWifi:'Fungua ukurasa huu ukiwa kwenye WiFi yetu.',wallet:'Akiba',dataMonth:'Data mwezi huu'},
  en:{needHelp:'Need help?',manageSub:'Enter your account details to manage your connection',otgTitle:'Use our On-the-Go WiFi wherever you are',otgSub:'Affordable packages at our hotspots',
   accountLead:'Enter your account number or paste a message from us.',detecting:'Looking for your connection on this network…',notFound:"We couldn't find a connection on this device. Use your account number below.",found:'Found you!',
   connectFind:'Connect to your {brand} account.',findBtn:'Find my account',howTitle:'How to access your account',how1:'Enter your account number or username',how2:'Or paste any message from us (payment confirmation, SMS notification, etc.)',
@@ -60,7 +60,7 @@ const STR={
   paid:'Payment received',accActive:'Account <strong>{u}</strong> is active until <strong>{d}</strong>.',restart:'If you are not online within a minute, restart your router.',wifiActive:'Your Wi-Fi is active until <strong>{d}</strong>. Save these to log in on another device:',
   code:'Code',password:'Password',connecting:'Connecting you now…',joinWifi:'Join the {b} Wi-Fi and log in with this code.',ok:'OK',valid:'This code is valid. Join the {b} Wi-Fi to use it.',
   statusActive:'Active',statusExpired:'Expired',statusSuspended:'Deactivated',until:'Until {d}',expiredOn:'Expired {d}',suspendedMsg:'This account is deactivated. Please contact us.',passLabel:'Password',connect:'Connect',
-  renew:'Renew {a}',mpesaLabel:'M-Pesa number',promo:'Promo code (optional)',wallet:'Wallet',dataMonth:'Data this month'}
+  renew:'Renew {a}',mpesaLabel:'M-Pesa number',promo:'Promo code (optional)',freeTitle:'Free WiFi now!',freeUntil:'Until {t}.',freeGo:'Connect free',freeNeedWifi:'Open this page while connected to our WiFi.',wallet:'Wallet',dataMonth:'Data this month'}
 };
 
 /* ===================== STATE ===================== */
@@ -116,6 +116,7 @@ function render(){
  $('#accountCol').classList.toggle('hide',!CFG.show.findAccount&&!CFG.show.accessAccount);$('.contactCard').classList.toggle('hide',!CFG.show.contact||!contactItems.length);
  $('.lights').innerHTML=Array.from({length:24},()=>'<i></i>').join('');CFG.theme==='christmas'?startSnow():stopSnow();
  if(isAdmin)renderAdmin();
+ renderFree();
 }
 
 /* ===================== ACCOUNT ===================== */
@@ -165,6 +166,10 @@ function busy(on){$('#portal-wait').hidden=!on;if(on){closeSheet();$('#portal-do
 function done(html){busy(false);$('#done-card').innerHTML=html;$('#portal-done').hidden=false;document.body.style.overflow='hidden';const back=$('#done-back');if(back)back.onclick=()=>{$('#portal-done').hidden=true;document.body.style.overflow='';};}
 function fail(kind,message){busy(false);$('#portal-done').hidden=true;if(kind!=='account'&&selected)openSheet(selected.id,selected.kind);alertBox(message);}
 // A top-level GET to the router's own login page (a form post to its plain-HTTP address would trigger a browser warning).
+let freeMode=null;
+function renderFree(){let el=$('#free-banner');if(!freeMode){if(el)el.remove();return;}if(!el){el=document.createElement('div');el.id='free-banner';el.className='free-banner';document.body.prepend(el);}
+ const until=new Date(freeMode.until).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});el.innerHTML=`<span><b>${esc(t('freeTitle'))}</b> ${esc(t('freeUntil',{t:until}))}${freeMode.reason?' · '+esc(freeMode.reason):''}</span><button type="button" class="btn" id="free-go">${esc(t('freeGo'))}</button>`;
+ $('#free-go').onclick=async()=>{alertBox('');try{if(!router.login){alertBox(t('freeNeedWifi'),true);return;}const r=await call('login',{method:'POST',body:JSON.stringify({free:true,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}catch(e){alertBox(e.message);}};}
 async function routerLogin(username,password){
  if(!router.login){await call('login',{method:'POST',body:JSON.stringify({username,password})});return false;}
  const r=await call('login',{method:'POST',body:JSON.stringify({username,password,chapId:router.chapId,chapChallenge:router.chapChallenge})});
@@ -236,7 +241,7 @@ async function boot(){
  render();
  const q=params.get('theme');
  try{
-  const d=await call('config');CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;state='ok';
+  const d=await call('config');CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;freeMode=d.freeMode||null;state='ok';
   try{if(!localStorage.getItem('portal-lang'))LANG=CFG.defaultLang||LANG;}catch{LANG=CFG.defaultLang||LANG;}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;
