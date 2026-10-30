@@ -12,6 +12,8 @@ sudo apt-get update -qq
 sudo apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo usermod -aG docker "$USER"
 sudo systemctl enable --now docker chrony
+# Some hosts (HOSTKEY Frankfurt) block Ubuntu's default time servers; Cloudflare's answers there. Correct time matters for M-Pesa, expiries and certificates.
+echo 'server time.cloudflare.com iburst' | sudo tee /etc/chrony/sources.d/netops.sources >/dev/null && sudo systemctl restart chrony
 # Small servers (for example Google's free e2-micro, ~1 GB RAM) need swap for MongoDB, GenieACS and image builds.
 if [ "$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo)" -lt 3000 ] && [ "$(swapon --show --noheadings | wc -l)" -eq 0 ]; then
   sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile >/dev/null && sudo swapon /swapfile
@@ -23,5 +25,5 @@ sudo dpkg-reconfigure -f noninteractive unattended-upgrades
 sudo ufw default deny incoming && sudo ufw default allow outgoing && sudo ufw allow OpenSSH && sudo ufw allow 51820/udp comment 'netops WireGuard' && sudo ufw --force enable
 # Block repeated SSH login attempts.
 sudo systemctl enable --now fail2ban
-echo "Architecture: $(uname -m)"; timedatectl | grep -E "synchronized|Time zone"
+echo "Architecture: $(uname -m)"; sleep 20; timedatectl | grep -E "synchronized|Time zone"
 echo "Done. Log out and back in so the docker group applies, then run: docker run --rm hello-world"
