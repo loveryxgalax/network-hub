@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Network assistant on Claude (owner's Anthropic API key; read-only snapshot with no customer contact data; refusals retried on a fallback model) | `test/assistant.test.cjs` |
 | 2026-10-30 | TR-069 customer CPE enrolment (CPE PPPoE login read from the ACS, link to a customer, write the customer's PPPoE login with setParameterValues; linked CPE on the profile); ONU reboot/disable/enable/remove through the OLT gateway contract with verification and reconciliation | `test/acs-enroll.test.cjs`, `test/workspace.test.cjs` |
 | 2026-10-30 | Customer address and map coordinates; roaming lock (ISP-wide or per customer: only through the router on the account); manual connect for existing customers with reason, actor and expiry before/after; vouchers with a last day to use, single named vouchers with SMS, apply a voucher to an account; referral and daily-visit loyalty points; data completeness and metric definitions on the dashboard and Reports | `test/extras.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | WireGuard page: routers and time-limited staff laptops on 10.99.0.0/24, keys generated and shown once, host sync script applies peers to wg0 every minute, limits staff to routers' management ports (Winbox jump box) and reports handshakes back. Fixed a dashboard script error from the previous increment | `test/wireguard.test.cjs` |
@@ -123,7 +124,7 @@ Update this file with every increment.
 | Email sending | Done | Comms → Email & alert escalation; needs an API key and a verified sender domain |
 | Customer support tickets | Done | linked by customer account (older tickets still match by name) |
 | Alerts (router health, outages, RADIUS, config change) | Done | escalation after delays, up to three levels |
-| Assistant | Partial | existing network assistant page |
+| Assistant | Done | Workspace → Network assistant; needs an Anthropic API key, usage billed to that account |
 
 ### Branding and portal (§11)
 | Item | Status | Notes |

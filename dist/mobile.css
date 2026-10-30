@@ -106,3 +106,8 @@ table.hm td{height:22px;border-radius:4px;background:color-mix(in srgb,var(--acc
 .perm-table select{min-width:160px}
 .kd-defs{margin-top:16px;padding:12px 16px}.kd-defs summary{cursor:pointer;font-weight:600}.kd-defs dl{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:8px 16px;margin:12px 0 0}.kd-defs dt{font-weight:600}.kd-defs dd{margin:0;opacity:.8}
 @media (max-width:640px){.kd-defs dl{grid-template-columns:1fr}.kd-defs dd{margin-bottom:6px}}
+
+.as-chat #as-log{max-height:55vh;overflow:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.as-msg{white-space:pre-wrap;padding:10px 14px;border-radius:12px;max-width:85%;line-height:1.5}.as-user{align-self:flex-end;background:var(--accent,#0d8a74);color:#fff}
+.as-assistant{align-self:flex-start;background:rgba(127,127,127,.1)}.as-wait{opacity:.6}.as-form textarea{width:100%;margin-bottom:8px}
+#as-body{display:flex;flex-direction:column;gap:16px}#as-body>section.card{padding:20px}
