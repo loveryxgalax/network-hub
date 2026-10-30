@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Onboarding board (Leads → Site survey → Installation scheduled → Installed → Completed / Lost; scheduling creates the installation work order; customer account made from the lead); stock requests with approve/issue and FIFO costing, stock receipts with unit cost; tickets linked to the customer account; email provider (Resend, Brevo, SendGrid) with customer copies and log; alert escalation in up to three levels by SMS/email | `test/ops.test.cjs`, `test/comms.test.cjs` |
 | 2026-10-30 | Money: append-only ledger in whole cents with a hash chain and CSV export; payment reversal (typed reference, undoes days/wallet/installation fee/points exactly once); wallet loaded vs pending and staff adjustments with reasons; refunds and withdrawals with request → approve (second admin when there is one) → paid by hand or M-Pesa B2C with result callback and hold release on failure; Paystack card/mobile-money checkout with server-side verification and signed webhooks; revenue figures exclude reversed payments | `test/money.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | Static IP service (per-router networks, automatic addresses, ARP pinning, speed queue, expired → blocked address list, Save only / Save & apply, PPPoE↔static conversion); family accounts; customer PINs and PIN dispatch; device/OS/browser per MAC and portal visits by hour/OS/device; roaming log; bulk actions with preview, count+version check and typed delete; free trial per device; buy several units with bulk discounts | `test/services.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | Opt-in router job runner (whitelisted jobs, scoped token, retries with backoff, timeouts, typed confirmation for reboot/upgrade); customer Connect/Disconnect/Reset device/Flight speed; push portal pages to routers; provisioning-failed state | `test/jobs.test.cjs` |
@@ -99,8 +100,8 @@ Update this file with every increment.
 ### Inventory and onboarding (§8)
 | Item | Status | Notes |
 |---|---|---|
-| Stock items, movements | Partial | existing fibre/stock module; no requests/approvals/FIFO |
-| Onboarding board (Leads → Completed) | Missing | |
+| Stock items, movements, requests/approvals, FIFO | Done | Operations → Stock requests; issues are costed oldest receipt first |
+| Onboarding board (Leads → Completed) | Done | Operations → Onboarding |
 
 ### Growth (§9)
 | Item | Status | Notes |
@@ -114,9 +115,9 @@ Update this file with every increment.
 | Item | Status | Notes |
 |---|---|---|
 | SMS provider (custom/BlessedTexts, Africa's Talking), templates, reminders, campaigns, log | Done | |
-| Email sending | Missing | needs mail provider |
-| Customer support tickets | Partial | linked by customer name |
-| Alerts (router health, outages, RADIUS, config change) | Done | escalation/notification delays missing |
+| Email sending | Done | Comms → Email & alert escalation; needs an API key and a verified sender domain |
+| Customer support tickets | Done | linked by customer account (older tickets still match by name) |
+| Alerts (router health, outages, RADIUS, config change) | Done | escalation after delays, up to three levels |
 | Assistant | Partial | existing network assistant page |
 
 ### Branding and portal (§11)
