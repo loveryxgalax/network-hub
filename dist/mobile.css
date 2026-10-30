@@ -99,3 +99,6 @@ dialog.pk-editor{width:min(820px,96vw);max-width:none}.pk-tabs{display:flex!impo
 .ob-col header{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:2px 4px}.ob-col header span{opacity:.6}
 .ob-card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:3px;background:var(--card,#fff);border:1px solid var(--line,rgba(127,127,127,.18));border-radius:10px;padding:10px 12px}
 .ob-card:hover,.ob-card:focus-visible{border-color:var(--accent,#0d8a74);outline:none}.ob-card small{opacity:.75;font-size:12px}.ob-card .status{align-self:flex-start;margin-top:4px}
+.hm-ctl{display:flex;gap:8px;flex-wrap:wrap}.hm-wrap{overflow-x:auto}
+table.hm{border-collapse:separate;border-spacing:3px;width:100%;min-width:620px}table.hm th{font-size:11px;font-weight:600;opacity:.65;text-align:left;padding:0 4px 0 0}
+table.hm td{height:22px;border-radius:4px;background:color-mix(in srgb,var(--accent,#0d8a74) calc(var(--a)*100%),rgba(127,127,127,.08))}

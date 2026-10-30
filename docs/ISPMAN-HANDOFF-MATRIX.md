@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Daily rollups (hourly average/peak traffic, CPU, customers online per router) kept 400 days; dashboard 30-day and 3-month ranges; weekday × hour heatmaps of traffic and customers online in Reports. Per-person permissions (allow / do not allow on top of the role) and router scope enforced on customers, profiles, changes, bulk, statics and router jobs; router choice on every customer | `test/rollup.test.cjs`, `test/access.test.cjs` |
 | 2026-10-30 | WiFi page: loading screen designs (spinner, dots, name, progress, none) applied before the page script runs; terms of service; French alongside Swahili and English; expired-PPPoE renewal page with the router rules; adverts (views, clicks, schedule, weight, free minutes after the full viewing time with a signed ticket) and daily quizzes (answer never sent to the page, one attempt per device per day) | `test/engage.test.cjs` |
 | 2026-10-30 | Onboarding board (Leads → Site survey → Installation scheduled → Installed → Completed / Lost; scheduling creates the installation work order; customer account made from the lead); stock requests with approve/issue and FIFO costing, stock receipts with unit cost; tickets linked to the customer account; email provider (Resend, Brevo, SendGrid) with customer copies and log; alert escalation in up to three levels by SMS/email | `test/ops.test.cjs`, `test/comms.test.cjs` |
 | 2026-10-30 | Money: append-only ledger in whole cents with a hash chain and CSV export; payment reversal (typed reference, undoes days/wallet/installation fee/points exactly once); wallet loaded vs pending and staff adjustments with reasons; refunds and withdrawals with request → approve (second admin when there is one) → paid by hand or M-Pesa B2C with result callback and hold release on failure; Paystack card/mobile-money checkout with server-side verification and signed webhooks; revenue figures exclude reversed payments | `test/money.test.cjs`, `test/services-http.test.cjs` |
@@ -30,14 +31,14 @@ Update this file with every increment.
 | Distinct states: paid online/offline, online-expired, expired, unpaid, deactivated, provisioning failed | Done | provisioning shown separately from the account state |
 | Reports: revenue by package/location/method, vouchers, usage, visits by time, heavy users, CSV | Done | `lib/reports.cjs`; Excel export is CSV |
 | Portal visits by device/OS | Done | captured when the WiFi page loads; Reports shows by hour, system and device |
-| Trends: 24h/7d/30d, heatmaps, fair-usage view | Partial | 1h/24h/7d only; no heatmaps |
+| Trends: 24h/7d/30d/3 months, heatmaps, fair-usage view | Done | 3 months from daily rollups; heatmaps in Reports; fair-usage state on each profile |
 | Metric definitions, "last updated", data completeness | Partial | freshness shown on routers; not on every chart |
 
 ### Customers and subscriptions (§4)
 | Item | Status | Notes |
 |---|---|---|
 | One customer table with filters, saved filters, CSV | Done | Customers page |
-| PPPoE create/edit (name, username, password, phone, email, package, static IP, notes) | Done | installation fee and device limit on the form; location field missing |
+| PPPoE create/edit (name, username, password, phone, email, package, static IP, notes) | Done | router, installation fee and device limit on the form; location field missing |
 | Customer profile: details, payments, sessions, usage, SMS, auth log, tickets | Done | profile dialog |
 | Actions: renew, payment, edit, SMS, password reveal, points | Done | |
 | Actions: STK request from profile | Done | uses the same confirmed-payment path as the portal |
@@ -133,7 +134,7 @@ Update this file with every increment.
 | Item | Status | Notes |
 |---|---|---|
 | Roles (owner/admin, manager, operator, technician, support, installer, viewer) | Done | server-enforced |
-| Capability-level permissions, branch/router scope | Missing | |
+| Capability-level permissions, branch/router scope | Done | Team → Permissions |
 | Activity log (who changed what) | Done | admin only |
 
 ## Next increments (in order)

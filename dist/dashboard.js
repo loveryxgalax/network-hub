@@ -27,7 +27,7 @@ function kdSkeleton(){
    <div class="kd-actions"><a class="kd-btn kd-btn-solid" href="#radius">${kdIcon('plus',16)} New subscriber</a><a class="kd-btn" href="#sites">${kdIcon('activity',16)} Sites &amp; traffic</a><a class="kd-btn" href="#mikrotiks">${kdIcon('router',16)} Routers</a></div></div></section>
  <section class="kd-kpis" id="kd-kpis"></section>
  <section class="kd-grid kd-main">
-  <article class="kd-card kd-wide"><header><div><h2>Network throughput</h2><p>Internet traffic through each router's uplink</p></div><div class="kd-tools"><select id="kd-router" aria-label="Router"></select><div class="segmented" id="kd-range">${[['1h','1 h'],['24h','24 h'],['7d','7 d']].map(([k,l])=>`<button type="button" data-range="${k}" class="${kd.range===k?'active':''}">${l}</button>`).join('')}</div></div></header><div id="kd-throughput" class="kd-chart"></div><footer class="kd-legend"><span><i style="background:var(--kd-cyan)"></i>Download</span><span><i style="background:var(--kd-violet)"></i>Upload</span><span class="kd-note" id="kd-peak"></span></footer></article>
+  <article class="kd-card kd-wide"><header><div><h2>Network throughput</h2><p>Internet traffic through each router's uplink</p></div><div class="kd-tools"><select id="kd-router" aria-label="Router"></select><div class="segmented" id="kd-range">${[['1h','1 h'],['24h','24 h'],['7d','7 d'],['30d','30 d'],['90d','3 m']].map(([k,l])=>`<button type="button" data-range="${k}" class="${kd.range===k?'active':''}">${l}</button>`).join('')}</div></div></header><div id="kd-throughput" class="kd-chart"></div><footer class="kd-legend"><span><i style="background:var(--kd-cyan)"></i>Download</span><span><i style="background:var(--kd-violet)"></i>Upload</span><span class="kd-note" id="kd-peak"></span></footer></article>
   <article class="kd-card"><header><div><h2>Router health</h2><p>CPU, memory and load right now</p></div><a class="kd-link" href="#mikrotiks">All routers →</a></header><div id="kd-routers" class="kd-routers"></div></article>
  </section>
  <section class="kd-grid kd-row3">
@@ -68,7 +68,7 @@ function kdPaint(animate){
  // Throughput chart
  const series=[{name:'Download',color:'var(--kd-cyan)',points:[]},{name:'Upload',color:'var(--kd-violet)',points:[]}],src=kd.router?pick[0]?.series.map(p=>[p[0],p[1],p[2]])||[]:d.totals.series;
  series[0].points=src.map(p=>[p[0],p[1]]);series[1].points=src.map(p=>[p[0],p[2]]);
- const peak=series[0].points.reduce((m,p)=>p[1]!=null&&p[1]>m[1]?p:m,[0,0]);$('#kd-peak').textContent=peak[1]?`Peak ${kc.fmtRate(peak[1])} at ${d.range==='7d'?kc.dayHour(peak[0]):kc.hhmm(peak[0])}`:'';
+ const peak=series[0].points.reduce((m,p)=>p[1]!=null&&p[1]>m[1]?p:m,[0,0]);$('#kd-peak').textContent=peak[1]?`Peak ${kc.fmtRate(peak[1])} at ${d.['7d','30d','90d'].includes(range)?kc.dayHour(peak[0]):kc.hhmm(peak[0])}`:'';
  kc.area($('#kd-throughput'),{series,height:340,unit:kc.fmtRate,axis:v=>v>=1000?(v/1000)+'G':v>=1?Math.round(v*10)/10:Math.round(v*1000)+'k',animate,label:'Network throughput',empty:'No throughput history yet',emptyHint:'Routers report every 30 seconds; the graph fills as data arrives.'});
  // Router health cards
  $('#kd-routers').innerHTML=routers.length?routers.map(r=>`<div class="kd-router ${r.status}"><div class="kd-router-head"><span class="kd-dot ${r.status}"></span><div><strong>${E(r.name)}</strong><small>${E([r.model,r.version&&'RouterOS '+r.version].filter(Boolean).join(' · ')||'Waiting for a report')}</small></div><span class="kd-state ${r.status}">${r.status==='online'?'Online':'Offline'}</span></div>
