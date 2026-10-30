@@ -7,8 +7,8 @@
 <meta name="theme-color" content="#0a3cff">
 <link rel="icon" type="image/png" href="/img/favicon.png">
 <link rel="preload" href="/fonts/maven-pro-700.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/portal/portal.css?v=9">
-<script src="/portal/portal.js?v=11" defer></script>
+<link rel="stylesheet" href="/portal/portal.css?v=10">
+<script src="/portal/portal.js?v=12" defer></script>
 </head>
 <body data-theme="midnight">
 <canvas id="snow"></canvas>
@@ -168,6 +168,7 @@
     <label id="sheet-phone-label"><span id="sheet-phone-text">M-Pesa number</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678"></label>
     <label id="sheet-promo-label"><span data-i18n="promo">Promo code (optional)</span><input name="promo" autocomplete="off" autocapitalize="characters" maxlength="24" placeholder="e.g. WELCOME20"></label>
     <button class="btn" type="submit" id="sheet-pay"><span id="sheet-pay-text">Pay with M-Pesa</span> <span aria-hidden="true">→</span></button>
+    <div id="sheet-card" class="hide"><label><span data-i18n="cardEmail">Email (for the card receipt)</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label><button type="button" class="btn ghost" id="sheet-card-pay"><span data-i18n="payCard">Pay with card</span></button></div>
     <button type="button" class="btn ghost hide" id="sheet-trial"></button>
     <p class="muted small" id="sheet-note"></p>
     <div class="contact hide" id="sheet-contact"></div>

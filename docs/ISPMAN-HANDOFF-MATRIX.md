@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Money: append-only ledger in whole cents with a hash chain and CSV export; payment reversal (typed reference, undoes days/wallet/installation fee/points exactly once); wallet loaded vs pending and staff adjustments with reasons; refunds and withdrawals with request → approve (second admin when there is one) → paid by hand or M-Pesa B2C with result callback and hold release on failure; Paystack card/mobile-money checkout with server-side verification and signed webhooks; revenue figures exclude reversed payments | `test/money.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | Static IP service (per-router networks, automatic addresses, ARP pinning, speed queue, expired → blocked address list, Save only / Save & apply, PPPoE↔static conversion); family accounts; customer PINs and PIN dispatch; device/OS/browser per MAC and portal visits by hour/OS/device; roaming log; bulk actions with preview, count+version check and typed delete; free trial per device; buy several units with bulk discounts | `test/services.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | Opt-in router job runner (whitelisted jobs, scoped token, retries with backoff, timeouts, typed confirmation for reboot/upgrade); customer Connect/Disconnect/Reset device/Flight speed; push portal pages to routers; provisioning-failed state | `test/jobs.test.cjs` |
 | 2026-10-30 | Speed rules (raise/cut/exact; ISP, router, package, customer; schedules; end time = flight speed) with explanation; free mode (routers, package, end time, portal button); daily FUP and adaptive steps; fair-usage SMS 50/80/100%; packages limited to routers; package version history and payment version | `test/speed.test.cjs`, `test/packages.test.cjs` |
@@ -77,10 +78,10 @@ Update this file with every increment.
 | M-Pesa STK (Daraja) with stkQuery confirmation, late callbacks, recheck | Done | |
 | M-Pesa C2B paybill with unmatched assignment | Done | URLs still registered to ISPman until the user moves them |
 | Payments list, receipts, invoices (print/PDF) | Done | |
-| Wallet balance, credit carry-over | Done | single balance; no loaded/pending categories |
-| Immutable ledger, integer minor units, reversals | Missing | amounts stored as KSh numbers with 2-dp rounding; no reversal flow |
-| Withdrawals | Skip | Kade receives money directly into its own paybill |
-| Other providers (Paystack, etc.) | Skip | not used in Kenya setup |
+| Wallet balance, credit carry-over | Done | loaded and pending (unconfirmed portal payments); staff adjustments go through the ledger |
+| Immutable ledger, integer minor units, reversals | Done | Payments → Ledger; hash-chained; existing payment records still hold KSh numbers, the ledger is in cents |
+| Refunds and withdrawals | Done | Payments → Refunds & withdrawals; M-Pesa B2C needs an initiator and security credential from the M-Pesa org portal, otherwise pay by hand and record the reference |
+| Other providers (Paystack) | Done | Payments → Card payments; off until a secret key is saved |
 
 ### Devices (§7)
 | Item | Status | Notes |

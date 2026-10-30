@@ -46,5 +46,21 @@ test('HTTP: static IP settings and conversion, family accounts, PINs, bulk, tria
   assert.equal((await pub('trial','POST',{planId:daily.id,mac:'AA:BB:CC:00:00:09'})).status,429,'one trial per device');
   const rep=(await api('reports?period=today')).body;assert.ok(rep.portalVisits.total>=1);assert.equal(rep.portalVisits.os[0].name,'Android');
   assert.equal((await api('roaming')).status,200);
+  // Money: payment → ledger, reversal (typed), wallet adjust, payout request/approve/paid, Paystack settings and webhook signature.
+  const paid=(await api('radius/subscribers/'+pp.id+'/payments','POST',{amount:1500,reference:'HTTPPAY1',method:'cash'})).body;assert.ok(paid.payment);
+  let lg=(await api('ledger')).body;assert.equal(lg.integrity.ok,true);assert.ok(lg.items.some(e=>e.ref==='HTTPPAY1'&&e.amountMinor===150000));
+  assert.equal((await api('payments/'+paid.payment.id+'/reverse','POST',{reason:'wrong account',confirm:'WRONG'})).status,400);
+  assert.equal((await api('payments/'+paid.payment.id+'/reverse','POST',{reason:'wrong account',confirm:'HTTPPAY1'})).status,200);
+  assert.equal((await api('payments/'+paid.payment.id+'/reverse','POST',{reason:'wrong account',confirm:'HTTPPAY1'})).status,409);
+  assert.equal((await api('radius/subscribers/'+hs.id+'/wallet','POST',{amount:200,reason:'goodwill'})).body.balance,200);
+  const po=(await api('payouts','POST',{kind:'refund',subscriberId:hs.id,amount:150,reason:'closing account',to:'cash'})).body;assert.equal(po.status,'requested');
+  assert.equal((await api('payouts/'+po.id+'/approve','POST',{})).body.status,'approved','the only admin may approve their own request');
+  assert.equal((await api('payouts/'+po.id+'/paid','POST',{reference:'CASH001'})).body.status,'paid');
+  assert.equal((await api('customers/'+hs.id+'/profile')).body.wallet.loaded,50);
+  const csv=await fetch(origin+'/api/ledger?format=csv',{headers:{Cookie:cookie}});assert.match(await csv.text(),/^seq,time,type/);
+  assert.equal((await api('paystack','PUT',{secretKey:'sk_test_'+'b'.repeat(40),currency:'KES'})).body.mode,'test');
+  assert.equal((await pub('config')).body.paystack,true);
+  const wh=await fetch(origin+'/portal/api/paystack/webhook',{method:'POST',headers:{'Content-Type':'application/json','x-paystack-signature':'0'.repeat(128)},body:'{"event":"charge.success"}'});assert.equal(wh.status,401);
+  assert.equal((await pub('b2c/'+'0'.repeat(36)+'/result','POST',{})).status,404);
  }finally{await new Promise(r=>app.server.close(r));await new Promise(r=>app.bridge.close(r));app.close?.();fs.rmSync(directory,{recursive:true,force:true});}
 });
