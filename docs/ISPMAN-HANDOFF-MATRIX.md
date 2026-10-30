@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Outage compensation (preview, fixed cut-off, idempotent grants with before/after), never-paid state, PPPoE deactivation grace, installation fee default/override/waive settled before the package, per-customer device limit | `test/accounts.test.cjs` |
 | 2026-10-30 | Staff M-Pesa payment request (STK) from the customer profile, rate-limited and audited; renews on Safaricom confirmation | `test/ispman-menu.test.cjs` |
 | 2026-10-30 | Package policy: tabbed editor (Details, Burst, Fair usage, Notifications, Time & day of purchase, Other), RADIUS burst/FUP/idle/interim enforcement, purchase windows on the portal, per-package expiry SMS, package ordering, hidden/off-sale | `test/packages.test.cjs` |
 
@@ -20,7 +21,7 @@ Update this file with every increment.
 | Item | Status | Notes |
 |---|---|---|
 | Dashboard counters, router health, revenue, expiring | Done | `dist/dashboard.js`, `lib/overview.cjs` |
-| Distinct states: paid online/offline, online-expired, expired, unpaid, deactivated, provisioning failed | Partial | active/expired/suspended + online exist; "unpaid" (never paid) and "provisioning failed" are not separate states |
+| Distinct states: paid online/offline, online-expired, expired, unpaid, deactivated, provisioning failed | Partial | all except provisioning failed (needs router jobs) |
 | Reports: revenue by package/location/method, vouchers, usage, visits by time, heavy users, CSV | Done | `lib/reports.cjs`; Excel export is CSV |
 | Portal visits by device/OS | Missing | needs user-agent capture on the portal |
 | Trends: 24h/7d/30d, heatmaps, fair-usage view | Partial | 1h/24h/7d only; no heatmaps |
@@ -41,10 +42,10 @@ Update this file with every increment.
 | Manual connects with actor/before/after | Partial | creates voucher-backed entitlement and audit entry; no before/after expiry record |
 | Static IP service (customers, per-router pools, ARP pinning, expiring) | Missing | static IP is only a field on PPPoE customers |
 | Bulk actions with explicit scope | Missing | campaigns only |
-| Outage compensation (preview + idempotent grant) | Missing | outage detection exists, compensation does not |
+| Outage compensation (preview + idempotent grant) | Done | |
 | MAC binding (PPPoE) | Done | per-ISP switch; roaming scopes/strict router assignment missing |
-| Installation fee default/override | Missing | |
-| PPPoE deactivation grace policy | Missing | expired PPPoE is restricted (address list), not deactivated |
+| Installation fee default/override | Done | settled from the first payment |
+| PPPoE deactivation grace policy | Done | 7–365 days, hourly check, payment reactivates |
 
 ### Packages and rate policy (§5)
 | Item | Status | Notes |
