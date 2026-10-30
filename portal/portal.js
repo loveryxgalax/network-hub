@@ -5,6 +5,12 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const params=new URLSearchParams(location.search);
 const router={login:params.get('login')||'',dst:params.get('dst')||'',chapId:params.get('chapId')||'',chapChallenge:params.get('chapChallenge')||'',mac:params.get('mac')||''};
+// Live "on the portal now" count for the netops dashboard: the view shown, pinged every 10 s while the page is visible.
+const presence={page:'Packages',service:'hotspot',tab:Math.random().toString(36).slice(2,10),timer:null};
+function here(page,service){if(page)presence.page=page;if(service)presence.service=service;if(params.get('admin')||params.get('frame'))return;
+ fetch('/portal/api/presence',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:presence.page,service:presence.service,mac:router.mac,nas:params.get('nas')||'',tab:presence.tab}),keepalive:true}).catch(()=>{});
+ clearTimeout(presence.timer);presence.timer=setTimeout(()=>{if(!document.hidden)here();},10000);}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)here();});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ===================== DESIGNS ===================== */
@@ -143,7 +149,7 @@ function render(){
 function extractAccount(text){const m=new RegExp(`\\b${CFG.accountPrefix}[-\\s]?[A-Z0-9]{3,}\\b`,'i').exec(text);return m?m[0].toUpperCase().replace(/\s/,'-'):null;}
 function showMsg(text,err=false){const m=$('#accMsg');m.className='msg'+(err?' err':'');m.textContent=text||'';}
 function alertBox(text,ok=false){const el=$('#portal-alert');if(!el)return;el.textContent=text;el.classList.toggle('ok',ok);el.hidden=!text;if(text)el.scrollIntoView({block:'center',behavior:'smooth'});}
-function renderAccount(a){
+function renderAccount(a){here('Account');
  const box=$('#accResult');
  if(!a.found){box.innerHTML='';return showMsg(t('noAccount'),true);}
  showMsg(a.pinError?t('pinWrong'):'',!!a.pinError);
@@ -173,7 +179,7 @@ $('#findBtn').addEventListener('click',detectSession);
 
 /* ===================== BUY SHEET & PAYMENT ===================== */
 function openSheet(id,kind){
- const p=(kind==='pppoe'?pppoePlans:plans).find(x=>x.id===id);if(!p)return;selected={id,kind};
+ const p=(kind==='pppoe'?pppoePlans:plans).find(x=>x.id===id);if(!p)return;selected={id,kind};here(kind==='pppoe'?'PPPoE Package':'Purchase Package',kind==='pppoe'?'pppoe':'hotspot');
  const home=kind==='pppoe';$('#sheet-kicker').textContent=home?t('homeInternet'):t('youPicked');$('#sheet-name').textContent=p.name;$('#sheet-price').textContent=kes(p.price);
  $('#sheet-facts').innerHTML=(home?[t('upTo',{n:p.downloadMbps}),t('unlimited'),p.duration]:[p.duration,t('upTo',{n:p.downloadMbps}),p.devices>1?t('devices',{n:p.devices}):t('device')]).map(f=>`<li>${esc(f)}</li>`).join('');
  const qs=$('#sheet-qty'),ql=$('#sheet-qty-label'),cu=!home&&p.custom;ql.classList.toggle('hide',!cu);if(cu){const price=n=>{const d=[...(p.custom.discounts||[])].reverse().find(x=>n>=x.minQty);return n===1?p.price:Math.max(1,Math.ceil(p.price*n*(1-(d?d.percent:0)/100)));};qs.innerHTML=Array.from({length:p.custom.maxQty},(_,i)=>i+1).map(n=>`<option value="${n}">${esc(t('qtyOpt',{n,p:kes(price(n))}))}</option>`).join('');qs.value='1';qs.onchange=()=>{$('#sheet-price').textContent=kes(price(Number(qs.value)));};}else qs.innerHTML='<option value="1">1</option>';
@@ -183,7 +189,7 @@ function openSheet(id,kind){
  const c=$('#sheet-contact');c.classList.toggle('hide',!home);c.innerHTML=home?[CFG.phone&&`<a href="tel:${esc(CFG.phone.replace(/\s/g,''))}"><span class="ico">${ICON.phone}</span><span><b>${t('call')}</b><small>${esc(CFG.phone)}</small></span></a>`,CFG.whatsapp&&`<a href="https://wa.me/${esc(intl(CFG.whatsapp))}" rel="noopener"><span class="ico">${ICON.chat}</span><span><b>${t('whatsapp')}</b><small>${esc(CFG.whatsapp)}</small></span></a>`].filter(Boolean).join(''):'';
  $('#sheet').hidden=false;document.body.style.overflow='hidden';if(!home)setTimeout(()=>{const i=$('#buy-form input[name=phone]');if(i&&!i.value)i.focus();},260);
 }
-function closeSheet(){$('#sheet').hidden=true;if($('#portal-wait').hidden&&$('#portal-done').hidden)document.body.style.overflow='';}
+function closeSheet(){$('#sheet').hidden=true;here('Packages','hotspot');if($('#portal-wait').hidden&&$('#portal-done').hidden)document.body.style.overflow='';}
 function busy(on){$('#portal-wait').hidden=!on;if(on){closeSheet();$('#portal-done').hidden=true;}document.body.style.overflow=on?'hidden':'';}
 function done(html){busy(false);$('#done-card').innerHTML=html;$('#portal-done').hidden=false;document.body.style.overflow='hidden';const back=$('#done-back');if(back)back.onclick=()=>{$('#portal-done').hidden=true;document.body.style.overflow='';};}
 function fail(kind,message){busy(false);$('#portal-done').hidden=true;if(kind!=='account'&&selected)openSheet(selected.id,selected.kind);alertBox(message);}
@@ -197,7 +203,7 @@ async function routerLogin(username,password){
  const r=await call('login',{method:'POST',body:JSON.stringify({username,password,chapId:router.chapId,chapChallenge:router.chapChallenge})});
  const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;return true;
 }
-async function pay(input){
+async function pay(input){here('Paying');
  alertBox('');lastKind=input.kind;busy(true);$('#wait-title').textContent=t('checkPhone');$('#wait-text').textContent=t('sending');
  try{const start=await call('pay',{method:'POST',body:JSON.stringify({...input,mac:router.mac})});$('#wait-text').textContent=t('enterPin',{a:kes(start.amount)});poll(start.id,start.token,Date.now());}catch(error){fail(input.kind,error.message);}
 }
@@ -296,6 +302,6 @@ async function boot(){
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;
  render();bootDone();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
- detectSession();checkAdmin();
+ detectSession();checkAdmin();here();
 }
 boot();

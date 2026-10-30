@@ -22,7 +22,28 @@ const paths = {
   activity:'M2 12h5l3-8 4 16 3-8h5',
   info:'M12 8h.01 M12 11v6 M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20',
   clock:'M12 6v6l4 2 M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20',
-  chevron:'M9 5l7 7-7 7'
+  chevron:'M9 5l7 7-7 7',
+  wifi:'M2 9a15 15 0 0 1 20 0 M5 12.5a10 10 0 0 1 14 0 M8.5 16a5 5 0 0 1 7 0 M12 19.5h.01',
+  network:'M10 3h4v4h-4z M3 17h4v4H3z M10 17h4v4h-4z M17 17h4v4h-4z M12 7v5 M5 17v-5h14v5 M12 12v5',
+  house:'M3 11l9-7 9 7 M5 10v10h14V10 M10 20v-5h4v5',
+  box:'M3 7l9-4 9 4-9 4z M3 7v10l9 4 9-4V7 M12 11v10',
+  users:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M2 21v-1a6 6 0 0 1 12 0v1 M16 3.5a4 4 0 0 1 0 7.5 M18 14a6 6 0 0 1 4 6v1',
+  wallet:'M3 6h15a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H3z M3 6l13-3v3 M16 13h.01',
+  eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12 M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
+  eyeoff:'M3 3l18 18 M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3 3.7 M6.6 6.6C3.9 8.3 2 12 2 12s4 7 10 7a9.6 9.6 0 0 0 5.4-1.6 M9.9 9.9a3 3 0 0 0 4.2 4.2',
+  headset:'M4 14v-2a8 8 0 0 1 16 0v2 M4 14h3v6H4z M17 14h3v6h-3z M20 20a4 4 0 0 1-4 2h-3',
+  shield:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4',
+  userplus:'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M2 21v-1a6 6 0 0 1 12 0v1 M19 8v6 M16 11h6',
+  chart:'M3 3v18h18 M7 15l4-4 3 3 6-6',
+  pie:'M12 3v9h9 M21 12A9 9 0 1 1 12 3',
+  receipt:'M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z M9 8h6 M9 12h6',
+  arrowdown:'M12 4v16 M6 14l6 6 6-6',
+  arrowup:'M12 20V4 M6 10l6-6 6 6',
+  card:'M2 6h20v12H2z M2 10h20 M6 15h4',
+  file:'M6 2h9l5 5v15H6z M14 2v6h6 M9 13h7 M9 17h7',
+  globe:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M2 12h20 M12 2a15 15 0 0 1 0 20 M12 2a15 15 0 0 0 0 20',
+  chat:'M4 4h16v12H8l-4 4z',
+  bolt:'M13 2L4 14h7l-1 8 9-12h-7z'
 };
 const icon = (name,size=17) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name] || paths.router}"/></svg>`;
 
