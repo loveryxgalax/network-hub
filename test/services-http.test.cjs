@@ -46,6 +46,9 @@ test('HTTP: static IP settings and conversion, family accounts, PINs, bulk, tria
   assert.equal((await pub('trial','POST',{planId:daily.id,mac:'AA:BB:CC:00:00:09'})).status,429,'one trial per device');
   const rep=(await api('reports?period=today')).body;assert.ok(rep.portalVisits.total>=1);assert.equal(rep.portalVisits.os[0].name,'Android');
   assert.equal((await api('roaming')).status,200);
+  assert.equal((await api('radius/manual-connect','POST',{subscriberId:hs.id,reason:''})).status,400,'a reason is required');
+  const before=(await api('customers/'+hs.id+'/profile')).body.subscriber.expiresAt,mc=(await api('radius/manual-connect','POST',{subscriberId:hs.id,reason:'Paid cash at office'})).body;
+  assert.equal(mc.before,before);assert.ok(mc.after>Math.max(Date.now(),before||0));assert.equal(mc.by,'svc@example.test');assert.equal((await api('radius/manual-connect')).body.items[0].reason,'Paid cash at office');
   // Money: payment → ledger, reversal (typed), wallet adjust, payout request/approve/paid, Paystack settings and webhook signature.
   const paid=(await api('radius/subscribers/'+pp.id+'/payments','POST',{amount:1500,reference:'HTTPPAY1',method:'cash'})).body;assert.ok(paid.payment);
   let lg=(await api('ledger')).body;assert.equal(lg.integrity.ok,true);assert.ok(lg.items.some(e=>e.ref==='HTTPPAY1'&&e.amountMinor===150000));

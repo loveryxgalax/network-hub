@@ -104,3 +104,5 @@ table.hm{border-collapse:separate;border-spacing:3px;width:100%;min-width:620px}
 table.hm td{height:22px;border-radius:4px;background:color-mix(in srgb,var(--accent,#0d8a74) calc(var(--a)*100%),rgba(127,127,127,.08))}
 .hm-ctl select{width:auto!important;min-width:0;flex:0 0 auto}#hm{padding:0 20px 18px}
 .perm-table select{min-width:160px}
+.kd-defs{margin-top:16px;padding:12px 16px}.kd-defs summary{cursor:pointer;font-weight:600}.kd-defs dl{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:8px 16px;margin:12px 0 0}.kd-defs dt{font-weight:600}.kd-defs dd{margin:0;opacity:.8}
+@media (max-width:640px){.kd-defs dl{grid-template-columns:1fr}.kd-defs dd{margin-bottom:6px}}

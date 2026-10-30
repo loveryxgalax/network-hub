@@ -249,13 +249,23 @@ function createApp(options={}){
    if(user.role==='installer')throw error(403,'Subscribers are not available to field installers');
    const write=()=>role(user,['admin','operator','manager']);
    if(route==='/api/radius'&&method==='GET'){const o=radius.overview(store),sc=access.scope(store,user);if(sc){const rm=compensation.routerOf(store);o.subscribers=o.subscribers.filter(x=>access.allowed(sc,x,rm));const names=new Set(o.subscribers.map(x=>x.username));for(const k of ['sessions','log'])if(Array.isArray(o[k]))o[k]=o[k].filter(x=>names.has(x.username));}return json(res,200,o);}
-   if(route==='/api/radius/manual-connect'&&method==='POST'){write();const input=await body(req);const plan=store.get('plans',String(input.planId||''));if(!plan||plan.service==='pppoe')throw error(400,'Choose a hotspot plan');
+   if(route==='/api/radius/manual-connect'&&method==='GET'){return json(res,200,{items:store.list('manualConnects').sort((a,b)=>b.time-a.time).slice(0,300)});}
+   if(route==='/api/radius/manual-connect'&&method==='POST'){write();const input=await body(req);
+    // An existing customer: one period of their own package without a payment, with a reason and the expiry before/after.
+    if(input.subscriberId){const why=String(input.reason||'').trim();if(why.length<4)throw error(400,'Give a reason for connecting without payment');let rec;
+     store.transaction(()=>{const s=store.get('subscribers',String(input.subscriberId));if(!s)throw error(404,'Customer not found');{const sc=access.scope(store,user);if(sc&&!access.allowed(sc,s,compensation.routerOf(store)))throw error(403,'This customer is on a router you do not manage');}const p=store.get('plans',s.planId);if(!p)throw error(409,'The customer has no package');
+      const before=s.expiresAt??null,after=Math.max(Date.now(),s.expiresAt||0)+radius.planMs(p);store.put('subscribers',{...s,status:'active',deactivatedReason:'',expiresAt:after},s);
+      rec=store.put('manualConnects',{subscriberId:s.id,username:s.username,name:s.name,planName:p.name,before,after,reason:why.slice(0,200),by:user.email,time:Date.now()});});
+     try{statics.sync(store,jobs,radius.stateOf,user);}catch{}store.audit(user,'Manual connect: '+rec.username+' until '+new Date(rec.after).toISOString()+' ('+rec.reason+')',rec.subscriberId);return json(res,201,rec);}
+    const plan=store.get('plans',String(input.planId||''));if(!plan||plan.service==='pppoe')throw error(400,'Choose a hotspot plan');
     const code=require('./lib/vouchers.cjs').generate(store,{planId:plan.id,count:1,length:6,name:'Manual connects',manual:true},user).codes[0],sub=require('./lib/vouchers.cjs').redeem(store,code);
-    store.put('subscribers',{...sub,name:String(input.name||'').trim().slice(0,80)||sub.name,phone:String(input.phone||'').trim().slice(0,20)},sub);store.audit(user,'Manual connect '+code,sub.id);
+    store.put('subscribers',{...sub,name:String(input.name||'').trim().slice(0,80)||sub.name,phone:String(input.phone||'').trim().slice(0,20)},sub);store.put('manualConnects',{subscriberId:sub.id,username:code,name:String(input.name||'').trim().slice(0,80)||'Walk-in',planName:plan.name,before:null,after:sub.expiresAt,reason:'New hotspot code',by:user.email,time:Date.now()});store.audit(user,'Manual connect '+code,sub.id);
     let sms=null;if(input.sms===true&&billing.phone(input.phone))sms=await billing.sendSms(store,input.phone,'Your Kade Networks '+plan.name+' code: '+code+'. Enter it on the WiFi page.','manual');
     return json(res,201,{code,plan:plan.name,expiresAt:sub.expiresAt,sms});}
    if(route==='/api/radius/vouchers'&&method==='GET'){return json(res,200,{batches:vouchers.batches(store)});}
-   if(route==='/api/radius/vouchers'&&method==='POST'){role(user,['admin','manager']);const out=vouchers.generate(store,await body(req),user);store.audit(user,'Generated '+out.codes.length+' vouchers',out.batch.id);return json(res,201,out);}
+   if(route==='/api/radius/vouchers'&&method==='POST'){role(user,['admin','manager']);const input=await body(req),out=vouchers.generate(store,input,user);store.audit(user,'Generated '+out.codes.length+' vouchers',out.batch.id);
+    if(input.sms===true&&billing.phone(input.assignedPhone)){const plan=store.get('plans',out.batch.planId);out.sms=await billing.sendSms(store,input.assignedPhone,`Hi ${String(input.assignedName||'').split(' ')[0]||'there'}, your Kade Networks ${plan?.name||''} WiFi code is ${out.codes[0]}. Enter it on the WiFi page.`,'voucher');}return json(res,201,out);}
+   if(route==='/api/radius/vouchers/apply'&&method==='POST'){role(user,['admin','manager','operator']);const input=await body(req),r=vouchers.applyTo(store,input.code,input.subscriberId);store.audit(user,'Applied voucher to '+r.subscriber.username,r.subscriber.id);return json(res,200,r);}
    const vRoute=route.match(/^\/api\/radius\/vouchers\/([a-f0-9-]{36})$/);
    if(vRoute){if(method==='GET')return json(res,200,{codes:vouchers.codes(store,vRoute[1])});if(method==='DELETE'){role(user,['admin','manager']);const out=vouchers.removeBatch(store,vRoute[1]);store.audit(user,'Deleted voucher batch',vRoute[1]);return json(res,200,out);}}
    if(route==='/api/radius/campaign'&&method==='GET')return json(res,200,{campaign:campaigns.status(store),running:campaigns.isRunning(),segments:campaigns.SEGMENTS});

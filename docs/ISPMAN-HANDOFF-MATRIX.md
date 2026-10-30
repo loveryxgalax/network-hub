@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Customer address and map coordinates; roaming lock (ISP-wide or per customer: only through the router on the account); manual connect for existing customers with reason, actor and expiry before/after; vouchers with a last day to use, single named vouchers with SMS, apply a voucher to an account; referral and daily-visit loyalty points; data completeness and metric definitions on the dashboard and Reports | `test/extras.test.cjs`, `test/services-http.test.cjs` |
 | 2026-10-30 | WireGuard page: routers and time-limited staff laptops on 10.99.0.0/24, keys generated and shown once, host sync script applies peers to wg0 every minute, limits staff to routers' management ports (Winbox jump box) and reports handshakes back. Fixed a dashboard script error from the previous increment | `test/wireguard.test.cjs` |
 | 2026-10-30 | Daily rollups (hourly average/peak traffic, CPU, customers online per router) kept 400 days; dashboard 30-day and 3-month ranges; weekday × hour heatmaps of traffic and customers online in Reports. Per-person permissions (allow / do not allow on top of the role) and router scope enforced on customers, profiles, changes, bulk, statics and router jobs; router choice on every customer | `test/rollup.test.cjs`, `test/access.test.cjs` |
 | 2026-10-30 | WiFi page: loading screen designs (spinner, dots, name, progress, none) applied before the page script runs; terms of service; French alongside Swahili and English; expired-PPPoE renewal page with the router rules; adverts (views, clicks, schedule, weight, free minutes after the full viewing time with a signed ticket) and daily quizzes (answer never sent to the page, one attempt per device per day) | `test/engage.test.cjs` |
@@ -33,13 +34,13 @@ Update this file with every increment.
 | Reports: revenue by package/location/method, vouchers, usage, visits by time, heavy users, CSV | Done | `lib/reports.cjs`; Excel export is CSV |
 | Portal visits by device/OS | Done | captured when the WiFi page loads; Reports shows by hour, system and device |
 | Trends: 24h/7d/30d/3 months, heatmaps, fair-usage view | Done | 3 months from daily rollups; heatmaps in Reports; fair-usage state on each profile |
-| Metric definitions, "last updated", data completeness | Partial | freshness shown on routers; not on every chart |
+| Metric definitions, "last updated", data completeness | Done | dashboard footer (routers reporting, customer lists, accounting) and definitions on dashboard and Reports |
 
 ### Customers and subscriptions (§4)
 | Item | Status | Notes |
 |---|---|---|
 | One customer table with filters, saved filters, CSV | Done | Customers page |
-| PPPoE create/edit (name, username, password, phone, email, package, static IP, notes) | Done | router, installation fee and device limit on the form; location field missing |
+| PPPoE create/edit (name, username, password, phone, email, package, static IP, notes) | Done | router, address, map coordinates, roaming, referral, installation fee and device limit on the form |
 | Customer profile: details, payments, sessions, usage, SMS, auth log, tickets | Done | profile dialog |
 | Actions: renew, payment, edit, SMS, password reveal, points | Done | |
 | Actions: STK request from profile | Done | uses the same confirmed-payment path as the portal |
@@ -48,11 +49,11 @@ Update this file with every increment.
 | Hotspot profile extras: device/browser/OS, recent MACs, child/family accounts | Done | family accounts share package/expiry and count toward the device limit |
 | Roaming events | Done | Hotspot → Roaming, from RADIUS accounting |
 | Connect requests | Done | Payment requests page (portal STK attempts) |
-| Manual connects with actor/before/after | Partial | creates voucher-backed entitlement and audit entry; no before/after expiry record |
+| Manual connects with actor/before/after | Done | new codes or one period for an existing customer, with reason |
 | Static IP service (customers, per-router pools, ARP pinning, expiring) | Done | router changes go through the job runner; without it the state shows "Not applied". Needs one firewall rule per router (shown on the settings page) |
 | Bulk actions with explicit scope | Done | add days, change package, deactivate, activate, delete (admin, typed) |
 | Outage compensation (preview + idempotent grant) | Done | |
-| MAC binding (PPPoE) | Done | per-ISP switch; roaming scopes/strict router assignment missing |
+| MAC binding (PPPoE), roaming scope | Done | MAC binding switch; roaming lock ISP-wide or per customer |
 | Installation fee default/override | Done | settled from the first payment |
 | PPPoE deactivation grace policy | Done | 7–365 days, hourly check, payment reactivates |
 
@@ -109,9 +110,9 @@ Update this file with every increment.
 ### Growth (§9)
 | Item | Status | Notes |
 |---|---|---|
-| Vouchers: batches, CSV, redeem at first login | Done | no single-customer assignment, no voucher expiry |
+| Vouchers: batches, CSV, redeem at first login | Done | last day to use, single named vouchers, apply to an account |
 | Campaigns with discount codes | Done | promo codes (percent/amount/bonus days, limits) |
-| Loyalty points (earn on payment, redeem to wallet) | Done | no referral/visit points |
+| Loyalty points (earn on payment, redeem to wallet) | Done | plus referral and daily visit points |
 | Advertising, quizzes | Done | Hotspot → Adverts & quizzes; images must be https |
 
 ### Communications and alerts (§10)
