@@ -82,7 +82,7 @@ for(const k of Object.keys(THEME_FR))THEME_COPY[k].fr=THEME_FR[k];
 
 
 /* ===================== STATE ===================== */
-let CFG={theme:'midnight',brandName:'Kade Networks',brandColor:'#0a3cff',intro:'',defaultLang:'sw',phone:'',whatsapp:'',email:'info@kadenetworks.com',accountPrefix:'KNE',popular:'',
+let CFG={theme:'midnight',brandName:'Kade Networks',brandColor:'#0032fd',intro:'',defaultLang:'sw',phone:'',whatsapp:'',email:'info@kadenetworks.com',accountPrefix:'KNE',popular:'',
  show:{pppoe:true,hotspot:true,findAccount:true,accessAccount:true,onTheGo:true,contact:true}};
 let plans=[],pppoePlans=[],mpesaOn=true,cardOn=false,state='loading',LANG='sw',selected=null,polling=null,lastKind='hotspot',csrf='',isAdmin=false;
 try{const s=localStorage.getItem('portal-lang');if(s&&STR[s])LANG=s;}catch{}
