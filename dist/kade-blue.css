@@ -215,3 +215,4 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .da-act{white-space:nowrap}.da-act .button{margin-left:4px}
 @media (max-width:640px){.da-tiles{grid-template-columns:1fr}}
 .da-tabs button small{display:inline;margin-left:4px}.da-act .button{padding:6px 12px;font-size:12.5px}
+.del-q{max-width:360px;margin:0 0 14px;display:block}

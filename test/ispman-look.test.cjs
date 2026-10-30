@@ -93,3 +93,15 @@ test('alerts: acknowledge and resolve record who; points award; self-service lin
   assert.equal((await api('radius/subscribers/'+sub.id+'/self-service','POST',{send:true})).status,400,'no phone');
  }finally{await new Promise(r=>app.server.close(r));fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('recently deleted: a deleted customer can be restored with the same id, password and payments; purge after 90 days',()=>{
+ const {store,done}=fx();try{const trash=require('../lib/trash.cjs'),plan=store.put('plans',radius.plan({name:'H',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days'}));
+  const s=store.put('subscribers',radius.subscriber(store,{name:'Visapoint',username:'visapoint',service:'pppoe',planId:plan.id,phone:'0794049151'}));radius.setPassword(store,s.id,'secret-pw-1');
+  store.put('subscriberPayments',{subscriberId:s.id,username:s.username,amount:1500,method:'mpesa',reference:'TJA1',time:Date.now()});
+  trash.remove(store,store.get('subscribers',s.id),{email:'brian@x.test',name:'Brian'});assert.equal(store.get('subscribers',s.id),null);
+  const l=trash.list(store);assert.equal(l.length,1);assert.equal(l[0].deletedBy,'brian@x.test');assert.equal(l[0].plan,'H');assert.equal(l[0].subscriber,undefined,'the list does not carry the full record');
+  const other=store.put('subscribers',radius.subscriber(store,{name:'New',username:'visapoint',service:'pppoe',planId:plan.id}));
+  assert.throws(()=>trash.restore(store,l[0].id,{}),/now used by another customer/);store.remove('subscribers',other.id);
+  const back=trash.restore(store,l[0].id,{email:'o@x.test'});assert.equal(back.id,s.id);assert.equal(radius.password(store,s.id),'secret-pw-1');assert.equal(back.restoredBy,'o@x.test');assert.equal(trash.list(store).length,0);
+  trash.remove(store,back,{});assert.equal(trash.purge(store,Date.now()+91*864e5),1);assert.equal(radius.password(store,s.id),null,'password forgotten after 90 days');
+ }finally{done();}
+});
