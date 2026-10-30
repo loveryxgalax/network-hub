@@ -10,7 +10,7 @@ const routerAgent=require('./lib/router-agent.cjs');
 const customers=require('./lib/customers.cjs');
 const sites=require('./lib/sites.cjs');
 const radius=require('./lib/radius.cjs');
-const speedRules=require('./lib/speed.cjs'),compensation=require('./lib/compensation.cjs'),backupsLib=require('./lib/backups.cjs'),upgrades=require('./lib/upgrades.cjs'),summary=require('./lib/summary.cjs'),promoCodes=require('./lib/promos.cjs'),receipts=require('./lib/receipts.cjs'),revenue=require('./lib/revenue.cjs'),health=require('./lib/health.cjs'),oltDetect=require('./lib/oltdetect.cjs'),vouchers=require('./lib/vouchers.cjs'),campaigns=require('./lib/campaigns.cjs'),reports=require('./lib/reports.cjs');
+const jobs=require('./lib/jobs.cjs'),speedRules=require('./lib/speed.cjs'),compensation=require('./lib/compensation.cjs'),backupsLib=require('./lib/backups.cjs'),upgrades=require('./lib/upgrades.cjs'),summary=require('./lib/summary.cjs'),promoCodes=require('./lib/promos.cjs'),receipts=require('./lib/receipts.cjs'),revenue=require('./lib/revenue.cjs'),health=require('./lib/health.cjs'),oltDetect=require('./lib/oltdetect.cjs'),vouchers=require('./lib/vouchers.cjs'),campaigns=require('./lib/campaigns.cjs'),reports=require('./lib/reports.cjs');
 const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
@@ -74,6 +74,10 @@ function createApp(options={}){
    let accepted;try{accepted=customers.receive(store,device,report,customerUploads);}catch(cause){if(cause.status===400){store.setting('customerDiscoveryError:'+device.id,{time:Date.now(),message:cause.message});console.warn('Customer discovery report rejected for '+device.name+': '+cause.message);}throw cause;}
    if(accepted.completed){agentAccepted.set(credentialId,Date.now());store.setting('customerDiscoveryError:'+device.id,null);}return json(res,200,accepted);
   }
+  // Opt-in router job runner: scoped token, one whitelisted job at a time.
+  const jobNext=route.match(/^\/api\/router-jobs\/next\/([a-f0-9-]{36})$/),jobResult=route.match(/^\/api\/router-jobs\/result\/([a-f0-9-]{36})\/([a-f0-9-]{36})$/);
+  if((jobNext&&method==='GET')||(jobResult&&method==='POST')){const rid=(jobNext||jobResult)[1],token=String(req.headers.authorization||'').replace(/^Bearer /,'');if(!jobs.validToken(store,rid,token))throw error(401,'Job runner not enrolled');
+   store.setting('jobsPoll:'+rid,{time:Date.now()});if(jobNext)return json(res,200,jobs.next(store,rid)||{});const r=jobs.result(store,rid,jobResult[2],await body(req,8192));return json(res,200,{ok:true,status:r.status});}
   // Upgrade path: a router that already has discovery installed fetches the current script with its own token (no new token issued).
   const scriptRoute=route.match(/^\/api\/customer-agent\/script\/([a-f0-9-]{36})$/);
   if(scriptRoute&&method==='GET'){
@@ -171,6 +175,15 @@ function createApp(options={}){
   const explainRoute=route.match(/^\/api\/speed-explain\/([a-f0-9-]{36})$/);
   if(explainRoute&&method==='GET'){const s=store.get('subscribers',explainRoute[1]);if(!s)throw error(404,'Subscriber not found');const p=store.get('plans',s.planId);if(!p)throw error(404,'No package');const f=require('./lib/packages.cjs').fupState(store,s,p,radius.planMs(p));const sess=store.list('radiusSessions').filter(x=>x.username===s.username).sort((a,b)=>b.updatedAt-a.updatedAt)[0],rid=sess?store.list('devices').find(d=>d.type==='router'&&d.name.toLowerCase()===String(sess.nasName||'').toLowerCase())?.id||'':'';
    const e=speedRules.resolve(store,{subscriber:s,plan:p,routerId:rid,service:s.service,baseDown:f.downMbps,baseUp:f.upMbps});return json(res,200,{...e,fup:f.active?{reasons:f.reasons,percent:f.percent}:null,note:'Configured speed. The router applies it at the customer\'s next login.'});}
+  if(route==='/api/router-jobs'&&method==='GET'){role(user,['admin','manager','network-technician','operator']);return json(res,200,jobs.overview(store));}
+  if(route==='/api/router-jobs'&&method==='POST'){role(user,['admin','manager','network-technician']);const input=await body(req);if(jobs.TYPES[input.type]?.risky)role(user,['admin']);
+   const params={...(input.params||{})};if(input.type==='push-design')Object.assign(params,{origin:publicUrl?.origin||'',folder:params.folder||'hotspot'});
+   const j=jobs.create(store,{routerId:input.routerId,type:input.type,params,confirm:input.confirm,user});store.audit(user,'Queued router job: '+j.label+' on '+j.routerName,j.id);return json(res,201,j);}
+  if(route==='/api/router-jobs/enroll'&&method==='POST'){role(user,['admin']);if(!publicUrl)throw error(409,'Configure the HTTPS public origin first');const e=jobs.enroll(store,String((await body(req)).deviceId||''));store.audit(user,'Issued job runner script',e.router.id);return json(res,201,{router:e.router.name,script:jobs.runnerScript(publicUrl.origin,e.router.id,e.token)});}
+  const jobRevoke=route.match(/^\/api\/router-jobs\/enroll\/([a-f0-9-]{36})$/);
+  if(jobRevoke&&method==='DELETE'){role(user,['admin']);store.secret('jobs:'+jobRevoke[1],null);store.audit(user,'Revoked job runner',jobRevoke[1]);return json(res,200,{ok:true});}
+  const jobAction=route.match(/^\/api\/router-jobs\/([a-f0-9-]{36})\/(cancel|retry)$/);
+  if(jobAction&&method==='POST'){role(user,['admin','manager','network-technician']);const j=jobAction[2]==='cancel'?jobs.cancel(store,jobAction[1]):jobs.retry(store,jobAction[1]);store.audit(user,(jobAction[2]==='cancel'?'Cancelled':'Retried')+' router job',j.id);return json(res,200,j);}
   if(route==='/api/overdue'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,revenue.overdue(store));}
   if(route==='/api/portal-payments'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,revenue.payments(store));}
   const profileRoute=route.match(/^\/api\/customers\/([a-f0-9-]{36})\/profile$/);
@@ -209,11 +222,21 @@ function createApp(options={}){
     if(method==='GET'&&url.searchParams.get('versions')==='1')return json(res,200,{versions:store.list('planVersions').filter(v=>v.planId===existing.id).sort((a,b)=>b.version-a.version).slice(0,30)});
     if(method==='DELETE'){if(store.list('subscribers').some(s=>s.planId===existing.id))throw error(409,'Move this plan\'s subscribers to another plan first');store.remove('plans',existing.id);store.audit(user,'Deleted plan',existing.id);return json(res,200,{ok:true});}}
    if(route==='/api/radius/subscribers'&&method==='POST'){write();const input=await body(req);let saved,secret;store.transaction(()=>{saved=store.put('subscribers',radius.subscriber(store,input));secret=radius.setPassword(store,saved.id,input.password);});store.audit(user,'Created subscriber',saved.id);return json(res,201,{...saved,password:secret});}
-   const subRoute=route.match(/^\/api\/radius\/subscribers\/([a-f0-9-]{36})(?:\/(renew|password|payments|points|stk))?$/);
+   const subRoute=route.match(/^\/api\/radius\/subscribers\/([a-f0-9-]{36})(?:\/(renew|password|payments|points|stk|disconnect|reset-device|connect|flight-speed))?$/);
    if(subRoute){const existing=store.get('subscribers',subRoute[1]);if(!existing)throw error(404,'Subscriber not found');
     if(subRoute[2]==='password'&&method==='GET'){role(user,['admin','operator','manager']);store.audit(user,'Viewed subscriber password',existing.id);return json(res,200,{password:radius.password(store,existing.id)});}
     write();
     if(subRoute[2]==='payments'&&method==='POST'){const result=billing.pay(store,existing.id,await body(req));store.audit(user,'Recorded payment '+result.payment.reference,existing.id);const sms=await billing.receipt(store,result);return json(res,201,{...result,sms});}
+    if(subRoute[2]==='connect'&&method==='POST'){const sess=store.list('radiusSessions').filter(x=>x.username===existing.username&&x.mac&&x.ip).sort((a,b)=>b.updatedAt-a.updatedAt)[0],rid=compensation.routerOf(store).get(existing.username);
+     if(!sess||!rid)throw error(409,'No recent device for this customer: they need to open the WiFi page once.');if(radius.stateOf(existing)!=='active')throw error(409,'The package is not active. Renew or record a payment first.');
+     const j=jobs.create(store,{routerId:rid,type:'connect',params:{username:existing.username,password:radius.password(store,existing.id)||'',mac:String(sess.mac).toUpperCase(),ip:sess.ip},subscriberId:existing.id,user});store.audit(user,'Queued hotspot connect',existing.id);return json(res,201,{job:j,message:`Connecting ${sess.mac} on ${j.routerName}.`});}
+    if(subRoute[2]==='flight-speed'&&method==='POST'){const input=await body(req),hours=Number(input.hours);if(!(hours>0&&hours<=168))throw error(400,'Choose 1–168 hours');
+     const rule=speedRules.save(store,{scope:'customer',targetId:existing.id,mode:'exact',downMbps:input.downMbps,upMbps:input.upMbps,until:Date.now()+hours*36e5,note:'Flight speed'});store.audit(user,'Set flight speed',existing.id);
+     let job=null;const rid=compensation.routerOf(store).get(existing.username);if(rid&&store.secret('jobs:'+rid)&&existing.service==='pppoe'){const m=v=>v>=1?Math.round(v*100)/100+'M':Math.round(v*1000)+'k';try{job=jobs.create(store,{routerId:rid,type:'set-speed',params:{username:existing.username,rate:m(rule.upMbps)+'/'+m(rule.downMbps)},subscriberId:existing.id,user});}catch{}}
+     return json(res,201,{rule,job,message:job?'Speed changed now and until the end time.':"Speed applies at the customer's next login, until the end time."});}
+    if((subRoute[2]==='disconnect'||subRoute[2]==='reset-device')&&method==='POST'){const rid=compensation.routerOf(store).get(existing.username);if(!rid)throw error(409,'Not sure which router this customer uses yet. It shows once they have connected.');
+     const params=subRoute[2]==='disconnect'?{username:existing.username}:{mac:String(existing.lastMac||'').toUpperCase()};if(subRoute[2]==='reset-device'&&!params.mac)throw error(409,'No device MAC recorded for this customer');
+     const j=jobs.create(store,{routerId:rid,type:subRoute[2],params,subscriberId:existing.id,user});store.audit(user,'Queued '+j.label,existing.id);return json(res,201,{job:j,message:`Queued on ${j.routerName}. It runs within a minute if the job runner is installed there.`});}
     if(subRoute[2]==='stk'&&method==='POST'){if(!publicUrl)throw error(409,'Configure the HTTPS public origin first');const input=await body(req),phoneNo=String(input.phone||existing.phone||'');limit(req,'staff-stk',30,600000,existing.id);
      const r=await portal.start(store,{kind:'account',username:existing.username,phone:phoneNo,promo:input.promo||''},publicUrl.origin);store.audit(user,'Sent M-Pesa payment request (KSh '+r.amount+')',existing.id);return json(res,201,{id:r.id,amount:r.amount,message:'Payment request sent to '+phoneNo+'. The customer enters their M-Pesa PIN; the account renews when Safaricom confirms.'});}
     if(subRoute[2]==='points'&&method==='POST'){const saved=billing.redeemPoints(store,existing.id,(await body(req)).points);store.audit(user,'Redeemed loyalty points',existing.id);return json(res,200,saved);}
@@ -347,6 +370,8 @@ function createApp(options={}){
   const route=url.pathname,method=req.method,origin=publicUrl?.origin||'http://'+req.headers.host;
   if(route==='/portal/api/info'&&method==='GET')return json(res,200,portal.info(store));
   // The landing page: design settings plus real packages in one call, and the two visitor lookups (rate limited; no contact details returned).
+  // Pages a router fetches into its hotspot folder (the job runner's "push design"). No secrets inside.
+  if((route==='/portal/api/router/login.html'||route==='/portal/api/router/status.html')&&method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(route.endsWith('login.html')?portal.hotspotLoginPage(publicUrl?.origin||origin):statusPage.page(statusPage.get(store),publicUrl?.origin||origin,false));}
   if(route==='/portal/api/config'&&method==='GET'){const cfg=landing.get(store),inf=portal.info(store);return json(res,200,{config:{...cfg,brandName:cfg.brandName||inf.name,phone:cfg.phone||inf.support,whatsapp:cfg.whatsapp||cfg.phone||inf.support},plans:inf.plans,pppoePlans:inf.pppoePlans,mpesa:inf.mpesa,freeMode:inf.freeMode});}
   if(route==='/portal/api/account'&&method==='POST'){limit(req,'account',240,600000);const input=await body(req,2048),q=String(input.query||'').slice(0,400);limit(req,'account-q',12,600000,q.toLowerCase().slice(0,60)||'empty');return json(res,200,landing.account(store,q));}
   if(route==='/portal/api/session'&&method==='GET'){limit(req,'session',240,600000);return json(res,200,landing.session(store,url.searchParams.get('mac')));}

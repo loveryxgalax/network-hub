@@ -52,6 +52,10 @@ The app listens on `http://127.0.0.1:4317`. Opening `dist/index.html` directly d
 - The dashboard currently retains 89 last-known CCR PPPoE sessions and labels them `Report stale`; it must not present them as currently connected until a fresh complete CCR report arrives.
 - TR-069 work for CCR, hEX, and customer CPEs is deferred. Do not infer TR-069 enrollment from customer discovery.
 
+## Router job runner (opt-in, added 2026-10-30)
+
+The discovery script still never downloads commands. A separate, opt-in `network-hub-jobs` script (installed per router from MikroTik → Router jobs, with its own token `jobs:<routerId>`) polls `/api/router-jobs/next/<id>` every minute and runs one job from the whitelist in `lib/jobs.cjs` (disconnect, reset device, connect, backup now, push portal pages, static IP apply/remove, live speed change, reboot, RouterOS upgrade). Values are validated against fixed patterns before they are placed in a script; there is no free-form command job. Reboot and upgrade require the operator to type the router name, are admin-only and are never retried automatically. A router without the runner installed cannot receive any job. Never queue reboot or upgrade jobs yourself: they exist for the owner to trigger.
+
 ## Recent feature behavior
 
 The `PPPoE & router alerts` page is read-only. It shows current/stale/disconnected PPPoE sessions, session uptime, exact-interface traffic when available, router freshness, and deduplicated warning/error events. The RouterOS discovery script uses schema 2 and reads log rows locally before filtering topics because filtering `topics` in `/log print where ...` was unreliable on the tested hEX.

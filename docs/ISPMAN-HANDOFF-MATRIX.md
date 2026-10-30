@@ -11,6 +11,7 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-10-30 | Opt-in router job runner (whitelisted jobs, scoped token, retries with backoff, timeouts, typed confirmation for reboot/upgrade); customer Connect/Disconnect/Reset device/Flight speed; push portal pages to routers; provisioning-failed state | `test/jobs.test.cjs` |
 | 2026-10-30 | Speed rules (raise/cut/exact; ISP, router, package, customer; schedules; end time = flight speed) with explanation; free mode (routers, package, end time, portal button); daily FUP and adaptive steps; fair-usage SMS 50/80/100%; packages limited to routers; package version history and payment version | `test/speed.test.cjs`, `test/packages.test.cjs` |
 | 2026-10-30 | Outage compensation (preview, fixed cut-off, idempotent grants with before/after), never-paid state, PPPoE deactivation grace, installation fee default/override/waive settled before the package, per-customer device limit | `test/accounts.test.cjs` |
 | 2026-10-30 | Staff M-Pesa payment request (STK) from the customer profile, rate-limited and audited; renews on Safaricom confirmation | `test/ispman-menu.test.cjs` |
@@ -22,7 +23,7 @@ Update this file with every increment.
 | Item | Status | Notes |
 |---|---|---|
 | Dashboard counters, router health, revenue, expiring | Done | `dist/dashboard.js`, `lib/overview.cjs` |
-| Distinct states: paid online/offline, online-expired, expired, unpaid, deactivated, provisioning failed | Partial | all except provisioning failed (needs router jobs) |
+| Distinct states: paid online/offline, online-expired, expired, unpaid, deactivated, provisioning failed | Done | provisioning shown separately from the account state |
 | Reports: revenue by package/location/method, vouchers, usage, visits by time, heavy users, CSV | Done | `lib/reports.cjs`; Excel export is CSV |
 | Portal visits by device/OS | Missing | needs user-agent capture on the portal |
 | Trends: 24h/7d/30d, heatmaps, fair-usage view | Partial | 1h/24h/7d only; no heatmaps |
@@ -36,7 +37,8 @@ Update this file with every increment.
 | Customer profile: details, payments, sessions, usage, SMS, auth log, tickets | Done | profile dialog |
 | Actions: renew, payment, edit, SMS, password reveal, points | Done | |
 | Actions: STK request from profile | Done | uses the same confirmed-payment path as the portal |
-| Actions: connect/disconnect, reset, flight speed, speed override, max connections, PIN | Missing | disconnect needs RADIUS CoA (not set up) |
+| Actions: connect/disconnect, reset, flight speed, max connections | Done | through the opt-in router job runner; flight speed also works without it at next login |
+| Actions: PIN | Missing | |
 | Hotspot profile extras: device/browser/OS, recent MACs, child/family accounts | Missing | |
 | Roaming events | Missing | |
 | Connect requests | Done | Payment requests page (portal STK attempts) |
@@ -83,7 +85,7 @@ Update this file with every increment.
 |---|---|---|
 | MikroTik inventory, health, ports/SFP, pools, firewall, queues, WAN quality | Done | read-only discovery script v8 |
 | Config backups with diffs | Done | nightly export over existing channel; not encrypted separately from DB |
-| Device jobs (reboot, re-onboard, push config) | Skip | user rule: never reboot/update routers from netops |
+| Device jobs (reboot, upgrade, backup, push pages, static apply) | Done | opt-in runner; reboot/upgrade typed confirmation, admin only |
 | Topology/neighbour map | Done | |
 | OLT list and detection from neighbours | Partial | no vendor operations |
 | TR-069 (GenieACS) | Partial | inventory/refresh/reboot/Wi-Fi exist; customer CPE enrolment pending |
@@ -120,7 +122,7 @@ Update this file with every increment.
 | Landing page: 9 designs, list/grid/swipe, contacts, show/hide sections | Done | Captive experience page |
 | Status page designs + status.html download | Done | |
 | Loading screen, expired-PPPoE page, terms & languages beyond EN/SW | Missing | |
-| Push design to routers with per-router results | Missing | manual file upload |
+| Push design to routers with per-router results | Done | Captive experience → Push to routers; results in Router jobs |
 
 ### Team and audit (§12)
 | Item | Status | Notes |
