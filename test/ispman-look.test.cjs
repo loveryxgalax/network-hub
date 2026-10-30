@@ -35,3 +35,24 @@ test('overview: hotspot and PPPoE status use RADIUS sessions too, with unpaid an
   assert.deepEqual([o.pppoe.online,o.pppoe.onlineExpired,o.pppoe.deactivated],[1,1,1]);assert.deepEqual(o.pppoe.byDevice,[{name:'CCR',count:2}]);assert.deepEqual(o.hotspot.byPackage,[{name:'Daily',count:1}]);
  }finally{done();}
 });
+test('reports: revenue split by service (hourly for one day) and payment times by weekday and time of day',()=>{
+ const {store,done}=fx();try{const reports=require('../lib/reports.cjs'),D=864e5,now=Date.parse('2026-10-31T09:30:00+03:00');
+  const h=store.put('subscribers',{name:'H',username:'h',service:'hotspot',status:'active'}),p=store.put('subscribers',{name:'P',username:'p',service:'pppoe',status:'active'});
+  const pay=(s,amount,iso)=>store.put('subscriberPayments',{subscriberId:s.id,username:s.username,amount,method:'mpesa',time:Date.parse(iso)});
+  pay(h,50,'2026-10-31T08:10:00+03:00');pay(p,2000,'2026-10-31T08:40:00+03:00');pay(h,20,'2026-10-30T22:15:00+03:00');pay(p,1500,'2026-10-29T01:00:00+03:00');
+  const t=reports.build(store,{period:'today'},now);assert.equal(t.hourly,true);assert.equal(t.series.length,24);assert.deepEqual(t.series[8],{label:'08:00',hotspot:50,pppoe:2000});
+  const m=reports.build(store,{period:'month'},now);assert.equal(m.hourly,false);assert.deepEqual(m.series.find(x=>x.label==='2026-10-30'),{label:'2026-10-30',hotspot:20,pppoe:0});
+  const pt=m.paymentTimes.d7;assert.equal(pt.total,1520,'today is left out');assert.equal(pt.weekdays[0].day,'Friday','yesterday first');
+  assert.equal(pt.weekdays[0].times.find(x=>x.name==='Night').amount,20);assert.equal(pt.all.find(x=>x.name==='Late Night').amount,1500);
+ }finally{done();}
+});
+test('static IP list: connection state and a warning when one address is given to two customers',()=>{
+ const {store,done}=fx();try{const statics=require('../lib/statics.cjs'),a=store.put('devices',{name:'CCR2004',type:'router'}),b=store.put('devices',{name:'HEX S',type:'router'}),now=Date.now();
+  store.put('subscribers',{name:'Church',username:'church',service:'static',staticIp:'10.27.0.13',routerId:a.id,status:'active',expiresAt:now+864e5,provisioning:{status:'ok'}});
+  store.put('subscribers',{name:'Kyandula HT',username:'kht',service:'static',staticIp:'10.27.0.13',routerId:b.id,status:'active',expiresAt:now-864e5,provisioning:{status:'failed',error:'already have such entry'}});
+  store.put('subscribers',{name:'Shop',username:'shop',service:'static',staticIp:'10.27.0.20',routerId:a.id,status:'active',expiresAt:now-864e5,provisioning:{status:'ok'}});
+  const o=statics.overview(store,radius.stateOf,now),c=n=>o.items.find(x=>x.name===n).connection;
+  assert.deepEqual([c('Church'),c('Kyandula HT'),c('Shop')],['connected','failed','disconnected']);
+  assert.equal(o.duplicates.length,1);assert.equal(o.duplicates[0].ip,'10.27.0.13');assert.deepEqual(o.duplicates[0].customers.map(x=>x.name).sort(),['Church','Kyandula HT']);
+ }finally{done();}
+});
