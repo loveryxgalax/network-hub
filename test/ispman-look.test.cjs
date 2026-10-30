@@ -76,3 +76,20 @@ test('static customer actions: Connect now re-sends, deactivate blocks, delete r
   assert.ok(((await api('router-jobs')).body.jobs||[]).some(j=>j.type==='static-remove'&&j.params.ip==='10.27.0.14'));
  }finally{await new Promise(r=>app.server.close(r));app.close?.();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('alerts: acknowledge and resolve record who; points award; self-service link',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'il-al-')),{createApp}=require('../server.cjs'),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://network.example.test',radiusToken:'bridge-token-for-tests-0123456789',radiusPort:0});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+app.server.address().port;let cookie='',csrf='';
+ const api=async(route,method='GET',input)=>{const r=await fetch(origin+'/api/'+route,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},...(input===undefined?{}:{body:JSON.stringify(input)})});const t=await r.text();return {status:r.status,body:t?JSON.parse(t):null,response:r};};
+ try{const owner=await api('setup','POST',{name:'Owner',workspace:'QA',email:'al@example.test',password:'fixture-owner-password-123'});cookie=owner.response.headers.get('set-cookie').split(';')[0];csrf=owner.body.csrf;
+  const a=(await api('records/alerts','POST',{title:'CCR offline',severity:'critical',status:'Open'})).body;
+  const ack=await api('alerts/'+a.id+'/acknowledge','POST',{});assert.equal(ack.body.status,'Acknowledged');assert.equal(ack.body.acknowledgedBy,'al@example.test');
+  const res=await api('alerts/'+a.id+'/resolve','POST',{});assert.equal(res.body.status,'Resolved');assert.equal(res.body.resolvedBy,'al@example.test');assert.ok(res.body.resolvedAt);
+  assert.equal((await api('nav-counts')).body.alerts,0);
+  const plan=(await api('radius/plans','POST',{name:'D',service:'hotspot',downloadMbps:5,uploadMbps:2,price:50,durationValue:1,durationUnit:'days',devices:1})).body;
+  const sub=(await api('radius/subscribers','POST',{name:'Ann Mutua',username:'ann',service:'hotspot',planId:plan.id,password:'pw123456'})).body;
+  assert.equal((await api('radius/subscribers/'+sub.id+'/award-points','POST',{points:5,reason:''})).status,400);
+  const aw=await api('radius/subscribers/'+sub.id+'/award-points','POST',{points:5,reason:'Referral'});assert.equal(aw.body.subscriber.points,5);
+  const ss=await api('radius/subscribers/'+sub.id+'/self-service','POST',{});assert.equal(ss.body.link,'https://network.example.test/portal/?account=ann');
+  assert.equal((await api('radius/subscribers/'+sub.id+'/self-service','POST',{send:true})).status,400,'no phone');
+ }finally{await new Promise(r=>app.server.close(r));fs.rmSync(dir,{recursive:true,force:true});}
+});
