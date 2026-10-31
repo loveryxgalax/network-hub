@@ -174,3 +174,9 @@ test('package interest: a PPPoE customer asks from the portal; staff move them o
   await api('radius/subscribers/'+sub.id+'/pin','POST',{});assert.equal((await portal('interest',{account:'ann',planId:p5.id})).status,403,'PIN needed once set');
  }finally{await new Promise(r=>app.server.close(r));fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('stock requests carry a priority; open urgent requests are listed first',()=>{
+ const {store,done}=fx();try{const sr=require('../lib/stockreq.cjs'),item=store.put('stock',{name:'ONU',unit:'pcs',minimum:2});sr.receive(store,{stockId:item.id,quantity:10,unitCost:2000},{});
+  sr.request(store,{stockId:item.id,quantity:1,reason:'Spare'},{email:'a@x'});sr.request(store,{stockId:item.id,quantity:2,reason:'Outage repair',priority:'urgent'},{email:'b@x'});sr.request(store,{stockId:item.id,quantity:1,reason:'Odd',priority:'bogus'},{email:'c@x'});
+  const l=sr.overview(store).requests;assert.equal(l[0].priority,'urgent');assert.ok(l.slice(1).every(r=>r.priority==='normal'),'unknown priorities become normal');
+ }finally{done();}
+});
