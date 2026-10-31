@@ -35,3 +35,17 @@ test('alert escalation: levels fire once each after their delay, acknowledged al
   await escalation.run(store,Date.now()+120000,f);assert.equal(sent.length,4,'resolved message is sent once');
  }finally{done();}
 });
+test('SMS: per-service wording falls back to the general message; welcome is off by default; template library',async()=>{
+ const {store,done}=fx();try{const billing=require('../lib/billing.cjs'),radius=require('../lib/radius.cjs');
+  billing.updateSettings(store,{templates:{'hotspot.payment':'Asante {name}! KSh {amount} received.','pppoe.payment':''}});
+  const c=billing.settings(store);assert.equal(billing.tpl(c,'payment','hotspot'),'Asante {name}! KSh {amount} received.');assert.equal(billing.tpl(c,'payment','pppoe'),c.templates.payment,'empty = general message');
+  assert.throws(()=>billing.updateSettings(store,{templates:{'static.reminder':'x'.repeat(460)}}),/459/);
+  const p=store.put('plans',radius.plan({name:'Home',service:'pppoe',downloadMbps:10,uploadMbps:5,price:1000,durationValue:30,durationUnit:'days'}));const s=store.put('subscribers',radius.subscriber(store,{name:'Ann Wanjiru',username:'ann',service:'pppoe',planId:p.id,phone:'0712345678'}));
+  assert.equal(await billing.welcome(store,s,async()=>{throw new Error('must not send');}),null,'welcome is off unless switched on');
+  store.secret('sms:config',{provider:'africastalking',username:'u',apiKey:'k'.repeat(20),senderId:''});billing.updateSettings(store,{enabled:{welcome:true}});let body='';
+  await billing.welcome(store,s,async(url,o)=>{body=String(o.body);return new Response(JSON.stringify({SMSMessageData:{Recipients:[{status:'Success',messageId:'m'}]}}),{status:201});});assert.match(decodeURIComponent(body.replace(/\+/g,' ')),/Welcome to Kade Networks, Ann/);
+  const t=billing.saveLibrary(store,{name:'WhatsApp group',content:'Join our WhatsApp group, {name}'});assert.equal(billing.library(store).length,1);
+  billing.saveLibrary(store,{name:'WhatsApp group',content:'Updated',active:false},t.id);assert.equal(billing.library(store)[0].active,false);assert.throws(()=>billing.saveLibrary(store,{name:'',content:'x'}),/Name/);
+  billing.deleteLibrary(store,t.id);assert.equal(billing.library(store).length,0);
+ }finally{done();}
+});
