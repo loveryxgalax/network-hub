@@ -4,7 +4,10 @@
 set -euo pipefail
 [[ $(id -u) == 0 ]] && { echo "Run as your normal sudo user, not root." >&2; exit 1; }
 sudo apt-get update -qq
-sudo apt-get install -y -qq ca-certificates curl git ufw unattended-upgrades chrony fail2ban wireguard-tools jq age rclone
+sudo apt-get install -y -qq ca-certificates curl git ufw unattended-upgrades chrony fail2ban wireguard-tools jq age unzip
+# rclone from rclone.org: Ubuntu's 1.60 gets "501 NotImplemented" from Cloudflare R2 on uploads.
+rclone version 2>/dev/null | head -1 | grep -q 'v1\.6' && sudo apt-get remove -y -qq rclone
+command -v rclone >/dev/null || curl -fsSL https://rclone.org/install.sh | sudo bash
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
