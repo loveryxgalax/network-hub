@@ -596,7 +596,7 @@ function createApp(options={}){
   const qzRoute=route.match(/^\/portal\/api\/quiz\/([a-f0-9-]{36})$/);
   if(qzRoute&&method==='POST'){limit(req,'quiz',30,600000);return json(res,200,engage.answer(store,portal.grantFree,qzRoute[1],await body(req,4096)));}
   // A PPPoE customer asks for another package from the account page. Accounts with a PIN must give it.
-  if(route==='/portal/api/interest'&&method==='POST'){limit(req,'interest',20,3600000);const input=await body(req,1024),r=landing.accountRaw(store,String(input.account||'').slice(0,80));if(!r.found)throw error(404,'Account not found');
+  if(route==='/portal/api/interest'&&method==='POST'){limit(req,'interest',20,3600000);if(radius.settings(store).selfPackageChange===false)throw error(403,'Package changes are handled by our team. Please call us.');const input=await body(req,1024),r=landing.accountRaw(store,String(input.account||'').slice(0,80));if(!r.found)throw error(404,'Account not found');
    const sub=store.list('subscribers').find(x=>x.username===r.account);if(!sub||sub.service!=='pppoe')throw error(400,'Package requests are for home internet (PPPoE) accounts');const pin=store.secret('pin:'+sub.id);if(pin&&String(input.pin||'')!==pin.pin)throw error(403,'Enter your PIN first');
    const plan=store.get('plans',String(input.planId||''));if(!plan||plan.service==='hotspot'||plan.id===sub.planId)throw error(400,'Choose another home internet package');
    store.put('subscribers',{...sub,interestPlanId:plan.id,interestAt:Date.now()},sub);return json(res,200,{ok:true});}

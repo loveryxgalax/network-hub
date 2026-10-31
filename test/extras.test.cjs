@@ -9,6 +9,8 @@ test('roaming lock, location and referral fields on customers',()=>{
   const s=store.put('subscribers',radius.subscriber(store,{name:'Ann',username:'ann',service:'pppoe',planId:p.id,routerId:north.id,expiresAt:Date.now()+864e5,latitude:'-1.2186',longitude:'36.923',address:'Kahawa West, blue gate'}));radius.setPassword(store,s.id,'secret123');
   assert.equal(s.latitude,-1.2186);assert.equal(s.address,'Kahawa West, blue gate');assert.throws(()=>radius.subscriber(store,{name:'X',username:'x',service:'pppoe',planId:p.id,latitude:'200'}),/latitude/);
   assert.equal(radius.authorize(store,req('ann','south')).status,200,'roaming is allowed by default');
+  assert.equal(store.get('subscribers',s.id).routerId,south.id,'not strict: the assigned router follows the customer');
+  {const cur=store.get('subscribers',s.id);store.put('subscribers',{...cur,routerId:north.id},cur);}
   radius.updateSettings(store,{roaming:'assigned'});assert.equal(radius.authorize(store,req('ann','south')).status,401);assert.equal(radius.authorize(store,req('ann','north')).status,200);
   store.put('subscribers',{...store.get('subscribers',s.id),roaming:'any'},store.get('subscribers',s.id));assert.equal(radius.authorize(store,req('ann','south')).status,200,'per-customer override');
   assert.throws(()=>radius.subscriber(store,{name:'B',username:'bob',service:'pppoe',planId:p.id,referredBy:'nobody'}),/Referred by/);
@@ -34,5 +36,22 @@ test('vouchers: last day to use, single named voucher, apply to an existing hots
   const s=store.put('subscribers',radius.subscriber(store,{name:'Hot',username:'hot1',service:'hotspot',planId:p.id,expiresAt:now+36e5}));
   const r=vouchers.applyTo(store,g.codes[1].toLowerCase(),s.id,now);assert.ok(Math.abs(r.subscriber.expiresAt-(now+36e5+864e5))<5);
   assert.throws(()=>vouchers.applyTo(store,g.codes[1],s.id,now),/already used/);
+ }finally{done();}
+});
+test('settings: blocked devices, static installation fee, packets margin, customer package changes',()=>{
+ const {store,done}=fx();try{const r=store.put('devices',{name:'north',type:'router',driver:'none'});
+  const p=store.put('plans',radius.plan({name:'Home',service:'pppoe',downloadMbps:10,uploadMbps:5,price:1000,durationValue:30,durationUnit:'days'}));
+  const s=store.put('subscribers',radius.subscriber(store,{name:'Ann',username:'ann',service:'pppoe',planId:p.id,expiresAt:Date.now()+864e5}));radius.setPassword(store,s.id,'secret123');
+  assert.equal(radius.authorize(store,req('ann','north',{'Calling-Station-Id':'aa-bb-cc-dd-ee-ff'})).status,200);
+  assert.throws(()=>radius.updateSettings(store,{blockedMacs:[{mac:'nope'}]}),/MAC/);
+  radius.updateSettings(store,{blockedMacs:[{mac:'AA:BB:CC:DD:EE:FF',reason:'stolen'},{mac:'aabbccddeeff'}]});assert.equal(radius.settings(store).blockedMacs.length,1,'same MAC once');
+  const denied=radius.authorize(store,req('ann','north',{'Calling-Station-Id':'aa-bb-cc-dd-ee-ff'}));assert.equal(denied.status,401);
+  assert.equal(radius.authorize(store,req('ann','north',{'Calling-Station-Id':'11:22:33:44:55:66'})).status,200);
+  store.setting('staticSettings:'+r.id,{network:'10.27.0.0/24',gateway:'10.27.0.1',iface:'bridge'});radius.updateSettings(store,{installFeeStatic:true,installFeeStaticAmount:2500});
+  const st=radius.subscriber(store,{name:'Shop',username:'shop',service:'static',planId:p.id,routerId:r.id});assert.equal(st.installFeeDue,2500);
+  assert.throws(()=>radius.updateSettings(store,{usageMarginPct:150}),/0–100/);radius.updateSettings(store,{usageMarginPct:20});
+  radius.accounting(store,{'Acct-Status-Type':'Interim-Update','Acct-Session-Id':'m1','User-Name':'ann','NAS-Identifier':'north','Acct-Output-Octets':'1000000','Acct-Input-Octets':'500000'},Date.now());
+  const ses=store.sessionsOf('ann')[0];assert.equal(ses.downloadBytes,1200000);assert.equal(ses.uploadBytes,600000);assert.equal(ses.rawDownloadBytes,1000000);
+  assert.equal(radius.settings(store).selfPackageChange,true);radius.updateSettings(store,{selfPackageChange:false});assert.deepEqual(require('../lib/portal.cjs').info(store).pppoePlans,[]);
  }finally{done();}
 });
