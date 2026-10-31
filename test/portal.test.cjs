@@ -185,3 +185,16 @@ test('promo codes: percent off, bonus days, limits, and the full package value s
   assert.ok(store.get('subscribers',sub.id).expiresAt>=before+37*864e5,'one more month plus 7 bonus days');
  }finally{done();}
 });
+test('portal "Leave a message" is off by default and, when on, files an Open ticket linked by phone',async()=>{
+ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{createApp}=require('../server.cjs');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'msg-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://network.example.test'});
+ const port=await new Promise(r=>app.server.listen(0,'127.0.0.1',()=>r(app.server.address().port))),url='http://127.0.0.1:'+port+'/portal/api/message';
+ const send=b=>fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+ try{
+  assert.equal((await send({name:'Amina',phone:'0712345678',message:'No internet since morning'})).status,404);
+  const landing=require('../lib/landing.cjs');app.store.setting('landingConfig',{...landing.get(app.store),show:{...landing.get(app.store).show,message:true}});
+  assert.equal((await send({name:'Amina',phone:'not a phone',message:'hello'})).status,400);
+  assert.equal((await send({name:'Amina',phone:'0712345678',message:'No internet since morning'})).status,200);
+  const t=app.store.list('tickets').find(x=>x.source==='portal');assert.equal(t.status,'Open');assert.match(t.details,/No internet since morning/);assert.match(t.details,/254712345678/);
+ }finally{await app.close();}
+});

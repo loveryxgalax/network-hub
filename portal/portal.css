@@ -499,3 +499,6 @@ body[data-loading=progress] .boot-bar i{display:block;height:100%;width:40%;back
 .quiz-pics .quiz-opt{display:grid;gap:6px;justify-items:center;text-align:center;border:2px solid transparent;border-radius:12px;padding:6px;cursor:pointer}
 .quiz-pics .quiz-opt img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}.quiz-pics .quiz-opt input{position:absolute;opacity:0}
 .quiz-pics .quiz-opt:has(input:checked){border-color:var(--brand)}
+.msg-form{margin-top:14px;display:grid;gap:10px}.msg-form h3{margin:0;font-size:15px}
+.msg-form input,.msg-form textarea{display:block;width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--surface);color:var(--ink);outline:none;resize:vertical}
+.msg-form input:focus,.msg-form textarea:focus{border-color:var(--brand)}
