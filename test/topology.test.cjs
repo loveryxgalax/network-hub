@@ -58,3 +58,18 @@ test('customer usage: range and grouping; larger of RADIUS or router figures per
   const pg=u.sessionsPage(store,s,1);assert.equal(pg.total,31);assert.equal(pg.items.length,6);
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('WiFi page per router: packages of other routers hidden, isolate, own support contact',async()=>{
+ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{createApp}=require('../server.cjs'),radius=require('../lib/radius.cjs'),portal=require('../lib/portal.cjs');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'rp-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://network.example.test'});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const o='http://127.0.0.1:'+app.server.address().port,st=app.store;
+ try{const a=st.put('devices',{name:'CCR2004',type:'router'}),b=st.put('devices',{name:'HEX S',type:'router'});
+  const mk=(name,routerIds)=>st.put('plans',{...radius.plan({name,service:'hotspot',downloadMbps:5,uploadMbps:2,price:10,durationValue:1,durationUnit:'hours'}),routerIds});
+  mk('Everywhere',[]);mk('Only CCR',[a.id]);mk('Only HEX',[b.id]);
+  const names=async q=>(await (await fetch(o+'/portal/api/config'+q)).json()).plans.map(p=>p.name).sort();
+  assert.deepEqual(await names(''),['Everywhere','Only CCR','Only HEX'],'no router known: all');
+  assert.deepEqual(await names('?nas=ccr2004'),['Everywhere','Only CCR']);
+  portal.saveRouterPortal(st,a.id,{isolate:true,supportPhone:'0711000222'});assert.deepEqual(await names('?nas=CCR2004'),['Only CCR']);
+  const cfg=(await (await fetch(o+'/portal/api/config?nas=CCR2004')).json()).config;assert.equal(cfg.phone,'0711000222');
+  assert.throws(()=>portal.saveRouterPortal(st,a.id,{supportPhone:'12'}),/phone/);
+ }finally{await app.close();}
+});
