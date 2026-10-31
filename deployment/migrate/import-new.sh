@@ -15,6 +15,8 @@ cp "$m/env" .env && chmod 600 .env
 [[ -f "$m/backup.env" ]] && cp "$m/backup.env" deployment/docker/backup.env && chmod 600 deployment/docker/backup.env
 # Memory limits for an 8 GB server (the defaults suit a 1 GB server). Only added if .env does not set them already.
 for kv in HUB_MEMORY=768m MONGO_MEMORY=1g ACS_MEMORY=768m RADIUS_MEMORY=128m TUNNEL_MEMORY=128m MONGO_CACHE_GB=0.5; do grep -q "^${kv%%=*}=" .env || echo "$kv" >> .env; done
+# A rehearsal copy is passive: no automatic SMS/email to customers or staff and no auto-deactivation, so nothing happens twice.
+sed -i '/^NETWORK_PASSIVE=/d' .env; $final || echo NETWORK_PASSIVE=1 >> .env
 if [[ -f "$m/wg0.conf" ]]; then
   echo "Installing the WireGuard hub with the SAME keys, so routers only need the new endpoint IP…"
   sudo apt-get install -y -qq wireguard-tools >/dev/null; sudo install -m 600 "$m/wg0.conf" /etc/wireguard/wg0.conf
@@ -42,7 +44,7 @@ docker compose up -d mongo; for i in $(seq 1 30); do docker compose exec -T mong
 docker compose exec -T mongo mongorestore --quiet --drop --username "$MONGO_ROOT_USER" --password "$MONGO_ROOT_PASSWORD" --authenticationDatabase admin --archive --gzip < "$m/genieacs.archive.gz"
 docker compose up -d acs hub
 if [[ -n "${NETWORK_RADIUS_TOKEN:-}" && -f /etc/wireguard/wg0.conf ]]; then docker compose --profile radius up -d radius; fi
-if $final; then docker compose up -d tunnel; echo "Tunnel started: netops.kadenetworks.com now serves from this server."; else echo "Rehearsal: tunnel NOT started; the live site is still the old server."; fi
+if $final; then docker compose up -d tunnel; echo "Tunnel started: netops.kadenetworks.com now serves from this server."; else echo "Rehearsal: tunnel NOT started and passive mode on; the live site is still the old server."; fi
 sleep 5; docker compose --profile radius ps
 docker compose exec -T hub node -e "fetch('http://127.0.0.1:4317/api/session').then(r=>r.json()).then(j=>console.log('netops answering; setup needed:',!!j.setup)).catch(e=>{console.error('netops not answering:',e.message);process.exit(1)})"
 echo "Imported. Delete the package when you are happy: shred -u $in"

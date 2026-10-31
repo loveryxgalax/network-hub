@@ -10,6 +10,8 @@ services:
       # GenieACS NBI is reached inside the private Compose network as http://acs:7557 (never published).
       NETWORK_TRUSTED_HTTP_HOSTS: acs
       NETWORK_POLL_MS: ${NETWORK_POLL_MS:-30000}
+      # 1 on a rehearsal copy: no automatic messages, deactivation or router changes (set by the migration import).
+      NETWORK_PASSIVE: ${NETWORK_PASSIVE:-}
       # Internal RADIUS bridge for FreeRADIUS (port 4318 on the private network only). Empty = disabled.
       NETWORK_RADIUS_TOKEN: ${NETWORK_RADIUS_TOKEN:-}
       NETWORK_RADIUS_HOST: 0.0.0.0
