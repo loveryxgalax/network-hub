@@ -196,6 +196,9 @@ function createApp(options={}){
   const receiptRoute=route.match(/^\/api\/receipt\/([a-f0-9-]{36})$/);
   if(receiptRoute&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');const sub=store.get('subscribers',receiptRoute[1]);if(!sub)throw error(404,'Subscriber not found');const inf=portal.info(store),cfg=landing.get(store),ws=store.setting('workspace')||{};
    res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(receipts.build(store,sub,{kind:url.searchParams.get('kind')==='invoice'?'invoice':'receipt',ref:String(url.searchParams.get('ref')||'').slice(0,40),cfg:{phone:ws.phone||cfg.phone||inf.support,email:ws.email||cfg.email,name:ws.name,address:ws.address}}));}
+  if(route==='/api/campaigns'){role(user,['admin','manager']);if(method==='GET')return json(res,200,{items:promoCodes.campaigns(store)});if(method==='POST'){const r=promoCodes.createCampaign(store,await body(req),user);store.audit(user,'Created campaign '+r.campaign.title+' ('+r.codes.length+' codes)',r.campaign.id);return json(res,201,r);}}
+  const campRoute=route.match(/^\/api\/campaigns\/([a-f0-9-]{36})$/);
+  if(campRoute){role(user,['admin','manager']);if(method==='GET')return json(res,200,promoCodes.campaign(store,campRoute[1]));if(method==='PATCH'){const r=promoCodes.updateCampaign(store,campRoute[1],await body(req));store.audit(user,'Updated campaign '+r.title,r.id);return json(res,200,r);}}
   if(route==='/api/promos'&&method==='GET'){role(user,['admin','manager']);return json(res,200,{items:promoCodes.list(store)});}
   if(route==='/api/promos'&&method==='POST'){role(user,['admin','manager']);const v=promoCodes.validate(await body(req));if(promoCodes.find(store,v.code))throw error(409,'That code already exists');const saved=store.put('promoCodes',v);store.audit(user,'Created promo code '+v.code,saved.id);return json(res,201,saved);}
   const promoRoute=route.match(/^\/api\/promos\/([a-f0-9-]{36})$/);

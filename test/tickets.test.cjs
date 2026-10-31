@@ -22,3 +22,18 @@ test('support tickets: replies, internal notes, status/priority/assignment histo
   const vr=await viewer('tickets/'+t.id+'/update','POST',{status:'Closed'});assert.ok([403].includes(vr.status),'viewer cannot change tickets: '+vr.status);
  }finally{await app.close();}
 });
+test('campaigns: many prefixed codes, one use counted per payment, edits apply to future uses',()=>{
+ const {Store}=require('../lib/store.cjs'),promos=require('../lib/promos.cjs');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cp-')),store=new Store(dir);
+ try{assert.throws(()=>promos.createCampaign(store,{title:'X',discount:150,count:5}),/1–100/);assert.throws(()=>promos.createCampaign(store,{title:'X',discount:50,count:5,prefix:'TOOLONGPREFIX'}),/Prefix/);
+  const r=promos.createCampaign(store,{title:'Refer a friend',discount:50,prefix:'refer',count:25,maxActivations:1,scope:'hotspot'});
+  assert.equal(r.codes.length,25);assert.equal(new Set(r.codes).size,25);assert.ok(r.codes.every(c=>/^REFER[A-Z2-9]{6}$/.test(c)));
+  const plan={id:'p1',name:'Day'},code=r.codes[0];assert.equal(promos.apply(store,code,{plan,kind:'hotspot',price:100}).amount,50);
+  assert.throws(()=>promos.apply(store,code,{plan,kind:'account',price:100}),/does not apply/);
+  promos.redeemed(store,code,{username:'amina',amount:50,discount:50,reference:'QX1'});promos.redeemed(store,code,{username:'amina',amount:50,discount:50,reference:'QX1'});
+  let d=promos.campaign(store,r.campaign.id);assert.equal(d.campaign.used,1,'a repeated callback is not counted twice');assert.equal(d.activations.length,1);assert.equal(d.campaign.available,24);
+  assert.throws(()=>promos.apply(store,code,{plan,kind:'hotspot',price:100}),/fully used/);
+  promos.updateCampaign(store,r.campaign.id,{discount:100,maxActivations:2});assert.equal(promos.apply(store,code,{plan,kind:'hotspot',price:100}).amount,1,'100% off leaves the 1-shilling minimum');
+  d=promos.campaign(store,r.campaign.id);assert.equal(d.activations[0].discount,50,'past activations unchanged');
+  promos.updateCampaign(store,r.campaign.id,{active:false});assert.throws(()=>promos.apply(store,r.codes[1],{plan,kind:'hotspot',price:100}),/not valid/);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
