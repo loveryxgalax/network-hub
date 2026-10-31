@@ -27,3 +27,15 @@ test('live view without Phoenix configured says so instead of failing',async()=>
   const r=await fetch(origin+'/live',{headers:{Cookie:cookie}});assert.equal(r.status,503);assert.match(await r.text(),/not running/);assert.equal(app.liveFeed,null);
  }finally{await app.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('live snapshot counts what routers report, plus netops RADIUS sessions only for routers that do not report',()=>{
+ const now=Date.now(),{snapshot}=require('../lib/live.cjs');
+ const rows={devices:[{id:'r1',name:'CCR',type:'router',ip:'10.0.0.1',lastSeen:now},{id:'r2',name:'HEX',type:'router',lastSeen:now},{id:'r3',name:'RBX',type:'router'}],subscribers:[],alerts:[],subscriberPayments:[]};
+ const settings={'onlineSeries:r1':{points:[[now-60000,5,40]]},'onlineSeries:r3':{points:[[now-3*36e5,9,9]]}};
+ const sessions=[{username:'a',service:'pppoe',nasName:'10.0.0.1',updatedAt:now,startedAt:now},{username:'b',service:'hotspot',nasName:'HEX',updatedAt:now,startedAt:now}];
+ const store={list:k=>rows[k]||[],setting:k=>settings[k],sessionsSince:()=>sessions};
+ const s=snapshot(store,now);
+ // CCR: 5 PPPoE + 40 hotspot reported (its RADIUS session is not counted twice); HEX: 1 RADIUS session; RBX: report too old.
+ assert.deepEqual({total:s.online.total,hotspot:s.online.hotspot,pppoe:s.online.pppoe},{total:46,hotspot:41,pppoe:5});
+ assert.deepEqual(s.online.byRouter.map(r=>r.name),['CCR','HEX']);
+ assert.equal(s.online.top.length,2);
+});
