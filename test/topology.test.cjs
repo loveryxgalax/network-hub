@@ -40,3 +40,21 @@ test('branding API: key needed, shown once and stored hashed; packages and ISP d
   {const dr=await fetch(o+'/api/brand-api',{method:'DELETE',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf}});assert.equal(dr.status,200,await dr.text());}assert.equal((await fetch(o+'/portal/api/brand/isp',{headers:{Authorization:'Bearer '+k.key}})).status,401,'revoked');
  }finally{await app.close();}
 });
+test('customer usage: range and grouping; larger of RADIUS or router figures per day, never both; paged sessions',()=>{
+ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs'),u=require('../lib/usage.cjs');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'us-')),store=new Store(dir);
+ try{const now=Date.UTC(2026,10,10,9,0,0),GB=1e9,r=store.put('devices',{name:'CCR',type:'router'});
+  const p=store.put('plans',radius.plan({name:'Home',service:'pppoe',downloadMbps:10,uploadMbps:5,price:2000,durationValue:30,durationUnit:'days'}));
+  const s=store.put('subscribers',radius.subscriber(store,{name:'Masavi',username:'masavi',service:'pppoe',planId:p.id}));
+  // Router reports for two days; RADIUS has a bigger figure for one of them.
+  store.setting('customerDiscovery:'+r.id,{observations:[{evidence:{ppp:{name:'Masavi'}},usageDays:{'2026-11-08':{down:5*GB,up:1*GB},'2026-11-09':{down:2*GB,up:0}}}]});
+  store.put('radiusSessions',{username:'masavi',service:'pppoe',startedAt:Date.UTC(2026,10,9,6,0,0),updatedAt:Date.UTC(2026,10,9,8,0,0),stoppedAt:Date.UTC(2026,10,9,8,0,0),downloadBytes:3*GB,uploadBytes:GB});
+  const d=u.usage(store,s,{from:'2026-11-01',to:'2026-11-10',group:'day'},now);
+  assert.equal(d.series.length,10);assert.equal(d.totals.down,8*GB,'5 GB from the router on the 8th, 3 GB from RADIUS on the 9th');assert.equal(d.totals.up,2*GB);assert.equal(d.totals.sessions,1);assert.deepEqual(d.sources,{radius:true,router:true});
+  assert.equal(u.usage(store,s,{from:'2026-11-01',to:'2026-11-10',group:'month'},now).series.length,1);
+  assert.deepEqual(u.usage(store,s,{from:'2026-11-01',to:'2026-11-10',group:'week'},now).series.map(x=>x.label),['2026-10-26','2026-11-02','2026-11-09']);
+  assert.throws(()=>u.usage(store,s,{from:'2026-11-10',to:'2026-11-01'},now),/valid date range/);
+  for(let i=0;i<30;i++)store.put('radiusSessions',{username:'masavi',service:'pppoe',startedAt:now-i*36e5,updatedAt:now-i*36e5+60000,downloadBytes:1,uploadBytes:1});
+  const pg=u.sessionsPage(store,s,1);assert.equal(pg.total,31);assert.equal(pg.items.length,6);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
