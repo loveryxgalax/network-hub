@@ -26,6 +26,9 @@ test('assistant: DeepSeek and OpenRouter use the OpenAI-style API with the right
   assert.equal(call.body.model,'deepseek-chat');assert.equal(call.body.messages[0].role,'system');assert.match(call.body.messages[1].content,/HEX/);assert.equal(call.body.messages.at(-1).content,'Is HEX up?');
   await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(429,{})}),/rate limited/);
   await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(402,{})}),/no credit/);
+  await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(200,{error:{message:'No endpoints found for this model'}})}),/No endpoints found/);
+  await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:async()=>{throw Object.assign(new Error('timed out'),{name:'TimeoutError'});}}),/took too long/);
+  assert.equal((await assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(200,{choices:[{message:{content:'',reasoning:'Thinking only'}}]})})).text,'Thinking only');
   // Switching provider needs that provider's key; a blank key does not carry the DeepSeek key across.
   assert.throws(()=>assistant.setConfig(store,{provider:'openrouter',apiKey:''}),/OpenRouter API key/);
   assistant.setConfig(store,{provider:'openrouter',apiKey:'sk-or-v1-'+'c'.repeat(40)});
