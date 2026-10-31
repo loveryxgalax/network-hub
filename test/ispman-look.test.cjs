@@ -141,3 +141,14 @@ test('sign-ins are logged with the visitor address from Cloudflare, and the lock
   assert.equal(log[0].status,'success');assert.equal(log[0].ip,'7.7.7.7');assert.equal(log[1].status,'blocked');assert.equal(log[2].reason,'Wrong password');
  }finally{await new Promise(r=>app.server.close(r));fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('trends: online at each hour, typical day, hotspot visits by weekday and hour, PPPoE days with gaps',()=>{
+ const {store,done}=fx();try{const trends=require('../lib/trends.cjs'),now=Date.parse('2026-10-31T12:30:00+03:00'),H=36e5;
+  const add=(id,u,svc,start,end)=>store.db.prepare("INSERT INTO records(kind,id,body,created,updated) VALUES('radiusSessions',?,?,?,?)").run(id,JSON.stringify({username:u,service:svc,startedAt:start,updatedAt:end,stoppedAt:end,downloadBytes:2e9,uploadBytes:1e8}),start,end);
+  add('a','ann','hotspot',Date.parse('2026-10-31T09:10:00+03:00'),Date.parse('2026-10-31T11:20:00+03:00'));
+  add('b','ben','pppoe',Date.parse('2026-10-30T20:00:00+03:00'),Date.parse('2026-10-31T12:20:00+03:00'));
+  const t=trends.build(store,{days:1},now),at=iso=>t.series.find(p=>p.t===Date.parse(iso));
+  assert.deepEqual([at('2026-10-31T10:00:00+03:00').hotspot,at('2026-10-31T10:00:00+03:00').pppoe],[1,1]);assert.equal(at('2026-10-31T12:00:00+03:00').hotspot,0);
+  assert.equal(t.visits[5][9],1,'Saturday 09:00 (Monday first)');assert.equal(t.typical[10].hotspot,1);
+  const w=trends.build(store,{days:7},now);assert.equal(w.pppoe.length,28);assert.deepEqual(w.pppoe.find(d=>d.date==='2026-10-30'),{date:'2026-10-30',sessions:1,customers:1,download:2e9,upload:1e8,gap:false,noData:false});assert.equal(w.pppoe.find(d=>d.date==='2026-10-29').noData,true,'before the first PPPoE session');assert.equal(w.pppoe.find(d=>d.date==='2026-10-31').gap,false);
+ }finally{done();}
+});
