@@ -251,3 +251,7 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .rp-pair i.nodata{background:#d5d9e2}
 .kt-range{display:flex;align-items:center;gap:6px}.kt-range input{min-width:0;flex:1}.kt-range em{font-style:normal;color:var(--primary);font-size:12px}
 .im-filter-grid label:has(.kt-range){grid-column:span 2}@media (max-width:520px){.im-filter-grid label:has(.kt-range){grid-column:auto}}
+/* Hotspot / PPPoE customers: ISPman's shortcut tiles above the list */
+.ct-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.ct-shortcuts a{display:flex;justify-content:space-between;align-items:center;background:var(--primary);color:#fff!important;border-radius:8px;padding:12px 16px;font-size:18px;font-weight:700;text-decoration:none}
+@media (max-width:640px){.ct-shortcuts{grid-template-columns:1fr}}

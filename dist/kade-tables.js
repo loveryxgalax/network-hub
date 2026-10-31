@@ -17,6 +17,8 @@ function key(table){return (typeof state!=='undefined'?state.page:'')+'|'+[...ta
 function enhance(table){
  if(table.dataset.kt||!table.tHead||!table.tBodies[0]||table.closest('dialog,.kd,.im-no-kt'))return;const rows=[...table.tBodies[0].rows].filter(r=>r.cells.length>1);
  table.dataset.kt='1';if(rows.length<MIN_ROWS)return;
+ // A page with its own Filters panel and paging keeps them; nothing is added twice.
+ if(document.querySelector('#main .ct-filters,#main .im-filters:not(.kt-filters)'))return;
  const wrap=table.closest('.table-wrap')||table,k=key(table),st=memo.get(k)||{page:0,f:{}};memo.set(k,st);
  const heads=[...table.tHead.rows[0].cells].map((c,i)=>({i,name:c.textContent.trim()})).filter(h=>!SKIP.test(h.name));
  // A card that already has its own search box keeps it; the Filters panel is added only where nothing filters the rows.
