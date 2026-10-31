@@ -249,3 +249,5 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .rp-pair i.gap{background:#ef5350}
 .tr-sum{display:flex;flex-wrap:wrap;gap:18px;padding:10px 18px 0;font-size:13px;color:var(--muted)}.tr-sum b{color:var(--ink)}
 .rp-pair i.nodata{background:#d5d9e2}
+.kt-range{display:flex;align-items:center;gap:6px}.kt-range input{min-width:0;flex:1}.kt-range em{font-style:normal;color:var(--primary);font-size:12px}
+.im-filter-grid label:has(.kt-range){grid-column:span 2}@media (max-width:520px){.im-filter-grid label:has(.kt-range){grid-column:auto}}

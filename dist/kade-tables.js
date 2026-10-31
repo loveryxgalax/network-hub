@@ -5,6 +5,10 @@
 (()=>{
 const MIN_ROWS=6,SKIP=/^(actions?|)$/i,NOFILTER=/started|update|ended|time|date|downloaded|uploaded|expires|expiry|registered|seen|^when|duration|session time|down \/ up|^usage/i,memo=new Map();
 const ACR={ip:'IP',mac:'MAC',id:'ID',sms:'SMS',pppoe:'PPPoE',olt:'OLT',onu:'ONU',ipv4:'IPv4',ipv6:'IPv6',nas:'NAS',sn:'SN',cpe:'CPE',mpesa:'M-Pesa'};
+const RNUM=/amount|price|balance|wallet|paid|cost/i,RDATE=/^(time|date|when)$|transacted|deleted|detected|registered|started|expires|expiry|last seen|created|recorded/i;
+// The value of a cell for range filters: the first number (amounts), or a date from its text or title.
+const numOf=td=>{const m=/-?\d[\d,]*(\.\d+)?/.exec(td.innerText.replace(/\s/g,''));return m?Number(m[0].replace(/,/g,'')):null;};
+const dateOf=td=>{for(const v of [td.querySelector('[title]')?.title,td.title,td.innerText.split('\n')[0],td.innerText]){const t=Date.parse(String(v||'').trim());if(Number.isFinite(t))return t;}return null;};
 const title=s=>s.toLowerCase().replace(/[a-z0-9-]+/g,w=>ACR[w]||w.charAt(0).toUpperCase()+w.slice(1));
 let size=25;try{size=Number(localStorage.getItem('kd-page-size'))||25;}catch{}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -17,12 +21,14 @@ function enhance(table){
  const heads=[...table.tHead.rows[0].cells].map((c,i)=>({i,name:c.textContent.trim()})).filter(h=>!SKIP.test(h.name));
  // A card that already has its own search box keeps it; the Filters panel is added only where nothing filters the rows.
  const card=wrap.closest('.card,section')||wrap.parentElement,own=card&&card.querySelector('input[type=search],.table-toolbar input,.sites-panel>input');
- let panel=null;if(!own&&heads.some(h=>!NOFILTER.test(h.name))){panel=document.createElement('section');panel.className='card im-filters kt-filters';
-  panel.innerHTML=`<h2>Filters</h2><div class="im-filter-grid">${heads.filter(h=>!NOFILTER.test(h.name)).slice(0,8).map(h=>`<label>${esc(title(h.name))}<input type="search" data-col="${h.i}" placeholder="Filter ${esc(title(h.name))}…" value="${esc(st.f[h.i]||'')}"></label>`).join('')}</div>`;
-  wrap.before(panel);for(const i of panel.querySelectorAll('input'))i.oninput=()=>{st.f[i.dataset.col]=i.value;st.page=0;paint();};}
+ let panel=null;if(!own&&heads.some(h=>!NOFILTER.test(h.name)||RNUM.test(h.name)||RDATE.test(h.name))){panel=document.createElement('section');panel.className='card im-filters kt-filters';
+  panel.innerHTML=`<h2>Filters</h2><div class="im-filter-grid">${[...heads.filter(h=>!NOFILTER.test(h.name)&&!RNUM.test(h.name)).slice(0,6).map(h=>`<label>${esc(title(h.name))}<input type="search" data-col="${h.i}" placeholder="Filter ${esc(title(h.name))}…" value="${esc(st.f[h.i]||'')}"></label>`),...heads.filter(h=>RNUM.test(h.name)||RDATE.test(h.name)).slice(0,3).map(h=>{const d=!RNUM.test(h.name),ty=d?'date':'number';return `<label>${esc(title(h.name))}<span class="kt-range"><input type="${ty}" data-col="${h.i}" data-r="min" placeholder="Min" value="${esc(st.f[h.i+':min']||'')}"><em>to</em><input type="${ty}" data-col="${h.i}" data-r="max" placeholder="Max" value="${esc(st.f[h.i+':max']||'')}"></span></label>`;})].join('')}</div>`;
+  wrap.before(panel);for(const i of panel.querySelectorAll('input'))i.oninput=()=>{st.f[i.dataset.r?i.dataset.col+':'+i.dataset.r:i.dataset.col]=i.value;st.page=0;paint();};}
  const foot=document.createElement('div');foot.className='kt-foot';wrap.after(foot);
- function paint(){const f=Object.entries(st.f).filter(([,v])=>v&&v.trim()).map(([c,v])=>[Number(c),v.trim().toLowerCase()]);
-  const shown=rows.filter(r=>f.every(([c,v])=>r.cells[c]&&cellText(r.cells[c]).toLowerCase().includes(v)));const pages=Math.max(1,Math.ceil(shown.length/size));if(st.page>=pages)st.page=pages-1;
+ function paint(){const f=Object.entries(st.f).filter(([k,v])=>v&&v.trim()&&!k.includes(':')).map(([c,v])=>[Number(c),v.trim().toLowerCase()]);
+  // Ranges: min/max for amounts, from/to (whole days, Nairobi) for dates.
+  const rg=Object.entries(st.f).filter(([k,v])=>v&&k.includes(':')).map(([k,v])=>{const [c,side]=k.split(':'),isDate=/^\d{4}-\d{2}-\d{2}$/.test(v);return {c:Number(c),side,isDate,v:isDate?Date.parse(v+'T00:00:00+03:00')+(side==='max'?864e5-1:0):Number(v)};}).filter(x=>Number.isFinite(x.v));
+  const shown=rows.filter(r=>f.every(([c,v])=>r.cells[c]&&cellText(r.cells[c]).toLowerCase().includes(v))&&rg.every(x=>{const td=r.cells[x.c];if(!td)return false;const val=x.isDate?dateOf(td):numOf(td);return val!=null&&(x.side==='min'?val>=x.v:val<=x.v);}));const pages=Math.max(1,Math.ceil(shown.length/size));if(st.page>=pages)st.page=pages-1;
   const from=st.page*size,vis=new Set(shown.slice(from,from+size));for(const r of rows)r.hidden=!vis.has(r);
   const btn=(p,label=p+1)=>`<button type="button" data-p="${p}" class="${p===st.page?'on':''}">${label}</button>`,nums=[];for(let p=0;p<pages;p++)if(p<2||p>=pages-2||Math.abs(p-st.page)<=1)nums.push(p);else if(nums.at(-1)!=='…')nums.push('…');
   foot.innerHTML=`<span class="kt-info">Page ${st.page+1} of ${pages} <b>(showing ${shown.length?from+1:0}–${Math.min(from+size,shown.length)} of ${shown.length}${shown.length!==rows.length?`, filtered from ${rows.length}`:''})</b></span>
