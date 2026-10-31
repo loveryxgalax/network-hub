@@ -426,11 +426,13 @@ function createApp(options={}){
     const realm=radius.settings(store).realm,login=input.withRealm===true&&realm?sub.username+'@'+realm:sub.username,pw=radius.password(store,sub.id);if(!pw)throw error(409,'The customer has no PPPoE password yet');
     const operation=store.put('acsTasks',{deviceId,action:'pppoe',status:'Sending',requestedBy:user.id,subscriberId:sub.id});store.audit(user,'Requested CPE PPPoE login for '+sub.username,operation.id);
     try{const receipt=await acs.task(store,deviceId,'pppoe',{username:login,password:pw,path:input.path});return json(res,200,{linked:true,task:store.put('acsTasks',{...operation,...receipt},operation)});}catch(cause){store.put('acsTasks',{...operation,status:cause.mayHaveApplied?'Uncertain':'Rejected',error:cause.message},operation);throw error(502,cause.mayHaveApplied?'Linked. The ACS outcome of the PPPoE change is uncertain; check the device before retrying.':'Linked, but the PPPoE change failed: '+cause.message);}}
-   const deviceMatch=route.match(/^\/api\/acs\/devices\/([^/]+)(?:\/(reboot|refresh|wifi))?$/);if(deviceMatch){
+   if(route==='/api/acs/files'&&method==='GET'){try{return json(res,200,await acs.files(store));}catch(cause){throw error(502,cause.message);}}
+   const deviceMatch=route.match(/^\/api\/acs\/devices\/([^/]+)(?:\/(reboot|refresh|wifi|firmware))?$/);if(deviceMatch){
     let deviceId;try{deviceId=decodeURIComponent(deviceMatch[1]);}catch{throw error(400,'Invalid device ID');}const action=deviceMatch[2];
     if(!action&&method==='GET'){try{return json(res,200,await acs.detail(store,deviceId));}catch(cause){throw error(502,cause.message);}}
     if(action&&method==='POST'){
      if(!permissions.equipment(user.role))throw error(403,'Your role cannot change CPEs');const input=await body(req);
+     if(action==='firmware'){role(user,['admin','manager']);if(input.confirm!=='UPGRADE')throw error(400,'Type UPGRADE to confirm: the device reboots after the upgrade');if(typeof input.file!=='string'||!input.file)throw error(400,'Choose a firmware image');}
      if(action==='wifi'){if(typeof input.networkId!=='string'||!/^TR-(098|181):\d{1,2}$/.test(input.networkId))throw error(400,'Select an observed Wi-Fi network');if(input.password&&(typeof input.password!=='string'||input.password.length<8||input.password.length>63))throw error(400,'Wi-Fi password must contain 8–63 characters');if(input.ssid!==undefined&&(typeof input.ssid!=='string'||!input.ssid||Buffer.byteLength(input.ssid)>32))throw error(400,'SSID must contain 1–32 bytes');}
      if(store.list('acsTasks').some(t=>t.deviceId===deviceId&&t.action===action&&['Queued','Sending','Uncertain'].includes(t.status)))throw error(409,'An earlier request is still pending. Check the ACS and device before reconciling it');
      const operation=store.put('acsTasks',{deviceId,action,status:'Sending',requestedBy:user.id});store.audit(user,'Requested CPE '+action,operation.id);
