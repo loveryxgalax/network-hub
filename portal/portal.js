@@ -279,7 +279,9 @@ function wireAdmin(){
    const data=await r.json().catch(()=>({}));btn.textContent=r.ok?'Saved ✓':(data.error||'Save failed');}catch{btn.textContent='Save failed';}setTimeout(()=>btn.textContent='Save',2200);};
  $('#copyCfg').onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(CFG,null,2));$('#copyCfg').textContent='Copied ✓';}catch{$('#copyCfg').textContent='Copy failed';}setTimeout(()=>$('#copyCfg').textContent='Copy JSON',1500);};
 }
-window.addEventListener('message',e=>{if(e.origin!==location.origin||!params.has('preview')||e.data?.kade!=='config')return;const c=e.data.config||{};CFG={...CFG,...c,show:{...CFG.show,...(c.show||{})}};if(c.defaultLang)LANG=c.defaultLang;render();});
+// Preview inside the netops editor: the editor's unsaved settings win over the saved ones, whichever arrives first.
+let previewCfg=null;const applyPreview=()=>{const c=previewCfg;if(!c)return;CFG={...CFG,...c,show:{...CFG.show,...(c.show||{})}};if(c.defaultLang)LANG=c.defaultLang;};
+window.addEventListener('message',e=>{if(e.origin!==location.origin||!params.has('preview')||e.data?.kade!=='config')return;previewCfg=e.data.config||{};applyPreview();render();});
 async function checkAdmin(){
  if(params.has('preview')){try{parent.postMessage({kade:'ready'},location.origin);}catch{}return;}
  if(params.has('admin')){location.replace('/#captive');return;}
@@ -301,7 +303,7 @@ async function boot(){
  render();
  const q=params.get('theme');
  try{
-  const d=await call('config'+(router.mac?'?mac='+encodeURIComponent(router.mac):''));CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;cardOn=!!d.paystack;freeMode=d.freeMode||null;engage=d.engage||{ads:[],quiz:null};state='ok';
+  const d=await call('config'+(router.mac?'?mac='+encodeURIComponent(router.mac):''));CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};applyPreview();plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;cardOn=!!d.paystack;freeMode=d.freeMode||null;engage=d.engage||{ads:[],quiz:null};state='ok';
   try{if(!localStorage.getItem('portal-lang'))LANG=CFG.defaultLang||LANG;}catch{LANG=CFG.defaultLang||LANG;}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;

@@ -184,7 +184,9 @@ const pages={
    const cfg={...cv.st};for(const k of ['brandName','buyLabel','primary','background','text','accent'])cfg[k]=get(k)??'';cfg.showLogo=v.has('showLogo');return cfg;};
   const push=()=>{if(cv.tab==='landing')frame.contentWindow?.postMessage({kade:'config',config:cv.cfg},location.origin);else frame.src='/api/portal/status.html?preview=1&cfg='+encodeURIComponent(JSON.stringify(cv.st));};
   const change=()=>{if(cv.tab==='landing')cv.cfg=read();else cv.st=read();push();};
-  f.oninput=change;f.onchange=change;if(cv.tab==='landing')frame.onload=push;
+  f.oninput=change;f.onchange=change;if(cv.tab==='landing'){frame.onload=push;
+   // The preview says when it has loaded its saved settings; send ours again so they win.
+   if(window.cvReady)window.removeEventListener('message',window.cvReady);window.cvReady=e=>{if(e.origin===location.origin&&e.source===$('#cv-frame')?.contentWindow&&e.data?.kade==='ready')push();};window.addEventListener('message',window.cvReady);}
   for(const b of document.querySelectorAll('[data-cv-theme]'))b.onclick=()=>{cv.cfg={...read(),theme:b.dataset.cvTheme};pages.captive(id);};
   for(const b of document.querySelectorAll('[data-cv-design]'))b.onclick=()=>{cv.st={...read(),design:b.dataset.cvDesign};pages.captive(id);};
   for(const b of document.querySelectorAll('[data-cv-tab]'))b.onclick=e=>{e.preventDefault();cv.tab=b.dataset.cvTab;pages.captive(id);};
