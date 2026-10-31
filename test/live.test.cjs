@@ -30,12 +30,14 @@ test('live view without Phoenix configured says so instead of failing',async()=>
 test('live snapshot counts what routers report, plus netops RADIUS sessions only for routers that do not report',()=>{
  const now=Date.now(),{snapshot}=require('../lib/live.cjs');
  const rows={devices:[{id:'r1',name:'CCR',type:'router',ip:'10.0.0.1',lastSeen:now},{id:'r2',name:'HEX',type:'router',lastSeen:now},{id:'r3',name:'RBX',type:'router'}],subscribers:[],alerts:[],subscriberPayments:[]};
- const settings={'onlineSeries:r1':{points:[[now-60000,5,40]]},'onlineSeries:r3':{points:[[now-3*36e5,9,9]]}};
+ const settings={'onlineSeries:r1':{points:[[now-60000,5,40]]},'onlineSeries:r3':{points:[[now-3*36e5,9,9]]},
+  'customerDiscovery:r1':{observations:[{evidence:{ppp:{name:'kithwa',ip:'10.28.0.50',uptime:'1h00m00s'.replace('1h00m00s','01:00:00'),tx:5e9,rx:1e8,observedAt:now-30000}}},{evidence:{hotspot:{name:'KNE-OLD',tx:9e9,rx:0,observedAt:now-36e5}}}]}};
  const sessions=[{username:'a',service:'pppoe',nasName:'10.0.0.1',updatedAt:now,startedAt:now},{username:'b',service:'hotspot',nasName:'HEX',updatedAt:now,startedAt:now}];
  const store={list:k=>rows[k]||[],setting:k=>settings[k],sessionsSince:()=>sessions};
  const s=snapshot(store,now);
  // CCR: 5 PPPoE + 40 hotspot reported (its RADIUS session is not counted twice); HEX: 1 RADIUS session; RBX: report too old.
  assert.deepEqual({total:s.online.total,hotspot:s.online.hotspot,pppoe:s.online.pppoe},{total:46,hotspot:41,pppoe:5});
  assert.deepEqual(s.online.byRouter.map(r=>r.name),['CCR','HEX']);
- assert.equal(s.online.top.length,2);
+ // Top list: CCR's own session list (the stale entry is left out) plus HEX's netops RADIUS session; CCR's RADIUS session is not repeated.
+ assert.deepEqual(s.online.top.map(x=>[x.username,x.router,x.down]),[['kithwa','CCR',5e9],['b','HEX',0]]);assert.equal(s.online.top[0].since,now-3600000);
 });
