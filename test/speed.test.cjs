@@ -56,3 +56,12 @@ test('payments record the package version they were made under',()=>{
   const r=billing.pay(store,s.id,{amount:1500,reference:'VER00001',method:'cash'});assert.equal(r.payment.planVersion,3);assert.equal(r.payment.planPrice,1500);
  }finally{done();}
 });
+test('speed: an everyone-rule can take priority over router, package and customer rules',()=>{
+ const set={};const store={setting:(k,v)=>v===undefined?set[k]:(set[k]=v)};
+ const isp=speed.validate({scope:'isp',mode:'exact',downMbps:20,upMbps:10,over:['customer','bogus','customer']});assert.deepEqual(isp.over,['customer']);
+ assert.deepEqual(speed.validate({scope:'plan',targetId:'p1',mode:'cut',downMbps:5,upMbps:5,over:['router']}).over,[],'only everyone-rules carry priority');
+ set.speedRules={items:[{...isp,id:'a'},{...speed.validate({scope:'customer',targetId:'s1',mode:'exact',downMbps:50,upMbps:50}),id:'b'},{...speed.validate({scope:'plan',targetId:'p1',mode:'cut',downMbps:8,upMbps:4}),id:'c'}]};
+ const r=speed.resolve(store,{subscriber:{id:'s1'},plan:{id:'p1',name:'Home'},service:'pppoe',baseDown:10,baseUp:5});
+ // Customer rule ignored (the ISP rule has priority over it); the package rule still applies on top of the ISP rule.
+ assert.deepEqual([r.downMbps,r.upMbps],[8,4]);assert.deepEqual(r.rules,['a','c']);assert.ok(r.steps.some(x=>/Customer rule ignored/.test(x)));
+});
