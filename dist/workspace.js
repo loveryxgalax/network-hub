@@ -163,7 +163,7 @@ document.addEventListener('click',async event=>{const target=event.target.closes
  if(target.id==='logout'){await api('logout','POST',{});state.session=null;showAuth(false);}
  if(target.id==='menu-toggle'){if(innerWidth<=760){document.body.classList.toggle('nav-open');$('#scrim').hidden=!document.body.classList.contains('nav-open');}else document.body.classList.toggle('collapsed');}
  if(target.id==='scrim'){document.body.classList.remove('nav-open');target.hidden=true;}
- if(target.id==='workspace-link'||target.id==='profile-link')location.hash='settings';
+ if(target.id==='workspace-link')location.hash='settings';if(target.id==='profile-link')location.hash='me';
  if(target.id==='save-workspace'){await api('workspace','PATCH',{name:$('#workspace-name').value});await load();chrome();toast('Workspace saved');}
  }catch(error){toast(error.message);}finally{if(target.dataset.poll)target.disabled=false;}});
 document.addEventListener('input',event=>{if(event.target.id==='list-query'){state.query=event.target.value;paintList();}if(event.target.id==='search-query')search();});

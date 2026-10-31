@@ -26,6 +26,11 @@ function createApp(options={}){
  for(const operation of store.list('acsTasks').filter(t=>t.status==='Sending'))store.put('acsTasks',{...operation,status:'Uncertain',error:'The server restarted before the ACS receipt was saved. Check the ACS and device before reconciling.'},operation);
  // Passive (a rehearsal copy on a new server): everything works for checking, but no automatic SMS/email to
  // customers or staff, no auto-deactivation and no router changes are started, so they never happen twice.
+ // Sign-in alerts (My account): email the user when their account signs in from a browser and address not seen before.
+ function signinAlert(user,ip,ua){try{const key='knownSignins:'+user.id,known=store.setting(key)||{items:[]},sig=crypto.createHash('sha256').update(ip+'|'+ua).digest('hex').slice(0,24);
+  if(known.items.includes(sig))return;const first=!known.items.length;store.setting(key,{items:[sig,...known.items].slice(0,30)});
+  if(first||!store.setting('signinAlerts:'+user.id)||passive)return;
+  emailLib.send(store,user.email,'New sign-in to netops','Your netops account ('+user.email+') just signed in from a new browser or address.\n\nAddress: '+ip+'\nBrowser: '+ua+'\nTime: '+new Date().toISOString()+'\n\nIf this was not you, change your password under My account and sign out other devices.','security').catch(()=>{});}catch{}}
  const passive=options.passive??process.env.NETWORK_PASSIVE==='1';if(passive)console.log('Passive mode: automatic messages, deactivation and router changes are off.');
  const publicOrigin=options.publicOrigin??process.env.NETWORK_PUBLIC_ORIGIN;
  const publicUrl=publicOrigin?new URL(publicOrigin):null;
@@ -128,9 +133,21 @@ function createApp(options={}){
    const ip=String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||'').slice(0,64),key=ip,a=attempts.get(key),ua=String(req.headers['user-agent']||'').slice(0,160);
    const logAccess=(email,u,status,reason)=>{const l=store.setting('accessLog')||{items:[]};l.items=[{time:Date.now(),email:String(email||'').toLowerCase().trim().slice(0,120),name:u?.name||'',ip,status,reason,ua},...l.items].slice(0,1000);store.setting('accessLog',l);};
    if(a&&a.until>Date.now()&&a.n>=8){logAccess(null,null,'blocked','Too many attempts from this address');throw error(429,'Too many attempts. Try again in 15 minutes.');}const input=await body(req),user=typeof input.email==='string'?store.db.prepare('SELECT * FROM users WHERE email=? AND active=1').get(input.email.toLowerCase().trim()):null;
-   const valid=checkPassword(typeof input.password==='string'?input.password.slice(0,257):'',user?.password||hashPassword('constant-dummy-password'));if(!user||!valid){attempts.set(key,{n:a&&a.until>Date.now()?a.n+1:1,until:Date.now()+900000});logAccess(input.email,user,'failed',user?'Wrong password':'No active account with this email');throw error(401,'Email or password is incorrect');}attempts.delete(key);logAccess(user.email,user,'success','Signed in');return json(res,200,session(res,user,secure));
+   const valid=checkPassword(typeof input.password==='string'?input.password.slice(0,257):'',user?.password||hashPassword('constant-dummy-password'));if(!user||!valid){attempts.set(key,{n:a&&a.until>Date.now()?a.n+1:1,until:Date.now()+900000});logAccess(input.email,user,'failed',user?'Wrong password':'No active account with this email');throw error(401,'Email or password is incorrect');}attempts.delete(key);logAccess(user.email,user,'success','Signed in');signinAlert(user,ip,ua);return json(res,200,session(res,user,secure));
   }
   const user=auth(req);if(!user)throw error(401,'Sign in to continue');if(mutating.has(method)&&req.headers['x-csrf-token']!==user.csrf)throw error(403,'Session verification failed. Reload the page.');
+  // My account: own details, password, sign-in alerts, recent sign-ins and activity, other sessions.
+  if(route==='/api/me'&&method==='GET'){const em=user.email.toLowerCase(),now=Date.now();
+   return json(res,200,{user:publicUser(user),signinAlerts:!!store.setting('signinAlerts:'+user.id),emailReady:!!emailLib.config?.(store),
+    signins:(store.setting('accessLog')?.items||[]).filter(l=>l.email===em).slice(0,15).map(l=>({time:l.time,ip:l.ip,status:l.status,reason:l.reason,ua:l.ua})),
+    activity:store.db.prepare('SELECT time,action,target FROM audit WHERE user_id=? ORDER BY id DESC LIMIT 20').all(user.id),
+    otherSessions:store.db.prepare('SELECT COUNT(*) n FROM sessions WHERE user_id=? AND token<>? AND expires>?').get(user.id,user.token,now).n});}
+  if(route==='/api/me/password'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.current||'').slice(0,257),user.password))throw error(400,'Your current password is not right');
+   const next=password(input.next);if(next===input.current)throw error(400,'Choose a password different from the current one');
+   store.transaction(()=>{store.db.prepare('UPDATE users SET password=? WHERE id=?').run(hashPassword(next),user.id);store.db.prepare('DELETE FROM sessions WHERE user_id=? AND token<>?').run(user.id,user.token);store.audit(user,'Changed own password',user.id);});
+   return json(res,200,{ok:true,message:'Password changed. Other devices were signed out.'});}
+  if(route==='/api/me/alerts'&&method==='PUT'){const input=await body(req);store.setting('signinAlerts:'+user.id,input.signinAlerts===true);return json(res,200,{signinAlerts:input.signinAlerts===true});}
+  if(route==='/api/me/signout-others'&&method==='POST'){const n=store.db.prepare('DELETE FROM sessions WHERE user_id=? AND token<>?').run(user.id,user.token).changes;store.audit(user,'Signed out other sessions',user.id);return json(res,200,{signedOut:n});}
   if(route==='/api/customers'&&method==='GET'){if(user.role==='installer')throw error(403,'Customer discovery is not available to field installers');return json(res,200,customers.list(store,url.searchParams));}
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
   if(route==='/api/trends'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,require('./lib/trends.cjs').build(store,{days:url.searchParams.get('days')}));}
