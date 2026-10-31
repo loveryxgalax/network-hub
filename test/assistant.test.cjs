@@ -15,27 +15,28 @@ test('assistant: key validation, snapshot without personal data, request shape, 
   await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'assistant',text:'x'}]),/Ask a question/);
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
-test('assistant: DeepSeek and OpenRouter use the OpenAI-style API with the right key, model and errors',async()=>{
+test('assistant: OpenRouter only (no DeepSeek), chosen model, clear errors',async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'as-')),store=new Store(dir);
  try{store.put('devices',{name:'HEX',type:'router',driver:'none',status:'online'});
-  assert.throws(()=>assistant.setConfig(store,{provider:'deepseek',apiKey:'sk-ant-'+'a'.repeat(40)}),/DeepSeek API key/);
-  assistant.setConfig(store,{provider:'deepseek',apiKey:'sk-'+'b'.repeat(32)});assert.deepEqual(assistant.publicConfig(store),{configured:true,provider:'deepseek',model:'deepseek-chat',effort:'medium'});
+  assert.throws(()=>assistant.setConfig(store,{provider:'deepseek',apiKey:'sk-'+'b'.repeat(32)}),/Anthropic API key/,'there is no DeepSeek provider');
+  const key='sk-or-v1-'+'c'.repeat(40);
+  assert.throws(()=>assistant.setConfig(store,{provider:'openrouter',apiKey:key}),/Choose an OpenRouter model/);
+  assert.throws(()=>assistant.setConfig(store,{provider:'openrouter',apiKey:key,model:'deepseek/deepseek-r1:free'}),/not allowed/);
+  // An old saved DeepSeek model counts as not set up; saving a new model keeps the saved key.
+  store.secret('assistant:config',{provider:'openrouter',apiKey:key,model:'deepseek/deepseek-chat-v3-0324:free',effort:'low'});assert.equal(assistant.publicConfig(store).configured,false);
+  await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}]),/API key/);
+  assistant.setConfig(store,{provider:'openrouter',apiKey:'',model:'meta-llama/llama-3.3-70b-instruct:free'});assert.deepEqual(assistant.publicConfig(store),{configured:true,provider:'openrouter',model:'meta-llama/llama-3.3-70b-instruct:free',effort:'low'});
   let call;const fake=(status,json)=>async(url,opts)=>{call={url,opts,body:JSON.parse(opts.body)};return {ok:status<300,status,json:async()=>json};};
-  const r=await assistant.ask(store,radius.stateOf,[{role:'user',text:'Is HEX up?'}],{fetchImpl:fake(200,{model:'deepseek-chat',choices:[{message:{content:'Yes, HEX is online.'},finish_reason:'stop'}],usage:{prompt_tokens:9,completion_tokens:4}})});
-  assert.equal(r.text,'Yes, HEX is online.');assert.equal(call.url,'https://api.deepseek.com/chat/completions');assert.equal(call.opts.headers.Authorization,'Bearer sk-'+'b'.repeat(32));
-  assert.equal(call.body.model,'deepseek-chat');assert.equal(call.body.messages[0].role,'system');assert.match(call.body.messages[1].content,/HEX/);assert.equal(call.body.messages.at(-1).content,'Is HEX up?');
+  const r=await assistant.ask(store,radius.stateOf,[{role:'user',text:'Is HEX up?'}],{fetchImpl:fake(200,{choices:[{message:{content:'Yes, HEX is online.'},finish_reason:'stop'}],usage:{prompt_tokens:9,completion_tokens:4}})});
+  assert.equal(r.text,'Yes, HEX is online.');assert.equal(call.url,'https://openrouter.ai/api/v1/chat/completions');assert.equal(call.opts.headers.Authorization,'Bearer '+key);
+  assert.equal(call.body.model,'meta-llama/llama-3.3-70b-instruct:free');assert.equal(call.body.messages[0].role,'system');assert.match(call.body.messages[1].content,/HEX/);assert.equal(call.body.messages.at(-1).content,'Is HEX up?');
   await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(429,{})}),/rate limited/);
   await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(402,{})}),/no credit/);
+  await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(404,{error:{message:'This model is unavailable for free.'}})}),/free list/);
   await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(200,{error:{message:'No endpoints found for this model'}})}),/No endpoints found/);
   await assert.rejects(assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:async()=>{throw Object.assign(new Error('timed out'),{name:'TimeoutError'});}}),/took too long/);
   assert.equal((await assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(200,{choices:[{message:{content:'',reasoning:'Thinking only'}}]})})).text,'Thinking only');
-  // Switching provider needs that provider's key; a blank key does not carry the DeepSeek key across.
-  assert.throws(()=>assistant.setConfig(store,{provider:'openrouter',apiKey:''}),/OpenRouter API key/);
-  assert.throws(()=>assistant.setConfig(store,{provider:'openrouter',apiKey:'sk-or-v1-'+'c'.repeat(40)}),/Choose an OpenRouter model/);
-  assistant.setConfig(store,{provider:'openrouter',apiKey:'sk-or-v1-'+'c'.repeat(40),model:'deepseek/deepseek-r1:free'});
-  await assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(200,{choices:[{message:{content:'ok'}}]})});
-  assert.equal(call.url,'https://openrouter.ai/api/v1/chat/completions');assert.equal(call.body.model,'deepseek/deepseek-r1:free');
-  assistant.setConfig(store,{provider:'openrouter',apiKey:''});assert.equal(assistant.publicConfig(store).model,'deepseek/deepseek-r1:free','saving again keeps the chosen model');
-  const list=await assistant.freeModels(async()=>({ok:true,json:async()=>({data:[{id:'meta/llama:free',context_length:9},{id:'paid/model'},{id:'deepseek/deepseek-r1:free',context_length:5}]})}),Date.now());assert.deepEqual(list.map(m=>m.id),['deepseek/deepseek-r1:free','meta/llama:free']);
+  const list=await assistant.freeModels(async()=>({ok:true,json:async()=>({data:[{id:'meta/llama:free',context_length:9},{id:'paid/model'},{id:'deepseek/deepseek-r1:free',context_length:50},{id:'qwen/qwen3:free',context_length:20}]})}),Date.now());
+  assert.deepEqual(list.map(m=>m.id),['qwen/qwen3:free','meta/llama:free'],'free models only, DeepSeek left out');
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
