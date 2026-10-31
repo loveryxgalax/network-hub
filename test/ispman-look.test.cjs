@@ -180,3 +180,14 @@ test('stock requests carry a priority; open urgent requests are listed first',()
   const l=sr.overview(store).requests;assert.equal(l[0].priority,'urgent');assert.ok(l.slice(1).every(r=>r.priority==='normal'),'unknown priorities become normal');
  }finally{done();}
 });
+test('bulk actions: ticked customers only; delete goes to Recently deleted and removes static router entries',()=>{
+ const {store,done}=fx();try{const bulk=require('../lib/bulk.cjs'),jobs=require('../lib/jobs.cjs'),trash=require('../lib/trash.cjs'),r=store.put('devices',{name:'CCR',type:'router'});jobs.enroll(store,r.id);
+  const plan=store.put('plans',radius.plan({name:'H',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days'}));
+  const a=store.put('subscribers',{name:'A',username:'a',service:'pppoe',planId:plan.id,status:'active'}),b=store.put('subscribers',{name:'B',username:'b',service:'pppoe',planId:plan.id,status:'active'}),c=store.put('subscribers',{name:'C',username:'c',service:'static',planId:plan.id,status:'active',routerId:r.id,staticIp:'10.27.0.5'});
+  const pv=bulk.preview(store,{service:'all',ids:[a.id,c.id]},radius.stateOf);assert.equal(pv.count,2);assert.equal(pv.items.length,2);
+  assert.equal(bulk.preview(store,{service:'pppoe',ids:[a.id,c.id]},radius.stateOf).count,1,'a selection never widens the filter');
+  const r2=bulk.apply(store,{service:'all',ids:[a.id,c.id]},'delete',{},{count:2,version:pv.version,confirm:'DELETE 2'},radius.stateOf,{email:'o@x'});assert.equal(r2.done,2);
+  assert.ok(store.get('subscribers',b.id),'unticked customer untouched');assert.equal(trash.list(store).length,2,'restorable');
+  assert.ok(store.list('routerJobs').some(j=>j.type==='static-remove'&&j.params.ip==='10.27.0.5'));
+ }finally{done();}
+});

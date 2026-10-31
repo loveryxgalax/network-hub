@@ -260,3 +260,4 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .ct-idle{color:#c25a0b!important}
 .auth-bad{color:#c42b2b}.auth-none{color:#c25a0b;font-weight:600}
 .oc-downs{margin-bottom:16px}.oc-down{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid var(--border)}.oc-down small{display:block;color:var(--muted)}.oc-down .status{margin-left:6px}
+.bk-list{max-height:460px;overflow:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:8px}
