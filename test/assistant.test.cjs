@@ -31,8 +31,11 @@ test('assistant: DeepSeek and OpenRouter use the OpenAI-style API with the right
   assert.equal((await assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(200,{choices:[{message:{content:'',reasoning:'Thinking only'}}]})})).text,'Thinking only');
   // Switching provider needs that provider's key; a blank key does not carry the DeepSeek key across.
   assert.throws(()=>assistant.setConfig(store,{provider:'openrouter',apiKey:''}),/OpenRouter API key/);
-  assistant.setConfig(store,{provider:'openrouter',apiKey:'sk-or-v1-'+'c'.repeat(40)});
+  assert.throws(()=>assistant.setConfig(store,{provider:'openrouter',apiKey:'sk-or-v1-'+'c'.repeat(40)}),/Choose an OpenRouter model/);
+  assistant.setConfig(store,{provider:'openrouter',apiKey:'sk-or-v1-'+'c'.repeat(40),model:'deepseek/deepseek-r1:free'});
   await assistant.ask(store,radius.stateOf,[{role:'user',text:'x'}],{fetchImpl:fake(200,{choices:[{message:{content:'ok'}}]})});
-  assert.equal(call.url,'https://openrouter.ai/api/v1/chat/completions');assert.equal(call.body.model,'deepseek/deepseek-chat-v3-0324:free');
+  assert.equal(call.url,'https://openrouter.ai/api/v1/chat/completions');assert.equal(call.body.model,'deepseek/deepseek-r1:free');
+  assistant.setConfig(store,{provider:'openrouter',apiKey:''});assert.equal(assistant.publicConfig(store).model,'deepseek/deepseek-r1:free','saving again keeps the chosen model');
+  const list=await assistant.freeModels(async()=>({ok:true,json:async()=>({data:[{id:'meta/llama:free',context_length:9},{id:'paid/model'},{id:'deepseek/deepseek-r1:free',context_length:5}]})}),Date.now());assert.deepEqual(list.map(m=>m.id),['deepseek/deepseek-r1:free','meta/llama:free']);
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });

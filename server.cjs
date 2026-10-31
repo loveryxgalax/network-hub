@@ -241,6 +241,7 @@ function createApp(options={}){
   const jobAction=route.match(/^\/api\/router-jobs\/([a-f0-9-]{36})\/(cancel|retry)$/);
   if(jobAction&&method==='POST'){role(user,['admin','manager','network-technician']);const j=jobAction[2]==='cancel'?jobs.cancel(store,jobAction[1]):jobs.retry(store,jobAction[1]);store.audit(user,(jobAction[2]==='cancel'?'Cancelled':'Retried')+' router job',j.id);return json(res,200,j);}
   if(route==='/api/assistant'&&method==='GET'){if(['installer','viewer'].includes(user.role))throw error(403,'Not available to your role');return json(res,200,assistant.publicConfig(store));}
+  if(route==='/api/assistant/free-models'&&method==='GET'){role(user,['admin']);return json(res,200,{items:await assistant.freeModels()});}
   if(route==='/api/assistant'&&method==='PUT'){role(user,['admin']);const saved=assistant.setConfig(store,await body(req));store.audit(user,'Updated assistant settings','assistant');return json(res,200,saved);}
   if(route==='/api/assistant/ask'&&method==='POST'){if(['installer','viewer'].includes(user.role))throw error(403,'Not available to your role');limit(req,'assistant',30,600000,user.id);const input=await body(req,65536);return json(res,200,await assistant.ask(store,radius.stateOf,input.history));}
   if(route==='/api/wireguard'&&method==='GET'){role(user,['admin','manager','network-technician']);const o=wireguard.overview(store),sc=access.scope(store,user);if(sc)o.peers=o.peers.filter(p=>p.kind==='staff'?p.userId===user.id:sc.has(p.routerId));return json(res,200,o);}
