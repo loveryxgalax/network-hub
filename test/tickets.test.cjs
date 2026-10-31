@@ -52,3 +52,22 @@ test('vouchers: import existing codes with a check, one voucher per phone, print
   assert.match(vouchers.printPage(store,done.batch.id,{}),/grid-template-columns:repeat\(3,1fr\)/);
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('bulk email: audiences are "any of", one email per address, fields filled, every result kept',async()=>{
+ const {Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs'),mo=require('../lib/mailout.cjs'),email=require('../lib/email.cjs');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'mo-')),store=new Store(dir);
+ try{const now=Date.now(),pp=store.put('plans',radius.plan({name:'Home 10',service:'pppoe',downloadMbps:10,uploadMbps:5,price:2000,durationValue:30,durationUnit:'days'})),hp=store.put('plans',radius.plan({name:'1 Hour',service:'hotspot',downloadMbps:5,uploadMbps:2,price:20,durationValue:1,durationUnit:'hours'}));
+  const add=(name,u,service,emailAddr,exp)=>store.put('subscribers',radius.subscriber(store,{name,username:u,service,planId:service==='pppoe'?pp.id:hp.id,email:emailAddr,expiresAt:exp}));
+  add('Amina Otieno','amina','pppoe','amina@x.co',now+864e5);add('Brian','brian','pppoe','',now+864e5);add('Cate','cate','hotspot','CATE@x.co',now-864e5);add('Cate Two','cate2','pppoe','cate@x.co',now-864e5);
+  assert.throws(()=>mo.preview(store,{audiences:['pppoe'],subject:'Hi',body:'Hello {NAME}'}),/Unknown field/);
+  let p=mo.preview(store,{audiences:['active-pppoe'],subject:'Your {PACKAGE_NAME}',body:'Hi {CUSTOMER_NAME}, {PACKAGE_SPEED_DOWN} for {PACKAGE_PRICE}. {ISP_NAME}'});
+  assert.equal(p.count,1);assert.equal(p.noEmail,1);assert.equal(p.sample[0].subject,'Your Home 10');assert.match(p.sample[0].text,/^Hi Amina Otieno, 10 Mbps for KSh 2,000\. Kade Networks$/);
+  p=mo.preview(store,{audiences:['inactive','hotspot'],subject:'S',body:'B'});assert.equal(p.count,1,'same address once');assert.equal(p.duplicates,1);
+  assert.throws(()=>mo.start(store,{audiences:['pppoe'],subject:'S',body:'B',confirm:2}),/email provider/);
+  email.setConfig(store,{provider:'sendgrid',apiKey:'SG.'+'c'.repeat(30),from:'noc@k.co'});
+  assert.throws(()=>mo.start(store,{audiences:['pppoe'],subject:'S',body:'B',confirm:5}),/changed/);
+  const job=mo.start(store,{audiences:['pppoe'],subject:'Hello {CUSTOMER_NAME}',body:'B',confirm:2});let n=0;
+  await mo.deliver(store,job.id,async()=>{n++;return new Response('',{status:n===1?202:500});});
+  const done=store.get('mailouts',job.id);assert.equal(done.status,'done');assert.equal(done.sent,1);assert.equal(done.failed,1);assert.deepEqual(done.recipients.map(r=>r.status).sort(),['failed','sent']);
+  await mo.deliver(store,job.id,async()=>{throw new Error('should not resend');});assert.equal(store.get('mailouts',job.id).sent,1,'finished sends are not repeated');
+  const t=mo.saveTemplate(store,{name:'Welcome',subject:'Welcome {CUSTOMER_NAME}',body:'Hi'});assert.equal(mo.templates(store).length,1);mo.deleteTemplate(store,t.id);assert.equal(mo.templates(store).length,0);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});

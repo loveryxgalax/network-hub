@@ -255,6 +255,14 @@ function createApp(options={}){
   if(enRoute&&['POST','PATCH','DELETE'].includes(method)){role(user,['admin','manager']);const kind=enRoute[1],existing=enRoute[2]?store.get(kind,enRoute[2]):null;if(enRoute[2]&&!existing)throw error(404,'Not found');
    if(method==='DELETE'){if(!existing)throw error(400,'Select one');store.remove(kind,existing.id);store.audit(user,'Removed '+(kind==='ads'?'advert':'quiz'),existing.id);return json(res,200,{removed:true});}
    if((method==='PATCH')!==!!existing)throw error(405,'Method not allowed');const input=await body(req),saved=kind==='ads'?engage.saveAd(store,input,existing):engage.saveQuiz(store,input,existing);store.audit(user,(existing?'Updated ':'Created ')+(kind==='ads'?'advert':'quiz'),saved.id);return json(res,existing?200:201,saved);}
+  if(route.startsWith('/api/mailouts')||route.startsWith('/api/email/templates')){role(user,['admin','manager']);const mo=require('./lib/mailout.cjs');
+   if(route==='/api/mailouts'&&method==='GET')return json(res,200,{items:mo.list(store),audiences:mo.AUDIENCES,vars:mo.VARS,templates:mo.templates(store),ready:!!emailLib.config(store)});
+   if(route==='/api/mailouts/preview'&&method==='POST')return json(res,200,mo.preview(store,await body(req,65536)));
+   if(route==='/api/mailouts'&&method==='POST'){access.need(store,user,'messages.send');const job=mo.start(store,await body(req,65536),user);store.audit(user,'Started email to '+job.total+' customers: '+job.subject,job.id);mo.deliver(store,job.id).catch(e=>console.warn('Bulk email stopped: '+e.message));return json(res,202,{id:job.id,total:job.total});}
+   const mr=route.match(/^\/api\/mailouts\/([a-f0-9-]{36})$/);if(mr&&method==='GET'){const j=store.get('mailouts',mr[1]);if(!j)throw error(404,'Not found');return json(res,200,j);}
+   if(route==='/api/email/templates'&&method==='POST'){const t=mo.saveTemplate(store,await body(req,65536));store.audit(user,'Saved email template '+t.name,t.id);return json(res,201,t);}
+   const tr=route.match(/^\/api\/email\/templates\/([a-f0-9-]{36})$/);if(tr&&method==='DELETE'){mo.deleteTemplate(store,tr[1]);store.audit(user,'Deleted an email template',tr[1]);return json(res,200,{ok:true});}
+   throw error(404,'Not found');}
   if(route==='/api/email'&&method==='GET'){role(user,['admin','manager']);return json(res,200,{config:emailLib.publicConfig(store),providers:emailLib.PROVIDERS,log:emailLib.log(store).slice(0,200),escalation:escalation.settings(store)});}
   if(route==='/api/email'&&method==='PUT'){role(user,['admin']);const saved=emailLib.setConfig(store,await body(req));store.audit(user,'Updated email settings','email');return json(res,200,saved);}
   if(route==='/api/email/test'&&method==='POST'){role(user,['admin']);const input=await body(req),r=await emailLib.send(store,input.to,'Test email from netops','If you can read this, email from Kade Networks netops works.','test');if(!r.ok)throw error(502,'Not sent: '+r.error);return json(res,200,r);}
