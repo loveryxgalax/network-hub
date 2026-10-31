@@ -43,7 +43,8 @@ set -a; . ./.env; set +a
 docker compose up -d mongo; for i in $(seq 1 30); do docker compose exec -T mongo mongosh --quiet --eval 'db.runCommand({ping:1}).ok' -u "$MONGO_ROOT_USER" -p "$MONGO_ROOT_PASSWORD" --authenticationDatabase admin >/dev/null 2>&1 && break; sleep 2; done
 docker compose exec -T mongo mongorestore --quiet --drop --username "$MONGO_ROOT_USER" --password "$MONGO_ROOT_PASSWORD" --authenticationDatabase admin --archive --gzip < "$m/genieacs.archive.gz"
 docker compose up -d acs hub
-if [[ -n "${NETWORK_RADIUS_TOKEN:-}" && -f /etc/wireguard/wg0.conf ]]; then docker compose --profile radius up -d radius; fi
+# /etc/wireguard is readable by root only, so the check needs sudo (a plain -f is always false for this user).
+if [[ -n "${NETWORK_RADIUS_TOKEN:-}" ]] && sudo test -f /etc/wireguard/wg0.conf; then docker compose --profile radius up -d radius; else echo "RADIUS NOT started: NETWORK_RADIUS_TOKEN missing from .env or no WireGuard hub. Customer logins need it." >&2; fi
 if $final; then docker compose up -d tunnel; echo "Tunnel started: netops.kadenetworks.com now serves from this server."; else echo "Rehearsal: tunnel NOT started and passive mode on; the live site is still the old server."; fi
 sleep 5; docker compose --profile radius ps
 docker compose exec -T hub node -e "fetch('http://127.0.0.1:4317/api/session').then(r=>r.json()).then(j=>console.log('netops answering; setup needed:',!!j.setup)).catch(e=>{console.error('netops not answering:',e.message);process.exit(1)})"
