@@ -148,6 +148,16 @@ function createApp(options={}){
    return json(res,200,{ok:true,message:'Password changed. Other devices were signed out.'});}
   if(route==='/api/me/alerts'&&method==='PUT'){const input=await body(req);store.setting('signinAlerts:'+user.id,input.signinAlerts===true);return json(res,200,{signinAlerts:input.signinAlerts===true});}
   if(route==='/api/me/signout-others'&&method==='POST'){const n=store.db.prepare('DELETE FROM sessions WHERE user_id=? AND token<>?').run(user.id,user.token).changes;store.audit(user,'Signed out other sessions',user.id);return json(res,200,{signedOut:n});}
+  // Support ticket detail: conversation, internal notes, status/priority/assignment (optionally SMS the reply).
+  const tkRoute=route.match(/^\/api\/tickets\/([a-f0-9-]{36})(?:\/(messages|update))?$/);
+  if(tkRoute){if(!permissions.read(user.role,'tickets'))throw error(403,'Support tickets are not available to your role');const tickets=require('./lib/tickets.cjs');
+   if(!tkRoute[2]&&method==='GET')return json(res,200,{...tickets.detail(store,tkRoute[1]),team:users().filter(u=>u.active).map(u=>({id:u.id,name:u.name}))});
+   if(!permissions.write(user.role,'tickets','PATCH'))throw error(403,'Your role cannot change tickets');
+   if(tkRoute[2]==='messages'&&method==='POST'){const input=await body(req,8192),msg=tickets.post(store,tkRoute[1],{text:input.text,internal:input.internal===true},user);store.audit(user,input.internal?'Added a ticket note':'Replied on a ticket',tkRoute[1]);
+    let sms=null;if(!input.internal&&input.sms===true){const t=store.get('tickets',tkRoute[1]),c=t.subscriberId&&store.get('subscribers',t.subscriberId);if(!c?.phone)throw error(409,'Saved, but this ticket has no customer phone to text');access.need(store,user,'messages.send');try{sms=await billing.sendSms(store,c.phone,String(input.text).slice(0,459),'support',fetch,Date.now());}catch(e){sms={status:'failed',error:e.message};}}
+    return json(res,201,{message:msg,sms});}
+   if(tkRoute[2]==='update'&&method==='POST'){const r=tickets.update(store,tkRoute[1],await body(req,2048),user,users());if(r.changes.length)store.audit(user,'Updated ticket: '+r.changes.join('; '),tkRoute[1]);return json(res,200,r);}
+   throw error(405,'Method not allowed');}
   if(route==='/api/customers'&&method==='GET'){if(user.role==='installer')throw error(403,'Customer discovery is not available to field installers');return json(res,200,customers.list(store,url.searchParams));}
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
   if(route==='/api/trends'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,require('./lib/trends.cjs').build(store,{days:url.searchParams.get('days')}));}
