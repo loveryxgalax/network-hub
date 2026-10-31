@@ -37,3 +37,18 @@ test('campaigns: many prefixed codes, one use counted per payment, edits apply t
   promos.updateCampaign(store,r.campaign.id,{active:false});assert.throws(()=>promos.apply(store,r.codes[1],{plan,kind:'hotspot',price:100}),/not valid/);
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('vouchers: import existing codes with a check, one voucher per phone, printable cards',()=>{
+ const {Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs'),vouchers=require('../lib/vouchers.cjs');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'vc-')),store=new Store(dir);
+ try{const hp=store.put('plans',radius.plan({name:'1 Hour',service:'hotspot',downloadMbps:5,uploadMbps:2,price:20,durationValue:1,durationUnit:'hours'}));store.put('plans',radius.plan({name:'Day',service:'hotspot',downloadMbps:5,uploadMbps:2,price:50,durationValue:1,durationUnit:'days'}));
+  const now=Date.UTC(2026,10,1);const csv='code,expiry_date\nKNE4X7PQ,2026-12-31\nkne9mz2t\nKNE4X7PQ\nshort\nKNEOLD01,2026-01-01\nKNEBAD02,31/12/2026';
+  const dry=vouchers.importCodes(store,{planId:hp.id,csv},null,false,now);assert.equal(dry.ready,2);assert.equal(dry.rejected,4);assert.equal(store.list('vouchers').length,0,'a check saves nothing');
+  assert.deepEqual(dry.preview.map(r=>r.errors[0]||'ok'),['ok','ok','repeated in this file','code must be 6–12 letters or numbers','already expired','expiry must be YYYY-MM-DD']);
+  const done=vouchers.importCodes(store,{planId:hp.id,csv},null,true,now);assert.equal(done.imported,2);
+  assert.ok(vouchers.peek(store,'KNE9MZ2T'),'imported code is usable');assert.equal(vouchers.importCodes(store,{planId:hp.id,csv:'KNE9MZ2T'},null,false,now).preview[0].errors[0],'already exists');
+  assert.equal(vouchers.redeem(store,'KNE4X7PQ',Date.UTC(2027,0,5)),null,'a code past its own last day does not work');
+  const ph=vouchers.phoneBatch(store,{csv:'phone_number,package\n0712345678\n0722000111,Day\n12345\n0733000222,Nope',planId:hp.id},null,true,now);
+  assert.equal(ph.made.length,2);assert.equal(ph.rejected,2);assert.deepEqual(ph.made.map(m=>m.planName),['1 Hour','Day']);assert.equal(ph.made[0].phone,'+254712345678');
+  const html=vouchers.printPage(store,done.batch.id,{layout:'compact',perPage:18,fields:'name,package,price'});assert.match(html,/KNE9MZ2T/);assert.match(html,/KSh 20/);assert.doesNotMatch(html,/Connect to the WiFi/);
+  assert.match(vouchers.printPage(store,done.batch.id,{}),/grid-template-columns:repeat\(3,1fr\)/);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
