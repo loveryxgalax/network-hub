@@ -10,7 +10,7 @@ test('adverts: https only, views give a ticket, free minutes only after the full
   const pv=engage.forPortal(store);assert.equal(pv.ads.length,1);assert.equal(pv.ads[0].earn.minutes,15);assert.equal(pv.ads[0].hasLink,true);assert.equal(pv.ads[0].link,undefined);
   const t0=Date.now(),{ticket}=engage.view(store,a.id,t0);assert.equal(store.get('ads',a.id).views,1);
   assert.throws(()=>engage.claimAd(store,portal.grantFree,a.id,{ticket,mac:'AA:BB:CC:DD:EE:01'},t0+3000),/longer/);
-  assert.throws(()=>engage.claimAd(store,portal.grantFree,a.id,{ticket:ticket.replace(/.$/,'0'),mac:'AA:BB:CC:DD:EE:01'},t0+11000),/Watch the advert first/);
+  assert.throws(()=>engage.claimAd(store,portal.grantFree,a.id,{ticket:ticket.slice(0,-1)+(ticket.endsWith('0')?'1':'0'),mac:'AA:BB:CC:DD:EE:01'},t0+11000),/Watch the advert first/);
   const g=engage.claimAd(store,portal.grantFree,a.id,{ticket,mac:'AA:BB:CC:DD:EE:01'},t0+11000);assert.ok(g.username&&g.password);
   const s=store.list('subscribers').find(x=>x.username===g.username);assert.equal(s.freeKind,'ad');assert.ok(Math.abs(s.expiresAt-(t0+11000+15*60000))<5);
   assert.throws(()=>engage.claimAd(store,portal.grantFree,a.id,{ticket,mac:'AA:BB:CC:DD:EE:01'},t0+12000),/already/);
