@@ -13,10 +13,28 @@ services:
       # Internal RADIUS bridge for FreeRADIUS (port 4318 on the private network only). Empty = disabled.
       NETWORK_RADIUS_TOKEN: ${NETWORK_RADIUS_TOKEN:-}
       NETWORK_RADIUS_HOST: 0.0.0.0
+      # Phoenix live view (optional, profile "live"). The feed listens on 4319 on the private network only.
+      NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
+      NETWORK_LIVE_URL: ${NETWORK_LIVE_URL:-}
+      NETWORK_LIVE_HOST: 0.0.0.0
     volumes:
       - hub-data:/data
     networks: [internal]
 
+  # Phoenix live NOC view (Phase 1): docker compose --profile live up -d --build live
+  # Reached only through the hub at /live (sign-in checked there); never published, no database.
+  live:
+    profiles: [live]
+    mem_limit: ${LIVE_MEMORY:-384m}
+    build: ./live
+    restart: unless-stopped
+    environment:
+      NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:?set NETWORK_LIVE_TOKEN in .env}
+      SECRET_KEY_BASE: ${LIVE_SECRET_KEY_BASE:?set LIVE_SECRET_KEY_BASE in .env}
+      LIVE_FEED_URL: http://hub:4319/internal/live
+      PUBLIC_HOST: netops.kadenetworks.com
+    depends_on: [hub]
+    networks: [internal]
   mongo:
     mem_limit: ${MONGO_MEMORY:-450m}
     image: ${MONGO_IMAGE:-mongo:8.2}

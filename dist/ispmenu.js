@@ -679,7 +679,7 @@ let navQuery='';
 // Alerts and the assistant stay at the bottom of the sidebar, as in ISPman.
 function pins(){const side=document.querySelector('#sidebar'),bottom=side?.querySelector('.sidebar-bottom');if(!bottom||state.session?.user?.role==='installer')return;let p=side.querySelector('.sidebar-pins');
  if(!p){p=document.createElement('div');p.className='sidebar-pins';bottom.before(p);}
- p.innerHTML=`<a href="#notifications" class="${state.page==='notifications'?'active':''}" title="Alerts">${icon('bell')}<span class="nav-label">Alerts</span>${counts.alerts?`<span class="pin-badge">${counts.alerts}</span>`:''}</a><a href="#ai" class="${state.page==='ai'?'active':''}" title="Assistant">${icon('chat')}<span class="nav-label">Assistant</span></a>`;}
+ p.innerHTML=`<a href="#notifications" class="${state.page==='notifications'?'active':''}" title="Alerts">${icon('bell')}<span class="nav-label">Alerts</span>${counts.alerts?`<span class="pin-badge">${counts.alerts}</span>`:''}</a><a href="#ai" class="${state.page==='ai'?'active':''}" title="Assistant">${icon('chat')}<span class="nav-label">Assistant</span></a><a href="/live" title="Live NOC view (Phoenix)">${icon('activity')}<span class="nav-label">Live view</span></a>`;}
 function organise(){const nav=document.querySelector('#navigation');if(!nav||document.body.classList.contains('nav-collapsed'))return;
  const kids=[...nav.children].filter(e=>!e.classList.contains('nav-search'));const groups=[];let cur={label:null,items:[]};groups.push(cur);
  for(const e of kids){if(e.classList.contains('nav-group-label')){cur={label:e,items:[]};groups.push(cur);}else cur.items.push(e);}
