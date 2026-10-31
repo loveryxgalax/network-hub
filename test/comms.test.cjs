@@ -29,5 +29,9 @@ test('alert escalation: levels fire once each after their delay, acknowledged al
   await escalation.run(store,t0+7*60000,f);assert.equal(sent.length,1,'a level fires once');
   await escalation.run(store,t0+31*60000,f);assert.equal(sent.length,2);assert.ok(sent[1].includes('sendgrid'));
   assert.deepEqual(Object.keys(store.get('alerts',a.id).escalations),['0','1']);assert.equal(store.get('alerts',b.id).escalations,undefined);assert.equal(store.get('alerts',c.id).escalations,undefined);
+  // Everyone who was told is told once that it is resolved.
+  {const cur=store.get('alerts',a.id);store.put('alerts',{...cur,status:'Resolved'},cur);}
+  await escalation.run(store,Date.now()+60000,f);assert.equal(sent.length,4);assert.ok(sent[2].includes('africastalking')&&sent[3].includes('sendgrid'));
+  await escalation.run(store,Date.now()+120000,f);assert.equal(sent.length,4,'resolved message is sent once');
  }finally{done();}
 });
