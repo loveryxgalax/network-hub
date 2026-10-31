@@ -24,3 +24,19 @@ test('hotspot fair usage: capped bundles by share of allowance used; uncapped bu
   assert.deepEqual(r.byPlan,[{name:'Day 1GB',capMB:1000,b30:1,b50:1,b80:1,limit:1}]);assert.equal(r.history.length,1);
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('branding API: key needed, shown once and stored hashed; packages and ISP details; CORS for other sites',async()=>{
+ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{createApp}=require('../server.cjs'),radius=require('../lib/radius.cjs');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ba-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://network.example.test'});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const o='http://127.0.0.1:'+app.server.address().port;
+ try{const s=await fetch(o+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'Kade Networks',email:'own@example.test',password:'fixture-owner-password-123'})});const cookie=s.headers.get('set-cookie').split(';')[0],csrf=(await s.json()).csrf;
+  app.store.put('plans',radius.plan({name:'1 Hour',service:'hotspot',downloadMbps:5,uploadMbps:2,price:20,durationValue:1,durationUnit:'hours'}));app.store.put('plans',{...radius.plan({name:'Secret',service:'hotspot',downloadMbps:5,uploadMbps:2,price:1,durationValue:1,durationUnit:'hours'}),hidden:true});
+  let r=await fetch(o+'/portal/api/brand/hotspot-packages');assert.equal(r.status,401);assert.equal(r.headers.get('access-control-allow-origin'),'*');
+  const k=await (await fetch(o+'/api/brand-api',{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},body:'{}'})).json();assert.match(k.key,/^kn_/);
+  assert.ok(!JSON.stringify(app.store.secret('brandApi')).includes(k.key),'only a hash is stored');
+  r=await fetch(o+'/portal/api/brand/hotspot-packages',{headers:{Authorization:'Bearer '+k.key}});assert.equal(r.status,200);assert.deepEqual((await r.json()).packages.map(p=>p.name),['1 Hour']);
+  const isp=await (await fetch(o+'/portal/api/brand/isp',{headers:{Authorization:'Bearer '+k.key}})).json();assert.equal(isp.name,'Kade Networks');
+  assert.equal((await fetch(o+'/portal/api/brand/isp',{method:'OPTIONS'})).status,204);
+  assert.equal((await fetch(o+'/portal/api/brand/isp',{headers:{Authorization:'Bearer kn_wrongwrongwrong'}})).status,401);
+  {const dr=await fetch(o+'/api/brand-api',{method:'DELETE',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf}});assert.equal(dr.status,200,await dr.text());}assert.equal((await fetch(o+'/portal/api/brand/isp',{headers:{Authorization:'Bearer '+k.key}})).status,401,'revoked');
+ }finally{await app.close();}
+});
