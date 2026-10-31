@@ -8,7 +8,8 @@ cd "$(dirname "$0")/../.."
 final=false;[[ "${1:-}" == "--final" ]] && final=true
 out="$HOME/netops-migration.tar";work=$(mktemp -d);trap 'rm -rf "$work"' EXIT;umask 077
 # This Compose project's volume (never another project's on the same machine).
-project=$(docker compose config 2>/dev/null | sed -n 's/^name: //p' | head -1);[[ -n "$project" ]] || { echo "Cannot read the Compose project name" >&2; exit 1; }
+project=$(docker compose config 2>&1 | sed -n 's/^name: //p' | head -1 || true)
+[[ -n "$project" ]] || { echo "Cannot read the Compose project name. docker compose says:" >&2; docker compose config >/dev/null; exit 1; }
 vol(){ docker volume ls -q --filter "label=com.docker.compose.project=$project" --filter "label=com.docker.compose.volume=$1" | head -1; }
 set -a; . ./.env; set +a
 mkdir "$work/m"

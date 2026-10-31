@@ -27,7 +27,8 @@ echo "Creating containers and volumes…"
 docker compose --profile radius build hub acs radius >/dev/null
 docker compose --profile radius create >/dev/null
 # This Compose project's volume (never another project's on the same machine).
-project=$(docker compose config 2>/dev/null | sed -n 's/^name: //p' | head -1);[[ -n "$project" ]] || { echo "Cannot read the Compose project name" >&2; exit 1; }
+project=$(docker compose config 2>&1 | sed -n 's/^name: //p' | head -1 || true)
+[[ -n "$project" ]] || { echo "Cannot read the Compose project name. docker compose says:" >&2; docker compose config >/dev/null; exit 1; }
 vol(){ docker volume ls -q --filter "label=com.docker.compose.project=$project" --filter "label=com.docker.compose.volume=$1" | head -1; }
 # A rehearsal copy may already be running here: stop it, or it keeps its old database open while the files are replaced.
 docker compose --profile radius stop tunnel radius hub acs >/dev/null 2>&1 || true

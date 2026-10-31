@@ -29,8 +29,10 @@ services:
     build: ./live
     restart: unless-stopped
     environment:
-      NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:?set NETWORK_LIVE_TOKEN in .env}
-      SECRET_KEY_BASE: ${LIVE_SECRET_KEY_BASE:?set LIVE_SECRET_KEY_BASE in .env}
+      # Not ":?" here: Compose checks those for every command, even with this profile off. Phoenix refuses to
+      # start without them instead (config/runtime.exs).
+      NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
+      SECRET_KEY_BASE: ${LIVE_SECRET_KEY_BASE:-}
       LIVE_FEED_URL: http://hub:4319/internal/live
       PUBLIC_HOST: netops.kadenetworks.com
     depends_on: [hub]
