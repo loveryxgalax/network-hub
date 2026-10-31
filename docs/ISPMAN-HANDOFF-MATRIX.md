@@ -166,3 +166,18 @@ Update this file with every increment.
 | 19.9 Campaigns: codes, activations, edit | Done | 100% off charges KSh 1 (smallest M-Pesa payment); a truly free code is not built. |
 | 19.10 Platform invoice | Skip | That is ISPman billing the ISP; netops has no platform bill. |
 | 19.11 Email audiences and templates | Done | Plain text with fields; union of audiences; one per address; per-recipient result. No rich-text editor. |
+
+## 20. HOTSPOT section deep dive (Oct 31, 2026)
+
+| Module | Status | Notes |
+|---|---|---|
+| 20.1 Customers: filters, columns, Excel | Done | Added Device type, Router device and Balance min–max filters, an Active connect column ("OFA MOTO: in 29 minutes") and Export to Excel (.xls that Excel, LibreOffice and Sheets open). |
+| 20.2 Customer detail | Done | New: View portal, Access logs (opens the filtered auth log), Create voucher, Speed override (customer speed rule), Payment ref (migration), Auto billing toggle (off by default; renews from the prepaid wallet only, skipped in passive mode), Customer profile (model, type, OS, browser, rendering engine, last IP, captive seen, user agent), Recent MAC addresses with Remove/Block, Recent connectivity, usage Download SVG/PNG/CSV. |
+| 20.3 Packages | Done | # order, ↓/↑ speed, Sessions (max concurrent + devices per user), Device (routers), Restrictions, Popular. New per-package "max concurrent sessions", enforced by RADIUS. |
+| 20.4 Roamings | Done | Filters: Customer, MAC, From device, To device, Detected at; ID and Time ago columns; paging; Excel. |
+| 20.5 Requests (connect requests) | Done | New page. Every captive-portal open (MAC, IP, router identity, device) is logged, at most once per MAC per minute, and kept 7 days. The M-Pesa page is still under Payment requests. |
+| 20.6 Sessions | Done | Active = not stopped and updated in the last 30 min. Filters: Customer, Username, IP, MAC. Sync every 10 s. Includes router-reported sessions that our RADIUS does not handle, marked "Router". |
+| 20.7 Auth logs | Done | 7 days in an indexed table. Filters: Customer, Username, MAC, Reply, date. Shows Access-Accept/Access-Reject and the reason. |
+| 20.8 Acct logs | Done | Per session: Started, Stopped, Last update, Up, Down, Terminate cause; a second tab has the raw Start/Interim/Stop records. Kept 7 days. |
+| 20.9 Servers | Done | New page: server, SSID, router, router IP, interface/profile, connected, enabled. Read-only. Full details need customer discovery v9 on each router (Replace discovery script, a read-only print of `/ip hotspot` and the wireless SSIDs). Until then servers are listed from the sessions the routers report. Checkboxes select rows for export. Enable/disable from netops is intentionally not offered. |
+| 20.10 Manual connects | Done | Two tables with filters (Customer, Package, Team member, date): "Manual connects by team members" and "Manual connect logs" (every staff change to paid-until: manual connect, renew, edit, auto billing, with before and after). |

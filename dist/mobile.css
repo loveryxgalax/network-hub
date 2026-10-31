@@ -111,3 +111,7 @@ table.hm td{height:22px;border-radius:4px;background:color-mix(in srgb,var(--acc
 .as-msg{white-space:pre-wrap;padding:10px 14px;border-radius:12px;max-width:85%;line-height:1.5}.as-user{align-self:flex-end;background:var(--accent,#0032fd);color:#fff}
 .as-assistant{align-self:flex-start;background:rgba(127,127,127,.1)}.as-wait{opacity:.6}.as-form textarea{width:100%;margin-bottom:8px}
 #as-body{display:flex;flex-direction:column;gap:16px}#as-body>section.card{padding:20px}
+.pk-n{display:inline-block;min-width:18px;margin-right:4px;color:var(--muted);font-size:12px}.ct-ac{white-space:nowrap}.ct-ac b{color:var(--teal)}.hs-sync{margin:0 6px;font-size:13px}
+.pf-autobill{display:flex;gap:8px;align-items:flex-start;margin:6px 0 10px;font-size:13px}.pf-ua code{word-break:break-all;white-space:normal}.pfu-dl{margin:8px 0}
+input.hs-cb{width:18px!important;height:18px!important;min-width:0;padding:0!important;margin:0;accent-color:var(--teal)}
+.pf-actcard label.pf-autobill{display:flex!important;flex-direction:row;align-items:center;gap:10px;font-weight:400}.pf-actcard label.pf-autobill input{width:18px!important;height:18px!important;min-width:18px;margin:0;flex:none}
