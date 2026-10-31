@@ -255,3 +255,5 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .ct-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px}
 .ct-shortcuts a{display:flex;justify-content:space-between;align-items:center;background:var(--primary);color:#fff!important;border-radius:8px;padding:12px 16px;font-size:18px;font-weight:700;text-decoration:none}
 @media (max-width:640px){.ct-shortcuts{grid-template-columns:1fr}}
+.ct-want{color:#c25a0b!important;font-weight:600}.pf-want{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}
+.want-form{margin-top:10px}

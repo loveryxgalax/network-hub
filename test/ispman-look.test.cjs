@@ -159,3 +159,18 @@ test('editing a customer keeps the fields the form does not edit (family link, p
   assert.equal(edited.name,'Ann Mutua');assert.equal(edited.parentId,'p-1');assert.equal(edited.pppoeIp,'10.40.0.9');assert.deepEqual(edited.provisioning,{status:'ok'});assert.equal(edited.id,undefined);
  }finally{done();}
 });
+test('package interest: a PPPoE customer asks from the portal; staff move them or dismiss it',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'il-in-')),{createApp}=require('../server.cjs'),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://network.example.test',radiusToken:'bridge-token-for-tests-0123456789',radiusPort:0});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+app.server.address().port;let cookie='',csrf='';
+ const api=async(route,method='GET',input)=>{const r=await fetch(origin+'/api/'+route,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},...(input===undefined?{}:{body:JSON.stringify(input)})});const t=await r.text();return {status:r.status,body:t?JSON.parse(t):null,response:r};};
+ const portal=(route,input)=>fetch(origin+'/portal/api/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
+ try{const owner=await api('setup','POST',{name:'Owner',workspace:'QA',email:'in@example.test',password:'fixture-owner-password-123'});cookie=owner.response.headers.get('set-cookie').split(';')[0];csrf=owner.body.csrf;
+  const p5=(await api('radius/plans','POST',{name:'Home 5',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days',devices:1})).body,p10=(await api('radius/plans','POST',{name:'Home 10',service:'pppoe',downloadMbps:10,uploadMbps:5,price:2000,durationValue:30,durationUnit:'days',devices:1})).body;
+  const sub=(await api('radius/subscribers','POST',{name:'Ann',username:'ann',service:'pppoe',planId:p5.id,password:'pw123456'})).body;
+  assert.equal((await portal('interest',{account:'ann',planId:p5.id})).status,400,'must be another package');
+  assert.equal((await portal('interest',{account:'ann',planId:p10.id})).status,200);
+  assert.equal((await api('radius')).body.subscribers.find(x=>x.id===sub.id).interestPlanId,p10.id);
+  const ap=await api('radius/subscribers/'+sub.id+'/interest','POST',{action:'apply'});assert.equal(ap.body.subscriber.planId,p10.id);assert.equal(ap.body.subscriber.interestPlanId,undefined);
+  await api('radius/subscribers/'+sub.id+'/pin','POST',{});assert.equal((await portal('interest',{account:'ann',planId:p5.id})).status,403,'PIN needed once set');
+ }finally{await new Promise(r=>app.server.close(r));fs.rmSync(dir,{recursive:true,force:true});}
+});
