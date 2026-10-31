@@ -152,3 +152,10 @@ test('trends: online at each hour, typical day, hotspot visits by weekday and ho
   const w=trends.build(store,{days:7},now);assert.equal(w.pppoe.length,28);assert.deepEqual(w.pppoe.find(d=>d.date==='2026-10-30'),{date:'2026-10-30',sessions:1,customers:1,download:2e9,upload:1e8,gap:false,noData:false});assert.equal(w.pppoe.find(d=>d.date==='2026-10-29').noData,true,'before the first PPPoE session');assert.equal(w.pppoe.find(d=>d.date==='2026-10-31').gap,false);
  }finally{done();}
 });
+test('editing a customer keeps the fields the form does not edit (family link, pool address, router status)',()=>{
+ const {store,done}=fx();try{const plan=store.put('plans',radius.plan({name:'H',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days'}));
+  const s=store.put('subscribers',{...radius.subscriber(store,{name:'Ann',username:'ann',service:'pppoe',planId:plan.id}),parentId:'p-1',pppoeIp:'10.40.0.9',provisioning:{status:'ok'},deactivatedReason:'x'});
+  const edited=radius.subscriber(store,{name:'Ann Mutua',phone:'0712345678'},store.get('subscribers',s.id));
+  assert.equal(edited.name,'Ann Mutua');assert.equal(edited.parentId,'p-1');assert.equal(edited.pppoeIp,'10.40.0.9');assert.deepEqual(edited.provisioning,{status:'ok'});assert.equal(edited.id,undefined);
+ }finally{done();}
+});
