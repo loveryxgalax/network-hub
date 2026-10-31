@@ -26,13 +26,26 @@ test('upgrade tracker compares versions and orders routers least critical first'
 test('a sudden drop of PPPoE customers is one critical alert that clears on recovery; heavy users are flagged',()=>{
  const {store,done}=fx();try{const r=store.put('devices',{name:'CCR',type:'router'}),t0=Date.UTC(2026,9,26,6,0,0);
   for(let i=0;i<5;i++)customers.ingest(store,r,report(ppp(20)),t0+i*120000);
-  customers.ingest(store,r,report(ppp(4)),t0+5*120000);
-  let a=store.list('alerts').filter(x=>x.logKey==='drop:ppp');assert.equal(a.length,1);assert.equal(a[0].severity,'critical');assert.match(a[0].title,/PPPoE customers dropped/);
+  customers.ingest(store,r,report(ppp(4)),t0+5*120000);assert.equal(store.list('alerts').filter(x=>x.logKey==='drop:ppp').length,0,'one low report is not enough');
+  customers.ingest(store,r,report(ppp(4)),t0+5*120000+60000);
+  let a=store.list('alerts').filter(x=>x.logKey==='drop:ppp');assert.equal(a.length,1);assert.equal(a[0].severity,'critical');assert.match(a[0].title,/PPPoE customers dropped/);assert.equal(a[0].baseline,20);
   customers.ingest(store,r,report(ppp(5)),t0+6*120000);assert.equal(store.list('alerts').find(x=>x.logKey==='drop:ppp').status,'Open','still down');
   customers.ingest(store,r,report(ppp(19)),t0+7*120000);assert.equal(store.list('alerts').find(x=>x.logKey==='drop:ppp').status,'Resolved');
   // heavy user: 6 ten-minute samples at 90% of a 5 Mbps plan
   const plan=store.put('plans',radius.plan({name:'Home 5',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days'}));store.put('subscribers',radius.subscriber(store,{name:'U0',username:'u0',service:'pppoe',planId:plan.id,expiresAt:t0+30*864e5}));
   const key='ppp:u0',s=store.setting('customerDiscovery:'+r.id);const o=s.observations.find(x=>x.evidence.ppp?.name==='u0');o.trafficHistory=Array.from({length:6},(_,i)=>({time:t0+8*120000-(5-i)*600000+1,downloadMbps:4.5,uploadMbps:.5}));store.setting('customerDiscovery:'+r.id,s);
   customers.ingest(store,r,report(ppp(20)),t0+8*120000);assert.equal(store.list('alerts').filter(x=>x.logKey==='heavy:u0'&&x.status!=='Resolved').length,1);
+ }finally{done();}
+});
+test('customer drops at night alert only when near-total, and a drop that settles is closed after 6 hours',()=>{
+ const {store,done}=fx();try{const r=store.put('devices',{name:'HEX',type:'router'}),night=Date.UTC(2026,9,26,20,30,0);// 23:30 Nairobi
+  for(let i=0;i<5;i++)customers.ingest(store,r,report(ppp(20)),night+i*120000);
+  customers.ingest(store,r,report(ppp(7)),night+5*120000);customers.ingest(store,r,report(ppp(7)),night+6*120000);
+  assert.equal(store.list('alerts').filter(x=>x.logKey==='drop:ppp').length,0,'bedtime drop to 35% is not an outage');
+  const r2=store.put('devices',{name:'RBX',type:'router'});for(let i=0;i<5;i++)customers.ingest(store,r2,report(ppp(20)),night+i*120000);
+  customers.ingest(store,r2,report(ppp(2)),night+5*120000);customers.ingest(store,r2,report(ppp(2)),night+6*120000);
+  const a=store.list('alerts').find(x=>x.logKey==='drop:ppp'&&x.deviceId===r2.id);assert.equal(a.status,'Open','near-total drop at night still alerts');
+  const later=a.created+6*36e5+60000;for(let i=0;i<4;i++)customers.ingest(store,r2,report(ppp(9)),later+i*300000);
+  const b=store.get('alerts',a.id);assert.equal(b.status,'Resolved');assert.match(b.details,/Closed automatically/);
  }finally{done();}
 });
