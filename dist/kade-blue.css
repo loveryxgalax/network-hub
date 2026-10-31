@@ -280,3 +280,5 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .tk-note{background:#fffbe6;border-color:#f3d36b}.tk-event{background:var(--input,#f4f6fa);font-size:13px}.tk-compose{display:grid;gap:8px;margin-top:10px}.tk-compose textarea{width:100%}.tk-tabs{margin:12px 0 4px}
 .cp-swatch{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:8px;vertical-align:-2px}
 .mo-aud{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}.mo-aud label{display:flex;gap:8px;align-items:center;font-weight:500}
+.as-plans{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}.as-plan{border:1px solid var(--border);border-radius:12px;padding:12px;display:grid;gap:4px}.as-plan b{font-size:20px}.as-board{grid-template-columns:repeat(6,minmax(200px,1fr));margin-top:12px}
+.as-preview{border:1px dashed var(--border);border-radius:12px;padding:12px;margin:10px 0}.as-preview img{max-width:100%;max-height:180px;border-radius:8px;display:block;margin-bottom:6px}

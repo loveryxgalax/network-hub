@@ -1,6 +1,6 @@
 # ISPman handoff — implemented / partial / missing
 
-Reference: `NetOps-Claude-Code-Handoff.md` (read-only audit of ispman.tech, 28 Oct 2026, 147 captured views).
+Reference: `NetOps-Claude-Code-Handoff.md` (read-only audit of ispman.tech, 28 Oct 2026, 147 captured views), updated 31 Oct 2026 (§19, 180 views).
 That document describes **observed** reference behaviour; this file tracks what Network Hub actually does.
 Statuses: **Done** = backend workflow + validation + UI + tests. **Partial** = usable but missing parts listed.
 **Missing** = not built. **Skip** = deliberately not planned (reason given).
@@ -11,6 +11,8 @@ Update this file with every increment.
 
 | Date | Increment | Tests |
 |---|---|---|
+| 2026-11-01 | §19: support ticket conversation, internal notes, assignment, Pending/Closed and history; promo campaigns (prefixed code batches, activations, edit/off); voucher import with a check step, vouchers for phone lists (+ optional SMS), printable cards; bulk customer email (audiences, fields, templates, per-recipient results); advert sales (plans, "Advertise here" on the WiFi page, paid/review/approve board, schedule by weekday and hours) | `test/tickets.test.cjs` |
+| 2026-11-01 | Also from the screenshots: My account (own password, sign-in alerts), wallets and loyalty pages, static IP connection logs, topology tiles, ISP details, invoices linked to customers, resolved-alert messages, speed-rule priority, portal feature switches, ticket board, assistant on DeepSeek/OpenRouter | `test/me.test.cjs`, `test/topology.test.cjs`, `test/comms.test.cjs`, `test/speed.test.cjs`, `test/assistant.test.cjs` |
 | 2026-10-30 | Network assistant on Claude (owner's Anthropic API key; read-only snapshot with no customer contact data; refusals retried on a fallback model) | `test/assistant.test.cjs` |
 | 2026-10-30 | TR-069 customer CPE enrolment (CPE PPPoE login read from the ACS, link to a customer, write the customer's PPPoE login with setParameterValues; linked CPE on the profile); ONU reboot/disable/enable/remove through the OLT gateway contract with verification and reconciliation | `test/acs-enroll.test.cjs`, `test/workspace.test.cjs` |
 | 2026-10-30 | Customer address and map coordinates; roaming lock (ISP-wide or per customer: only through the router on the account); manual connect for existing customers with reason, actor and expiry before/after; vouchers with a last day to use, single named vouchers with SMS, apply a voucher to an account; referral and daily-visit loyalty points; data completeness and metric definitions on the dashboard and Reports | `test/extras.test.cjs`, `test/services-http.test.cjs` |
@@ -148,3 +150,18 @@ Update this file with every increment.
 4. Speed override (raise slower / cut faster / exact) at ISP and customer level with an explanation of the effective rate.
 5. Static IP service.
 6. Onboarding board.
+
+### Handoff §19 (31 Oct 2026 deeper inspection)
+| Item | Status | Notes |
+|---|---|---|
+| 19.1 OLT creation (brand, parent router, ports, SNMP v2c/v3) | Done | SNMPv3 has its own user/auth/privacy fields; community stored encrypted. |
+| 19.2 WireGuard management | Done | Own WireGuard hub (routers + expiring staff access), not ISPman's paid /28 service. |
+| 19.3 Inventory requests (priority, stock check, FIFO) | Done | Approval rechecks stock and issues oldest-first. |
+| 19.4 Advertising plans and placed-ads board | Partial | Plans, "Advertise here" requests, paid → review → approve/turn down, weekday/hour schedule, auto-finish. Payment is confirmed by staff (no online payment for adverts yet); image is a https link, no upload. |
+| 19.5 Picture quizzes | Done | Image choices with text fallback, scored or "no wrong answer". |
+| 19.6 Support: board, conversation, internal notes, assignment | Done | Replies can also be texted; notes staff-only; every change in history; viewers read-only. |
+| 19.7 Vouchers: bulk, phone list + SMS, import, print | Done | Check step with row errors before saving; print = HTML page → Save as PDF (grid 2–12, compact 18–100, A4/Letter). |
+| 19.8 PPPoE import | Done | CSV with a dry run (`/api/radius/import`). XLSX not accepted: save as CSV. |
+| 19.9 Campaigns: codes, activations, edit | Done | 100% off charges KSh 1 (smallest M-Pesa payment); a truly free code is not built. |
+| 19.10 Platform invoice | Skip | That is ISPman billing the ISP; netops has no platform bill. |
+| 19.11 Email audiences and templates | Done | Plain text with fields; union of audiences; one per address; per-recipient result. No rich-text editor. |

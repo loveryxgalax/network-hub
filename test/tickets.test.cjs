@@ -71,3 +71,23 @@ test('bulk email: audiences are "any of", one email per address, fields filled, 
   const t=mo.saveTemplate(store,{name:'Welcome',subject:'Welcome {CUSTOMER_NAME}',body:'Hi'});assert.equal(mo.templates(store).length,1);mo.deleteTemplate(store,t.id);assert.equal(mo.templates(store).length,0);
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('advert sales: order from the WiFi page, payment and review are separate, approved advert follows the plan schedule',()=>{
+ const {Store}=require('../lib/store.cjs'),ads=require('../lib/adsales.cjs'),engage=require('../lib/engage.cjs');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ad-')),store=new Store(dir);
+ try{assert.throws(()=>ads.savePlan(store,{name:'X',price:0,days:7}),/price/);
+  const plan=ads.savePlan(store,{name:'Week, daytime',price:1500,days:7,weekdays:['1','2','3','4','5'],fromHour:8,toHour:18,offered:true});ads.savePlan(store,{name:'Hidden',price:9,days:1,offered:false});
+  assert.deepEqual(ads.offered(store).map(p=>p.name),['Week, daytime']);
+  assert.throws(()=>ads.order(store,{planId:plan.id,business:'Mama Mboga',phone:'nope'}),/phone/);assert.throws(()=>ads.order(store,{planId:plan.id,business:'Shop',phone:'0712345678',imageUrl:'http://x.co/a.png'}),/https/);
+  let o=ads.order(store,{planId:plan.id,business:'Mama Mboga',phone:'0712345678'});assert.equal(o.status,'awaiting-payment');assert.equal(o.ref,'AD0001');
+  ads.savePlan(store,{...plan,price:9999},store.get('adPlans',plan.id));assert.equal(store.get('adOrders',o.id).plan.price,1500,'order keeps the price it was bought at');
+  assert.throws(()=>ads.step(store,o.id,'approve',{}),/paid order/);
+  o=ads.step(store,o.id,'paid',{reference:'QK12ABC'});assert.equal(o.status,'paid-no-artwork','paid but no advert yet');
+  o=ads.step(store,o.id,'artwork',{title:'Fresh veg',text:'Delivered daily'});assert.equal(o.status,'review');
+  const mon10=Date.UTC(2026,10,2,7,0,0);// Monday 10:00 Nairobi
+  o=ads.step(store,o.id,'approve',{startsAt:new Date(mon10).toISOString()});assert.equal(o.status,'running');
+  assert.equal(engage.forPortal(store,mon10+60000).ads?.length??engage.forPortal(store,mon10+60000).length,1,'shows on a weekday in hours');
+  const sunNoon=Date.UTC(2026,10,8,9,0,0),monNight=Date.UTC(2026,10,2,19,0,0);const n=x=>{const r=engage.forPortal(store,x);return (r.ads||r).length;};
+  assert.equal(n(sunNoon),0,'not on Sunday');assert.equal(n(monNight),0,'not after 18:00');
+  ads.sweep(store,mon10+8*864e5);assert.equal(store.get('adOrders',o.id).status,'finished');
+  const o2=ads.order(store,{planId:plan.id,business:'B',phone:'0712345678'});const dec=ads.step(store,o2.id,'decline',{reason:'Not allowed content'});assert.equal(dec.status,'declined');assert.throws(()=>ads.step(store,o2.id,'paid',{reference:'X'}),/awaiting payment/);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});

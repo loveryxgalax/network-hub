@@ -250,6 +250,12 @@ function createApp(options={}){
   const wgRoute=route.match(/^\/api\/wireguard\/([a-f0-9-]{36})$/);
   if(wgRoute&&method==='PATCH'){role(user,['admin']);const saved=wireguard.setEnabled(store,wgRoute[1],(await body(req)).enabled===true);store.audit(user,(saved.enabled?'Enabled':'Disabled')+' WireGuard peer '+saved.name,saved.id);return json(res,200,saved);}
   if(wgRoute&&method==='DELETE'){role(user,['admin']);const p=wireguard.remove(store,wgRoute[1]);store.audit(user,'Removed WireGuard peer '+p.name,p.id);return json(res,200,{removed:true});}
+  if(route.startsWith('/api/adsales')){role(user,['admin','manager']);const ads=require('./lib/adsales.cjs');
+   if(route==='/api/adsales'&&method==='GET')return json(res,200,ads.board(store));
+   if(route==='/api/adsales/plans'&&method==='POST'){const p=ads.savePlan(store,await body(req));store.audit(user,'Created ad plan '+p.name,p.id);return json(res,201,p);}
+   const pr=route.match(/^\/api\/adsales\/plans\/([a-f0-9-]{36})$/);if(pr){const ex=store.get('adPlans',pr[1]);if(!ex)throw error(404,'Plan not found');if(method==='PATCH'){const p=ads.savePlan(store,{...ex,...await body(req)},ex);store.audit(user,'Updated ad plan '+p.name,p.id);return json(res,200,p);}if(method==='DELETE'){store.remove('adPlans',ex.id);store.audit(user,'Deleted ad plan '+ex.name,ex.id);return json(res,200,{ok:true});}}
+   const or=route.match(/^\/api\/adsales\/orders\/([a-f0-9-]{36})\/(paid|artwork|approve|decline|finish)$/);if(or&&method==='POST'){const o=ads.step(store,or[1],or[2],await body(req,8192),user);store.audit(user,'Ad order '+o.ref+': '+or[2],o.id);return json(res,200,o);}
+   throw error(404,'Not found');}
   if(route==='/api/engage'&&method==='GET'){role(user,['admin','manager','operator']);const days=[7,30,90].includes(Number(url.searchParams.get('days')))?Number(url.searchParams.get('days')):30;return json(res,200,{ads:store.list('ads'),quizzes:store.list('quizzes'),results:engage.results(store,days)});}
   const enRoute=route.match(/^\/api\/engage\/(ads|quizzes)(?:\/([a-f0-9-]{36}))?$/);
   if(enRoute&&['POST','PATCH','DELETE'].includes(method)){role(user,['admin','manager']);const kind=enRoute[1],existing=enRoute[2]?store.get(kind,enRoute[2]):null;if(enRoute[2]&&!existing)throw error(404,'Not found');
@@ -598,6 +604,9 @@ function createApp(options={}){
    if(!name||/[<>\u0000-\u001f]/.test(name))throw error(400,'Enter your name');if(!phone)throw error(400,'Enter a valid phone number');if(text.length<3)throw error(400,'Write a message');
    const sub=store.list('subscribers').find(x=>billing.phone(x.phone)===phone);
    store.put('tickets',{title:'Message from the WiFi page: '+name,category:'Something else',details:text+'\n\nPhone: '+phone,priority:'Normal',status:'Open',customer:sub?.name||name,subscriberId:sub?.id||'',source:'portal'});return json(res,200,{ok:true});}
+  // "Advertise here": offered plans, and a business sending its advert (no payment taken here).
+  if(route==='/portal/api/adplans'&&method==='GET')return json(res,200,{plans:require('./lib/adsales.cjs').offered(store),contact:(store.setting('workspace')||{}).phone||landing.get(store).phone||''});
+  if(route==='/portal/api/adorders'&&method==='POST'){limit(req,'adorder',5,3600000);const o=require('./lib/adsales.cjs').order(store,await body(req,8192));return json(res,201,{ref:o.ref,status:o.status,price:o.plan.price});}
   if(route==='/portal/api/presence'&&method==='POST'){limit(req,'presence',60,600000);const input=await body(req,1024),meta={ip:String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||''),ua:String(req.headers['user-agent']||'')};return json(res,200,input.leave?(presence.leave(input,meta),{ok:true}):presence.ping(input,meta));}
   if(route==='/portal/api/trial'&&method==='POST'){limit(req,'trial',30,600000);const input=await body(req,2048);return json(res,200,portal.trial(store,input));}
   if(route==='/portal/api/config'&&method==='GET'){try{devicesInfo.record(store,url.searchParams.get('mac'),req.headers['user-agent']);}catch{}const cfg=landing.get(store),inf=portal.info(store);return json(res,200,{config:{...cfg,brandName:cfg.brandName||inf.name,phone:cfg.phone||inf.support,whatsapp:cfg.whatsapp||cfg.phone||inf.support},plans:inf.plans,pppoePlans:inf.pppoePlans,mpesa:inf.mpesa,paystack:paystack.publicConfig(store).enabled,engage:engage.forPortal(store),freeMode:inf.freeMode});}

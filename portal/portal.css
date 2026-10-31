@@ -502,3 +502,6 @@ body[data-loading=progress] .boot-bar i{display:block;height:100%;width:40%;back
 .msg-form{margin-top:14px;display:grid;gap:10px}.msg-form h3{margin:0;font-size:15px}
 .msg-form input,.msg-form textarea{display:block;width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--surface);color:var(--ink);outline:none;resize:vertical}
 .msg-form input:focus,.msg-form textarea:focus{border-color:var(--brand)}
+.adv-dialog{border:0;border-radius:16px;padding:20px;max-width:440px;width:calc(100% - 32px);background:var(--surface);color:var(--ink)}.adv-dialog::backdrop{background:#0008}.adv-dialog form{display:grid;gap:10px}.adv-dialog h2{margin:0}
+.adv-dialog input,.adv-dialog textarea{display:block;width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);color:var(--ink)}.adv-plan{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px}.adv-plan input{width:auto;margin-top:4px}.adv-plan small{display:block;color:var(--muted)}
+.adv-actions{display:flex;gap:8px;justify-content:flex-end}.adv-msg{color:#b42318;margin:0;min-height:1em}
