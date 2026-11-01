@@ -44,6 +44,8 @@ function createApp(options={}){
  const passive=options.passive??process.env.NETWORK_PASSIVE==='1';if(passive)console.log('Passive mode: automatic messages, deactivation and router changes are off.');
  const publicOrigin=options.publicOrigin??process.env.NETWORK_PUBLIC_ORIGIN;
  const publicUrl=publicOrigin?new URL(publicOrigin):null;
+ // The RADIUS shared secret (same as FreeRADIUS's RADIUS_SECRET), only to write it into a router's link script.
+ const radiusSecret=options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'';
  if(publicUrl&&(publicUrl.protocol!=='https:'||publicUrl.username||publicUrl.password||publicUrl.pathname!=='/'||publicUrl.search||publicUrl.hash))throw new Error('NETWORK_PUBLIC_ORIGIN must be an HTTPS origin');
  const root=path.join(__dirname,'dist'),busy=new Set(),attempts=new Map(),agentAccepted=new Map(),customerUploads=new Map(),overviewCache=new Map();let timer,closing=false,collecting=false,lastPrune=0,lastReminders=0;
  const pollMs=Number(options.pollMs||process.env.NETWORK_POLL_MS||30000);if(!Number.isFinite(pollMs)||pollMs<1000)throw new Error('Polling interval must be at least 1000ms');
@@ -99,6 +101,9 @@ function createApp(options={}){
   const route=url.pathname,method=req.method,isPublic=!!publicUrl&&req.headers.host===publicUrl.host,secure=isPublic||!!req.socket.encrypted||process.env.NETWORK_SECURE_COOKIE==='1';
   if(publicUrl&&!isPublic&&!['127.0.0.1','localhost','[::1]'].includes(new URL('http://'+req.headers.host).hostname))throw error(403,'Unrecognized dashboard hostname');
   if(mutating.has(method)){const origin=req.headers.origin;if(origin&&origin!==`http${secure?'s':''}://${req.headers.host}`)throw error(403,'Cross-origin requests are not allowed');if(!String(req.headers['content-type']||'').startsWith('application/json'))throw error(415,'Send application/json');}
+  // Link a MikroTik: the router downloads its private link bundle with the token from the one-line command.
+  const bundleRoute=route.match(/^\/api\/provision\/bundle\/([a-f0-9-]{36})$/);
+  if(bundleRoute&&method==='GET'){limit(req,'provision-bundle',30,600000);const b=require('./lib/provision.cjs').readBundle(store,bundleRoute[1],String(req.headers.authorization||'').replace(/^Bearer /,''));res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'});return res.end(b.script);}
   const checkIn=route.match(/^\/api\/router-agent\/check-in\/([a-f0-9-]{36})$/);
   const customerCheckIn=route.match(/^\/api\/customer-agent\/check-in\/([a-f0-9-]{36})$/);
   if(customerCheckIn&&method==='POST'){
@@ -248,6 +253,46 @@ function createApp(options={}){
   if(route==='/api/router-jobs'&&method==='POST'){access.need(store,user,'router.jobs');const input=await body(req);{const sc=access.scope(store,user);if(sc&&!sc.has(input.routerId))throw error(403,'That router is not one of yours');}if(jobs.TYPES[input.type]?.risky)role(user,['admin']);
    const params={...(input.params||{})};if(input.type==='push-design')Object.assign(params,{origin:publicUrl?.origin||'',folder:params.folder||'hotspot'});
    const j=jobs.create(store,{routerId:input.routerId,type:input.type,params,confirm:input.confirm,user});store.audit(user,'Queued router job: '+j.label+' on '+j.routerName,j.id);return json(res,201,j);}
+  // Link a MikroTik (admins): create the router and its one-line link command, follow its first reports, and on a new
+  // router set up PPPoE/Hotspot through the job runner after the admin types the router's name.
+  if(route==='/api/provision/options'&&method==='GET'){role(user,['admin']);const srv=wireguard.server(store);return json(res,200,{publicOrigin:publicUrl?.origin||null,wireguard:!!srv.publicKey,radiusSecret:!!radiusSecret,realm:radius.settings(store).realm||''});}
+  if(route==='/api/provision'&&method==='POST'){role(user,['admin']);if(!publicUrl)throw error(409,'Set NETWORK_PUBLIC_ORIGIN to the HTTPS address of netops first');const pv=require('./lib/provision.cjs'),input=await body(req);
+   const existing=input.routerId?store.get('devices',String(input.routerId)):null;if(input.routerId&&existing?.type!=='router')throw error(404,'Router not found');
+   const name=existing?existing.name:String(input.name||'').trim();if(!pv.NAME.test(name))throw error(400,'Router name: letters, numbers, spaces, dot or dash (up to 40), starting with a letter or number');
+   if(!existing&&store.list('devices').some(d=>d.type==='router'&&d.name.toLowerCase()===name.toLowerCase()))throw error(409,'A router with this name already exists. Pick it from the list to make a new link script for it.');
+   const mode=['all','test','none'].includes(input.radius)?input.radius:'none',wantWg=input.wireguard===true||mode!=='none',srv=wireguard.server(store);
+   if(wantWg&&!srv.publicKey)throw error(409,'WireGuard is not set up on this server yet (Operations → WireGuard & Winbox access). Untick WireGuard and RADIUS, or set it up first.');
+   if(mode!=='none'&&!radiusSecret)throw error(409,'RADIUS_SECRET is not set for the hub. Add it to .env (it is already there if you set up RADIUS) and restart the hub, or choose "No RADIUS" for now.');
+   const parts=[],warnings=[];let device;
+   store.transaction(()=>{
+    const valid=validate('devices',{...(existing||{}),name,type:'router',driver:'routeros-script',endpoint:''},existing,store);device=store.put('devices',{...valid,status:'pending',lastCheck:existing?.lastCheck??null,lastSeen:existing?.lastSeen??null,lastError:'',metrics:existing?.metrics||{}},existing);
+    if(input.identity!==false)parts.push({title:'Router name (identity)',script:pv.identityScript(name)});
+    let wgAddress='';
+    if(wantWg){const had=store.list('wgPeers').find(p=>p.routerId===device.id&&p.kind==='router');if(had){wgAddress=had.address;warnings.push(`WireGuard: ${name} already has ${had.address}; the tunnel on the router is left as it is.`);}else{const w=wireguard.addRouter(store,{routerId:device.id,name});wgAddress=w.peer.address;parts.push({title:'WireGuard tunnel to netops ('+wgAddress+')',script:w.script.split('\n').filter(l=>!l.startsWith('# For netops RADIUS')).join('\n')});}}
+    if(mode!=='none')parts.push({title:'netops RADIUS'+(mode==='test'?' (test logins only)':''),script:pv.radiusScript({secret:radiusSecret,address:'10.99.0.1',srcAddress:wgAddress,realm:mode==='test'?(radius.settings(store).realm||'kade'):''})});
+    const at=crypto.randomBytes(32).toString('base64url');store.db.prepare('DELETE FROM secrets WHERE device_id IN (?,?)').run(device.id,'agent:'+device.id);store.secret('agent:'+device.id,{tokenHash:routerAgent.hash(at),issuedAt:Date.now()});parts.push({title:'Monitoring (read-only)',script:routerAgent.generate(publicUrl.origin,device.id,at)});
+    const dt=crypto.randomBytes(32).toString('base64url');store.secret('discovery:'+device.id,{tokenHash:routerAgent.hash(dt),issuedAt:Date.now()});parts.push({title:'Customer discovery and health (read-only)',script:customers.generate(publicUrl.origin,device.id,dt)});
+    if(input.runner!==false){const e=jobs.enroll(store,device.id);parts.push({title:'Job runner (only runs jobs you confirm in netops)',script:jobs.runnerScript(publicUrl.origin,device.id,e.token)});}
+   });
+   agentAccepted.delete(device.id);agentAccepted.delete('discovery:'+device.id);
+   const b=pv.saveBundle(store,device.id,pv.bundleScript(name,parts));store.audit(user,(existing?'Re-issued':'Created')+' Link a MikroTik script',device.id);
+   return json(res,201,{router:{id:device.id,name},oneLiner:pv.oneLiner(publicUrl.origin,b.id,b.token),parts:parts.map(p=>p.title),expiresAt:b.expiresAt,warnings});}
+  const provRoute=route.match(/^\/api\/provision\/([a-f0-9-]{36})(?:\/(services))?$/);
+  if(provRoute){role(user,['admin']);const pv=require('./lib/provision.cjs'),router=store.get('devices',provRoute[1]);if(!router||router.type!=='router')throw error(404,'Router not found');
+   const state=pv.routerState(store,router),job=store.list('routerJobs').filter(j=>j.routerId===router.id&&j.type==='provision-services').sort((a,b)=>b.createdAt-a.createdAt)[0]||null,peer=store.list('wgPeers').find(p=>p.routerId===router.id&&p.kind==='router');
+   if(!provRoute[2]&&method==='GET'){const d=readDevice(router),wgs=peer&&store.setting('wgStatus')?.peers?.[peer.publicKey];
+    return json(res,200,{router:{id:router.id,name:router.name,status:d.status,lastSeen:router.lastSeen||null,model:router.metrics?.model||'',version:router.metrics?.version||''},
+     checks:{monitoring:router.lastSeen||null,discovery:store.setting('customerDiscovery:'+router.id)?.lastReport||null,health:state.healthAt,runner:store.secret('jobs:'+router.id)?(store.setting('jobsPoll:'+router.id)?.time||0):null,wireguard:peer?{address:peer.address,handshake:wgs?.handshake||null}:null},
+     state,job:job&&{id:job.id,status:job.status,output:job.output,error:job.error,createdAt:job.createdAt,finishedAt:job.finishedAt||null}});}
+   if(provRoute[2]==='services'&&method==='POST'){const input=await body(req,8192);
+    if(!state.known)throw error(409,'Waiting for the router\'s first full report (about 2 minutes after the link script) so netops can check its ports.');
+    if(state.inService)throw error(409,'This router already serves customers (PPPoE server, hotspot or sessions found). netops does not reconfigure a router in service.');
+    const spec=pv.validateServices(input,{portalHost:publicUrl.hostname,state}),bodyScript=pv.servicesBody(spec,publicUrl.origin);
+    if(input.apply!==true)return json(res,200,{summary:pv.summary(spec),script:pv.pasteScript(bodyScript,router.name)});
+    if(job&&['queued','sent'].includes(job.status))throw error(409,'A setup job for this router is already waiting');
+    const j=jobs.create(store,{routerId:router.id,type:'provision-services',params:{spec:pv.encodeSpec(spec),origin:publicUrl.origin},confirm:input.confirm,user});
+    store.audit(user,'Queued PPPoE/Hotspot setup for a new router',router.id);return json(res,201,{job:{id:j.id,status:j.status},summary:pv.summary(spec)});}
+   throw error(405,'Method not allowed');}
   if(route==='/api/router-jobs/enroll'&&method==='POST'){role(user,['admin']);if(!publicUrl)throw error(409,'Configure the HTTPS public origin first');const e=jobs.enroll(store,String((await body(req)).deviceId||''));store.audit(user,'Issued job runner script',e.router.id);return json(res,201,{router:e.router.name,script:jobs.runnerScript(publicUrl.origin,e.router.id,e.token)});}
   const jobRevoke=route.match(/^\/api\/router-jobs\/enroll\/([a-f0-9-]{36})$/);
   if(jobRevoke&&method==='DELETE'){role(user,['admin']);store.secret('jobs:'+jobRevoke[1],null);store.audit(user,'Revoked job runner',jobRevoke[1]);return json(res,200,{ok:true});}

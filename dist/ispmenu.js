@@ -23,12 +23,12 @@ const at=nav.findIndex(n=>n[0]==='radius');if(at>=0)nav.splice(at,1,...items);
 const nh=nav.findIndex(n=>n[0]==='network-health');if(nh>=0)nav.splice(nh+1,0,['router-health','Router health','activity']);
 const nm=nav.findIndex(n=>n[0]==='network-map');if(nm>=0)nav.splice(nm+1,0,['nbr-map','Neighbour map','grid']);
 const st2=nav.findIndex(n=>n[0]==='settings');if(st2>=0)nav.splice(st2,0,['system-logs','System logs','shield'],['audit','Activity log','info'],['deleted','Recently deleted','refresh']);
-const mk=nav.findIndex(n=>n[0]==='mikrotiks');if(mk>=0)nav.splice(mk+1,0,['router-jobs','Router jobs','settings'],['config-backups','Config backups','server'],['upgrades','Upgrade tracker','refresh']);
+const mk=nav.findIndex(n=>n[0]==='mikrotiks');if(mk>=0)nav.splice(mk+1,0,['router-link','Link a MikroTik','plus'],['router-jobs','Router jobs','settings'],['config-backups','Config backups','server'],['upgrades','Upgrade tracker','refresh']);
 const d=nav.findIndex(n=>n[0]==='dashboard');if(d>=0)nav.splice(d+1,0,['trends','Trends','activity']);
 // ISPman's menu shape: a few top-level pages, then the business groups (customers, services, payments) before the
 // network groups. Each item keeps its page; only the order, headings and icons change.
 {const TOP=['dashboard','trends','team','wallet','settings','ai'],ORDER=['CUSTOMERS','HOTSPOT','PPPOE','STATIC IP','PAYMENTS','COMMS','MIKROTIK','OLTS & ONUS','MONITORING','FIBRE','OPERATIONS','TASKS','ACCOUNT'];
- const LABEL={dashboard:'Home',wallet:'Billing'},ICON={dashboard:'house',trends:'chart',team:'users',wallet:'receipt',settings:'settings',ai:'chat','cust-table':'users','cust-new':'userplus','cust-hotspot':'wifi','cust-pppoe':'house','hs-packages':'box','pp-packages':'box','st-customers':'network','pay-received':'arrowdown','pay-payouts':'arrowup','pay-reports':'chart','pay-ledger':'file','pay-card':'card','pay-mpesa':'wallet','comms-sms':'chat','comms-email':'chat','comms-campaigns':'bolt','hs-roaming':'globe','hs-servers':'server','hs-connect':'wifi','captive':'wifi','wireguard':'shield','tickets':'headset','system-logs':'shield','sites':'globe','mikrotiks':'router','olts':'server','hs-requests':'card','promos':'receipt','outages':'warning','overdue':'clock','radius':'settings'};
+ const LABEL={dashboard:'Home',wallet:'Billing'},ICON={dashboard:'house',trends:'chart',team:'users',wallet:'receipt',settings:'settings',ai:'chat','cust-table':'users','cust-new':'userplus','cust-hotspot':'wifi','cust-pppoe':'house','hs-packages':'box','pp-packages':'box','st-customers':'network','pay-received':'arrowdown','pay-payouts':'arrowup','pay-reports':'chart','pay-ledger':'file','pay-card':'card','pay-mpesa':'wallet','comms-sms':'chat','comms-email':'chat','comms-campaigns':'bolt','hs-roaming':'globe','router-link':'plus','hs-servers':'server','hs-connect':'wifi','captive':'wifi','wireguard':'shield','tickets':'headset','system-logs':'shield','sites':'globe','mikrotiks':'router','olts':'server','hs-requests':'card','promos':'receipt','outages':'warning','overdue':'clock','radius':'settings'};
  const blocks=[];let cur=null;for(const n of nav){if(n[3]){cur={head:n[3],items:[]};blocks.push(cur);}else if(!cur){cur={head:'',items:[]};blocks.push(cur);}cur.items.push(n.slice(0,3));}
  const top=[];for(const id of TOP)for(const b of blocks){const i=b.items.findIndex(n=>n[0]===id);if(i>=0)top.push(...b.items.splice(i,1));}
  const rest=blocks.filter(b=>b.items.length).sort((a,b)=>(ORDER.indexOf(a.head)+1||99)-(ORDER.indexOf(b.head)+1||99));
@@ -704,7 +704,7 @@ window.refreshSysBadge=refreshSysBadge;
 document.addEventListener('DOMContentLoaded',()=>{const base=window.renderDashboard;if(base)window.renderDashboard=function(){base.apply(this,arguments);const slot=document.querySelector('#kd-quick-slot');if(!slot||document.querySelector('.kade-quick'))return;
  const add=svc=>async()=>{try{radiusView.data=await api('radius');subscriberEditor();const sv=$('#sub-service');if(sv){sv.value=svc;sv.onchange&&sv.onchange();}}catch(e){toast(e.message);}};
  // [label, action, icon, kind]: "add" buttons are centred with a plus; the rest show the label left and an icon right, as in ISPman.
- const acts=[['Add Hotspot Customer',add('hotspot'),'plus','add'],['Add PPPoE Customer',add('pppoe'),'plus','add'],['Add Static IP',add('static'),'plus','add'],['Find Customer','cust-table','search','find'],['PPPoE Customers','cust-pppoe','house'],['Hotspot Customers','cust-hotspot','wifi'],['Static Customers','st-customers','network'],['Devices','mikrotiks','network'],['Hotspot Packages','hs-packages','box'],['PPPoE Packages','pp-packages','box'],['Settings','settings','settings']];
+ const acts=[['Add Hotspot Customer',add('hotspot'),'plus','add'],['Add PPPoE Customer',add('pppoe'),'plus','add'],['Add Static IP',add('static'),'plus','add'],['Find Customer','cust-table','search','find'],['PPPoE Customers','cust-pppoe','house'],['Hotspot Customers','cust-hotspot','wifi'],['Static Customers','st-customers','network'],['Devices','mikrotiks','network'],['Link MikroTik','router-link','router'],['Hotspot Packages','hs-packages','box'],['PPPoE Packages','pp-packages','box'],['Settings','settings','settings']];
  const sec=document.createElement('section');sec.className='kade-quick';
  sec.innerHTML=`<div class="kade-quick-head"><h2>Quick Actions</h2><div><a class="kade-pill dark" href="#system-logs">${icon('shield',15)} System Logs<span class="kade-sys-n" hidden></span></a><a class="kade-pill" href="#tickets">${icon('headset',15)} Support</a></div></div><div class="kade-quick-grid">${acts.map(([l,,ic,k],i)=>`<button type="button" class="kade-quick-btn ${k||'nav'}" data-qa="${i}">${k?`${icon(ic,15)}<span>${H(l)}</span>`:`<span>${H(l)}</span>${icon(ic,16)}`}</button>`).join('')}</div>`;
  slot.replaceWith(sec);for(const b of sec.querySelectorAll('[data-qa]'))b.onclick=()=>{const t=acts[b.dataset.qa][1];if(typeof t==='function')t();else location.hash=t;};refreshSysBadge();};if(state.page==='dashboard'&&document.querySelector('#kd-quick-slot'))window.renderDashboard();});
@@ -913,7 +913,98 @@ Object.assign(pages,{
   $('#mc-xls').onclick=()=>xlsExport('manual-connects',['Customer','Username','Package','Connected by','Paid until','Reason','Created'],d.connects.map(x=>[x.name,x.username,x.planName,x.by||'',x.after?stamp(x.after):'',x.reason||'',stamp(x.time)]));
   $('#mcl-xls').onclick=()=>xlsExport('manual-connect-logs',['Customer','Username','Package','Changed by','How','Paid until before','Paid until after','Changed at'],d.changes.map(x=>[x.name,x.username,x.planName,x.by,x.how,x.before?stamp(x.before):'',x.after?stamp(x.after):'',stamp(x.time)]));}
 });
-const ROUTES={me:'mePage','ad-sales':'adSalesPage','comms-mailout':'mailoutPage','promo-campaigns':'campaignsPage','pay-wallets':'walletsPage',loyalty:'loyaltyPage','st-logs':'staticLogs','system-logs':'systemLogs','cust-new':'customers','cust-inactive':'customers','cust-hotspot':'customers','cust-pppoe':'customers','pp-network':'pppoeNetwork',deleted:'deletedPage',notifications:'deviceAlerts','hs-sessions':'hsSessions','pp-sessions':'hsSessions','hs-auth':'hsAuth','pp-auth':'hsAuth','hs-acct':'hsAcct','pp-acct':'hsAcct','hs-connect':'hsConnect','hs-servers':'hsServers','hs-requests':'requests','hs-manual':'manual','hs-vouchers':'vouchers','comms-campaigns':'campaigns','pay-reports':'reports','pay-ledger':'ledger','wireguard':'wireguardPage','hs-engage':'engage','pp-expired':'expiredPage','comms-email':'emailPage','ops-onboarding':'onboarding','ops-stock':'stockRequests','pay-payouts':'payouts','pay-card':'card','captive':'captive','cust-table':'customers','st-customers':'statics','st-expiring':'statics','st-settings':'statics','hs-roaming':'roaming','bulk':'bulk','router-jobs':'routerJobs','speed-rules':'speedRules','outages':'outages','audit':'audit','config-backups':'backups','upgrades':'upgrades','nbr-map':'nbrmap','promos':'promos','overdue':'overdue','router-health':'health'};
+// Link a MikroTik: identity → one-line script (and waiting for the router) → PPPoE/Hotspot on a new router → applying.
+const LK_KEY='kd-link-router',lk={step:1,routerId:'',result:null,spec:null,preview:null};
+try{lk.routerId=localStorage.getItem(LK_KEY)||'';if(lk.routerId)lk.step=2;}catch{}
+const lkSave=()=>{try{lk.routerId?localStorage.setItem(LK_KEY,lk.routerId):localStorage.removeItem(LK_KEY);}catch{}};
+const lkSteps=()=>`<ol class="lk-steps">${['Router identity','Link script','Services','Apply'].map((t,i)=>`<li class="${lk.step>i+1?'done':lk.step===i+1?'on':''}"><b>${lk.step>i+1?'✓':i+1}</b><span>${t}</span></li>`).join('')}</ol>`;
+const lkCopy=(text,label='Copy')=>{const id='lkc'+Math.random().toString(36).slice(2,8);setTimeout(()=>{const b=$('#'+id);if(b)b.onclick=()=>{navigator.clipboard?.writeText(text).then(()=>toast('Copied'),()=>toast('Select the text and copy it'));};},0);return `<button type="button" class="button secondary" id="${id}">${label}</button>`;};
+Object.assign(pages,{
+ async routerLink(id){
+  if(state.session.user.role!=='admin'){shell('Link a MikroTik','Only admins can link routers.');$('#im-body').innerHTML=notice('Admins only','Ask an admin to link the router.',true);return;}
+  shell('Link a MikroTik','Register the router, paste one line in its terminal, then choose PPPoE or Hotspot services. Routers that already serve customers are only monitored, never reconfigured.',lk.routerId?'<button class="button secondary" id="lk-new">Link another router</button>':'');
+  const nb=$('#lk-new');if(nb)nb.onclick=()=>{lk.step=1;lk.routerId='';lk.result=null;lk.preview=null;lkSave();pages.routerLink(id);};
+  clearInterval(pages.routerLink.t);
+  if(lk.step===1)return pages.lkIdentity(id);
+  let s;try{s=await api('provision/'+lk.routerId);}catch(e){lk.step=1;lk.routerId='';lkSave();return pages.lkIdentity(id);}
+  if(state.page!==id)return;
+  if(lk.step===2)return pages.lkScript(id,s);
+  if(lk.step===3)return pages.lkServices(id,s);
+  return pages.lkApply(id,s);
+ },
+ async lkIdentity(id){
+  const o=await api('provision/options'),routers=rows('devices').filter(d=>d.type==='router');if(state.page!==id)return;
+  $('#im-body').innerHTML=`${lkSteps()}<section class="card"><form id="lk-f" class="radius-form"><h2>Router identity</h2>
+   ${o.publicOrigin?'':notice('Public address missing','Set NETWORK_PUBLIC_ORIGIN (the HTTPS address of netops) on the server first.',true)}
+   <div class="form-grid"><label>Router name<input name="name" maxlength="40" pattern="[A-Za-z0-9][A-Za-z0-9 ._\\-]{0,39}" placeholder="e.g. HEX Ikutha" autocomplete="off"></label>
+   <label>Or make a new script for an existing router<select name="routerId"><option value="">New router</option>${routers.map(r=>`<option value="${H(r.id)}">${H(r.name)}</option>`).join('')}</select></label></div>
+   <p class="muted small">Letters, numbers, spaces, dot and dash. netops RADIUS recognises the router by this name.</p>
+   <label class="check-label"><input type="checkbox" name="identity" checked> Set this name on the router (System → Identity)</label>
+   <label class="check-label"><input type="checkbox" name="wireguard" ${o.wireguard?'checked':'disabled'}> WireGuard tunnel to netops (private network; needed for netops RADIUS and Winbox through netops)${o.wireguard?'':' — set up WireGuard first (Operations → WireGuard & Winbox access)'}</label>
+   <label>RADIUS<select name="radius"><option value="none">No RADIUS change (keep what the router uses now)</option><option value="test" ${o.wireguard&&o.radiusSecret?'':'disabled'}>netops RADIUS for test logins only (username@${H(o.realm||'kade')})</option><option value="all" ${o.wireguard&&o.radiusSecret?'':'disabled'}>netops RADIUS for all logins (new router)</option></select></label>
+   ${o.radiusSecret?'':'<p class="muted small">netops RADIUS options need RADIUS_SECRET set for the hub and WireGuard set up.</p>'}
+   <label class="check-label"><input type="checkbox" name="runner" checked> Job runner: lets netops set up PPPoE/Hotspot in the next steps and run the jobs you confirm (disconnect, reset device, push login page…). It never runs anything you did not confirm.</label>
+   <button class="button primary" ${o.publicOrigin?'':'disabled'}>Continue</button></form></section>`;
+  const f=$('#lk-f');f.onsubmit=async e=>{e.preventDefault();const v=new FormData(f),b=$('button.primary',f);b.disabled=true;
+   const input={name:v.get('name'),routerId:v.get('routerId')||undefined,identity:v.get('identity')==='on',wireguard:v.get('wireguard')==='on',radius:v.get('radius'),runner:v.get('runner')==='on'};
+   if(!input.routerId&&!String(input.name||'').trim()){toast('Enter the router name');b.disabled=false;return;}
+   try{const r=await api('provision','POST',input);lk.routerId=r.router.id;lk.result=r;lk.step=2;lkSave();toast(`${r.router.name} registered. Paste the line on the router.`);pages.routerLink(id);}catch(err){toast(err.message);b.disabled=false;}};
+ },
+ lkScript(id,s){
+  const c=s.checks,r=lk.result&&lk.result.router.id===lk.routerId?lk.result:null,mins=t=>t?ago(t):'';
+  const row=(ok,label,wait,detail)=>`<li class="${ok?'ok':''}"><b>${ok?'✓':'…'}</b><span>${label}</span><small>${ok?H(detail||''):H(wait)}</small></li>`;
+  const runnerOk=c.runner===null||c.runner>0,ready=!!c.monitoring&&s.state.known&&runnerOk;
+  $('#im-body').innerHTML=`${lkSteps()}<section class="card lk-p"><h2>Provisioning script · ${H(s.router.name)}</h2>
+   <p class="muted">Open Winbox → New Terminal on the router and paste this one line. The router downloads its own setup from netops over HTTPS (certificate checked). Keep it private: it works for 2 hours.</p>
+   ${r?`<div class="lk-code"><code>${H(r.oneLiner)}</code>${lkCopy(r.oneLiner,'Copy script')}</div><p class="small muted">Installs: ${r.parts.map(H).join(' · ')}. Valid until ${H(stamp(r.expiresAt))}.</p>${(r.warnings||[]).map(w=>notice('Note',H(w))).join('')}`:`<p>The one-line script is only shown right after it is made.</p><button class="button secondary" id="lk-reissue">Make a new link script for ${H(s.router.name)}</button>`}
+   <details class="lk-adv"><summary>If the router says "not allowed by device-mode"</summary><ol><li>Open the MikroTik terminal (Winbox → New Terminal)</li><li>Run <code>/system/device-mode update mode=advanced</code></li><li>Within 5 minutes, press the router's reset button briefly or unplug the power for 10 seconds and plug it back (this confirms the change; your settings stay)</li><li>Paste the line above again</li></ol><p class="small muted">RouterOS 7.17+ ships some models in a restricted mode that blocks downloads and schedulers. netops never changes this mode itself.</p></details>
+   <h3>Waiting for the router</h3><ul class="lk-checks">
+    ${row(!!c.monitoring,'Monitoring check-in','Waiting for the first check-in (every 30 s)…',`${s.router.model} · RouterOS ${s.router.version} · ${mins(c.monitoring)}`)}
+    ${row(s.state.known,'Health and ports report','Waiting for the first full report (up to 2 minutes)…',`${s.state.ports.length} ports · ${mins(s.state.healthAt)}`)}
+    ${c.runner!==null?row(c.runner>0,'Job runner','Waiting for its first poll (every minute)…',mins(c.runner)):''}
+    ${c.wireguard?row(!!c.wireguard.handshake,'WireGuard '+c.wireguard.address,'Waiting for the tunnel (the server applies new peers within a minute)…',mins(c.wireguard.handshake)):''}
+   </ul>
+   ${s.state.known&&s.state.inService?notice('This router already serves customers',`It has ${[s.state.services.pppoeServers?'a PPPoE server':'',s.state.services.hotspots?'a hotspot':'',s.state.services.pppSessions?s.state.services.pppSessions+' PPPoE sessions':'',s.state.services.hotspotSessions?s.state.services.hotspotSessions+' hotspot sessions':''].filter(Boolean).join(', ')||'customer services'}. netops monitors it and will not reconfigure it. You are done.`):''}
+   <div class="row-actions lk-nav"><button class="button secondary" id="lk-back">Back</button><a class="button secondary" href="#mikrotiks">Finish (monitoring only)</a><button class="button primary" id="lk-next" ${ready&&!s.state.inService?'':'disabled'}>Configure services →</button></div></section>`;
+  $('#lk-back').onclick=()=>{lk.step=1;pages.routerLink(id);};
+  $('#lk-next').onclick=()=>{lk.step=3;pages.routerLink(id);};
+  const ri=$('#lk-reissue');if(ri)ri.onclick=async()=>{if(!confirm('Make a new link script? The previous one stops working.'))return;try{lk.result=await api('provision','POST',{routerId:lk.routerId,identity:true,wireguard:!!c.wireguard,radius:'none',runner:true});pages.routerLink(id);}catch(e){toast(e.message);}};
+  const t2=setInterval(async()=>{if(state.page!==id||lk.step!==2){clearInterval(t2);return;}if(document.activeElement?.closest?.('.lk-adv'))return;try{const n=await api('provision/'+lk.routerId);if(state.page===id&&lk.step===2&&JSON.stringify(n.checks)+n.state.known!==JSON.stringify(s.checks)+s.state.known){clearInterval(t2);pages.lkScript(id,n);}}catch{}},4000);pages.routerLink.t=t2;
+ },
+ lkServices(id,s){
+  const st=s.state,sp=lk.spec||{pppoe:true,hotspot:true,uplink:st.uplinks[0]||'ether1',ports:[],hotspotNet:'10.5.0.1/22',pppoeNet:'10.20.0.1/22',dnsName:'wifi.kade',nat:true};
+  if(st.inService){$('#im-body').innerHTML=lkSteps()+notice('Not configured','This router already serves customers; netops only monitors it.',true);return;}
+  const why=p=>p.uplink?'uplink / WAN':p.bridge?'in '+p.bridge:p.address?'has '+p.address:'';
+  $('#im-body').innerHTML=`${lkSteps()}<section class="card"><form id="lk-s" class="radius-form"><h2>Service types · ${H(s.router.name)}</h2><p class="muted">For a new or reset router. Nothing runs until you preview the exact script and type the router's name.</p>
+   <div class="lk-svc"><label class="lk-card"><input type="checkbox" name="pppoe" ${sp.pppoe?'checked':''}><b>PPPoE</b><small>Always-on home and business customers</small></label><label class="lk-card"><input type="checkbox" name="hotspot" ${sp.hotspot?'checked':''}><b>Hotspot</b><small>Captive portal and vouchers</small></label></div>
+   <h3>Uplink (internet)</h3><label>Port that brings the internet in<select name="uplink">${st.ports.map(p=>`<option ${p.name===sp.uplink?'selected':''}>${H(p.name)}</option>`).join('')}</select></label><p class="small muted">${st.uplinks.length?'Detected from the router: '+H(st.uplinks.join(', '))+'. ':''}It is never added to the customer bridge.</p>
+   <h3>Customer ports</h3><p class="small muted">Added to a new bridge "netops-bridge". Ports already in a bridge, with an address or carrying the uplink cannot be chosen.</p>
+   <div class="lk-ports">${st.ports.map(p=>{const w=why(p);return `<label class="lk-port ${w?'off':''}"><input type="checkbox" name="ports" value="${H(p.name)}" ${w?'disabled':''} ${sp.ports.includes(p.name)&&!w?'checked':''}><b>${H(p.name)}</b><small>${H(w||(p.running?'link up':'no link'))}</small></label>`;}).join('')}</div>
+   <div class="form-grid"><label>Hotspot gateway / network<input name="hotspotNet" value="${H(sp.hotspotNet)}"></label><label>Hotspot DNS name<input name="dnsName" value="${H(sp.dnsName)}"></label><label>PPPoE local address / network<input name="pppoeNet" value="${H(sp.pppoeNet)}"></label></div>
+   <label class="check-label"><input type="checkbox" name="nat" ${sp.nat?'checked':''}> Internet for customers through the uplink (NAT masquerade, added only if missing)</label>
+   ${s.checks.runner===null?notice('No job runner','This router has no job runner, so netops cannot apply the setup. You can still preview it and paste the script yourself.'):''}
+   <div class="row-actions lk-nav"><button type="button" class="button secondary" id="lk-back">Back</button><button class="button primary">Preview setup</button></div></form></section><div id="lk-pv"></div>`;
+  const f=$('#lk-s'),read=()=>{const v=new FormData(f);return {pppoe:v.get('pppoe')==='on',hotspot:v.get('hotspot')==='on',uplink:v.get('uplink'),ports:v.getAll('ports'),hotspotNet:v.get('hotspotNet'),pppoeNet:v.get('pppoeNet'),dnsName:v.get('dnsName'),nat:v.get('nat')==='on'};};
+  $('#lk-back').onclick=()=>{lk.spec=read();lk.step=2;pages.routerLink(id);};
+  f.onsubmit=async e=>{e.preventDefault();lk.spec=read();try{const p=await api('provision/'+lk.routerId+'/services','POST',lk.spec);
+   $('#lk-pv').innerHTML=`<section class="card lk-p"><h2>What will be set up</h2><ul class="lk-sum">${p.summary.map(x=>`<li>${H(x)}</li>`).join('')}</ul>
+    <p class="muted small">The script first checks the router and changes nothing if it finds a PPPoE server, a hotspot, the netops bridge, or a chosen port in use. It never reboots the router or changes RouterOS.</p>
+    <details><summary>Show the script</summary><pre class="lk-pre">${H(p.script)}</pre>${lkCopy(p.script,'Copy script (to paste yourself)')}</details>
+    ${s.checks.runner===null?'':`<form id="lk-ap" class="radius-form"><label>Type the router name <b>${H(s.router.name)}</b> to apply it now<input name="confirm" autocomplete="off" required></label><button class="button primary">Apply configuration</button></form>`}</section>`;
+   const ap=$('#lk-ap');if(ap)ap.onsubmit=async ev=>{ev.preventDefault();const b=$('button',ap);b.disabled=true;try{await api('provision/'+lk.routerId+'/services','POST',{...lk.spec,apply:true,confirm:new FormData(ap).get('confirm')});lk.step=4;pages.routerLink(id);}catch(err){toast(err.message);b.disabled=false;}};
+   $('#lk-pv').scrollIntoView({behavior:'smooth',block:'start'});}catch(err){toast(err.message);}};
+ },
+ lkApply(id,s){
+  const j=s.job,label={queued:'Waiting for the router to pick it up (within a minute)…',sent:'Running on the router…',succeeded:'Router is live',failed:'Setup did not run',cancelled:'Cancelled'}[j?.status]||'No setup job';
+  $('#im-body').innerHTML=`${lkSteps()}<section class="card lk-p"><h2>Applying configuration · ${H(s.router.name)}</h2>
+   <div class="lk-status ${j?.status||''}"><b>${H(label)}</b>${j?.output?`<p>${H(j.output)}</p>`:''}${j?.error?`<p class="auth-bad">${H(j.error)}</p>`:''}</div>
+   ${j?.status==='succeeded'?`<p>Customers on the chosen ports can now connect. Create packages and customers in netops; logins are checked by netops RADIUS. The hotspot login page was downloaded from netops.</p>`:''}
+   <div class="row-actions lk-nav">${j?.status==='failed'?'<button class="button secondary" id="lk-svc">Back to services</button>':''}<a class="button ${j?.status==='succeeded'?'primary':'secondary'}" href="#mikrotiks">All routers</a></div></section>`;
+  const b=$('#lk-svc');if(b)b.onclick=()=>{lk.step=3;pages.routerLink(id);};
+  if(j&&['queued','sent'].includes(j.status)){const t4=setInterval(async()=>{if(state.page!==id||lk.step!==4){clearInterval(t4);return;}try{const n=await api('provision/'+lk.routerId);if(n.job?.status!==j.status){clearInterval(t4);pages.lkApply(id,n);}}catch{}},4000);pages.routerLink.t=t4;}
+ }
+});
+const ROUTES={'router-link':'routerLink',me:'mePage','ad-sales':'adSalesPage','comms-mailout':'mailoutPage','promo-campaigns':'campaignsPage','pay-wallets':'walletsPage',loyalty:'loyaltyPage','st-logs':'staticLogs','system-logs':'systemLogs','cust-new':'customers','cust-inactive':'customers','cust-hotspot':'customers','cust-pppoe':'customers','pp-network':'pppoeNetwork',deleted:'deletedPage',notifications:'deviceAlerts','hs-sessions':'hsSessions','pp-sessions':'hsSessions','hs-auth':'hsAuth','pp-auth':'hsAuth','hs-acct':'hsAcct','pp-acct':'hsAcct','hs-connect':'hsConnect','hs-servers':'hsServers','hs-requests':'requests','hs-manual':'manual','hs-vouchers':'vouchers','comms-campaigns':'campaigns','pay-reports':'reports','pay-ledger':'ledger','wireguard':'wireguardPage','hs-engage':'engage','pp-expired':'expiredPage','comms-email':'emailPage','ops-onboarding':'onboarding','ops-stock':'stockRequests','pay-payouts':'payouts','pay-card':'card','captive':'captive','cust-table':'customers','st-customers':'statics','st-expiring':'statics','st-settings':'statics','hs-roaming':'roaming','bulk':'bulk','router-jobs':'routerJobs','speed-rules':'speedRules','outages':'outages','audit':'audit','config-backups':'backups','upgrades':'upgrades','nbr-map':'nbrmap','promos':'promos','overdue':'overdue','router-health':'health'};
 const original=window.render;
 window.render=function(){
  const id=state.page,preset=PRESETS[id];

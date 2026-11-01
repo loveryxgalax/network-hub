@@ -15,6 +15,8 @@ services:
       # Internal RADIUS bridge for FreeRADIUS (port 4318 on the private network only). Empty = disabled.
       NETWORK_RADIUS_TOKEN: ${NETWORK_RADIUS_TOKEN:-}
       NETWORK_RADIUS_HOST: 0.0.0.0
+      # Same value as FreeRADIUS's: written into a router's "Link a MikroTik" script when you choose netops RADIUS.
+      NETWORK_RADIUS_SECRET: ${RADIUS_SECRET:-}
       # Phoenix live view (optional, profile "live"). The feed listens on 4319 on the private network only.
       NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
       NETWORK_LIVE_URL: ${NETWORK_LIVE_URL:-}
