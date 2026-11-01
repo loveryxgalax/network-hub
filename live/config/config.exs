@@ -2,7 +2,8 @@ import Config
 
 config :netops_live, NetopsLiveWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
-  url: [host: "localhost", path: "/live"],
+  # No url path: the routes, static files and socket already sit under /live.
+  url: [host: "localhost"],
   render_errors: [formats: [html: NetopsLiveWeb.ErrorHTML], layout: false],
   pubsub_server: NetopsLive.PubSub,
   live_view: [signing_salt: "netops-live-view"]
