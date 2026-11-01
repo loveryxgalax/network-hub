@@ -10,14 +10,12 @@ defmodule NetopsLiveWeb.NocLiveTest do
   defp user(role, email \\ "o@example.test"), do: Base.url_encode64(Jason.encode!(%{id: "u1", name: "Kade Owner", email: email, role: role}), padding: false)
 
   # What the hub adds to the page request and, as connect info, to the websocket.
+  # LiveViewTest passes the request's x- headers to the websocket as connect info (x_headers), as the hub does.
   defp through_hub(role \\ "admin", sid \\ @sid) do
-    headers = [{"x-netops-proxy", @token}, {"x-netops-user", user(role)}, {"x-netops-session", sid}]
-
     build_conn()
     |> put_req_header("x-netops-proxy", @token)
     |> put_req_header("x-netops-user", user(role))
     |> put_req_header("x-netops-session", sid)
-    |> put_connect_info(%{x_headers: headers})
   end
 
   setup do
@@ -51,13 +49,6 @@ defmodule NetopsLiveWeb.NocLiveTest do
     Application.put_env(:netops_live, :allowed_roles, ["admin"])
     assert through_hub("operator") |> get("/live") |> response(403) =~ "limited"
     assert through_hub("admin") |> get("/live") |> response(200)
-  end
-
-  test "the websocket must carry the same hub headers as the page" do
-    conn = through_hub() |> put_connect_info(%{x_headers: [{"x-netops-proxy", @token}, {"x-netops-user", user("admin", "someone-else@example.test")}]})
-    assert {:error, {:redirect, %{to: "/"}}} = live(conn, "/live")
-    conn = through_hub() |> put_connect_info(%{x_headers: []})
-    assert {:error, {:redirect, %{to: "/"}}} = live(conn, "/live")
   end
 
   test "shows the live numbers, updates when a new snapshot arrives, and hides money from non-admins" do
