@@ -19,15 +19,20 @@ services:
       NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
       NETWORK_LIVE_URL: ${NETWORK_LIVE_URL:-}
       NETWORK_LIVE_HOST: 0.0.0.0
+      # Optional: only these roles may open /live (comma list, e.g. admin,manager). Empty = everyone but installers.
+      NETWORK_LIVE_ROLES: ${NETWORK_LIVE_ROLES:-}
     volumes:
       - hub-data:/data
     networks: [internal]
 
-  # Phoenix live NOC view (Phase 1): docker compose --profile live up -d --build live
+  # Phoenix live NOC view: docker compose --profile live up -d --build live
   # Reached only through the hub at /live (sign-in checked there); never published, no database.
+  # LIVE_IMAGE=ghcr.io/<owner>/netops-live:latest uses the image CI built (docker compose pull live) instead of
+  # compiling Elixir on the server.
   live:
     profiles: [live]
     mem_limit: ${LIVE_MEMORY:-384m}
+    image: ${LIVE_IMAGE:-netops-live:local}
     build: ./live
     restart: unless-stopped
     environment:
@@ -35,9 +40,16 @@ services:
       # start without them instead (config/runtime.exs).
       NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
       SECRET_KEY_BASE: ${LIVE_SECRET_KEY_BASE:-}
-      LIVE_FEED_URL: http://hub:4319/internal/live
+      LIVE_API_URL: http://hub:4319/internal/v1
       PUBLIC_HOST: netops.kadenetworks.com
+      LIVE_ROLES: ${NETWORK_LIVE_ROLES:-}
     depends_on: [hub]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks: [internal]
   mongo:
     mem_limit: ${MONGO_MEMORY:-450m}

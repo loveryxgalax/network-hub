@@ -12,8 +12,16 @@ if config_env() == :prod do
     # Browsers only reach Phoenix through the hub at the public site.
     check_origin: ["https://" <> System.get_env("PUBLIC_HOST", "netops.kadenetworks.com")]
 
+  roles = System.get_env("LIVE_ROLES", "") |> String.split(",", trim: true) |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
+
   config :netops_live,
-    feed_url: System.get_env("LIVE_FEED_URL", "http://hub:4319/internal/live"),
+    # Internal v1 API on the hub: /snapshot, /events, /session. LIVE_FEED_URL (old /internal/live) still works.
+    api_url: System.get_env("LIVE_API_URL", "http://hub:4319/internal/v1"),
+    feed_url: (System.get_env("LIVE_FEED_URL") |> then(&(&1 != "" && &1))) || nil,
     token: token,
-    poll_ms: String.to_integer(System.get_env("LIVE_POLL_MS", "3000"))
+    poll_ms: String.to_integer(System.get_env("LIVE_POLL_MS", "3000")),
+    events_ms: String.to_integer(System.get_env("LIVE_EVENTS_MS", "1000")),
+    session_check_ms: String.to_integer(System.get_env("LIVE_SESSION_CHECK_MS", "30000")),
+    # Extra guard on top of the hub's NETWORK_LIVE_ROLES: when set, only these roles may watch.
+    allowed_roles: roles
 end

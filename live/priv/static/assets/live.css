@@ -19,3 +19,4 @@ table{width:100%;border-collapse:collapse}th{background:var(--primary);color:#ff
 .muted{color:var(--muted)}.stale{background:#fffbe6;border:1px solid #f3d36b;color:#7a5a00;padding:8px 12px;border-radius:8px}.foot{color:var(--muted);text-align:center;font-size:12px}
 .empty{text-align:center;padding:40px}
 @media (max-width:640px){.bars li{grid-template-columns:100px 1fr 34px}table{font-size:12.5px}}
+.list li.good .sev{background:#17a35b}.activity li strong{font-weight:600}

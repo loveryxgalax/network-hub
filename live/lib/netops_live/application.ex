@@ -7,7 +7,8 @@ defmodule NetopsLive.Application do
     children =
       [
         {Phoenix.PubSub, name: NetopsLive.PubSub},
-        NetopsLive.Feed
+        NetopsLive.Feed,
+        NetopsLive.Events
       ] ++ [NetopsLiveWeb.Endpoint]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: NetopsLive.Supervisor)

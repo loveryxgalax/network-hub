@@ -5,18 +5,49 @@ defmodule NetopsLiveWeb.NocLive do
   Money is shown to admins only, as in netops.
   """
   use NetopsLiveWeb, :live_view
-  alias NetopsLive.Feed
+  alias NetopsLive.{Feed, Events, Sessions}
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket), do: Phoenix.PubSub.subscribe(NetopsLive.PubSub, Feed.topic())
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(NetopsLive.PubSub, Feed.topic())
+      Phoenix.PubSub.subscribe(NetopsLive.PubSub, Events.topic())
+      schedule_session_check()
+    end
+
     {snapshot, error} = Feed.latest()
-    {:ok, assign(socket, snapshot: snapshot, error: error, page_title: "Live")}
+    {events, stats} = Events.recent()
+    {:ok, assign(socket, snapshot: snapshot, error: error, events: events, lag_ms: stats.lag_ms, events_error: stats.error, session_failures: 0, page_title: "Live")}
   end
 
   @impl true
   def handle_info({:snapshot, snapshot}, socket), do: {:noreply, assign(socket, snapshot: snapshot, error: nil)}
   def handle_info({:feed_error, reason}, socket), do: {:noreply, assign(socket, error: reason)}
+  def handle_info({:events, events, meta}, socket), do: {:noreply, assign(socket, events: events, lag_ms: meta.lag_ms, events_error: nil)}
+
+  # Signing out of netops ends the live view: the sign-in is re-checked with the hub every 30 seconds. If the hub
+  # cannot be asked three times in a row, the screen closes too (the hub refuses new connections anyway).
+  def handle_info(:check_session, socket) do
+    case Sessions.checker().check(socket.assigns[:sid]) do
+      {:ok, true} ->
+        schedule_session_check()
+        {:noreply, assign(socket, session_failures: 0)}
+
+      {:ok, false} ->
+        {:noreply, redirect(socket, external: "/")}
+
+      {:error, _} ->
+        failures = socket.assigns.session_failures + 1
+        if failures >= 3, do: {:noreply, redirect(socket, external: "/")}, else: (schedule_session_check(); {:noreply, assign(socket, session_failures: failures)})
+    end
+  end
+
+  defp schedule_session_check do
+    case Application.get_env(:netops_live, :session_check_ms, 30_000) do
+      ms when is_integer(ms) and ms > 0 -> Process.send_after(self(), :check_session, ms)
+      _ -> :ok
+    end
+  end
 
   @impl true
   def render(%{snapshot: nil} = assigns) do
@@ -84,6 +115,16 @@ defmodule NetopsLiveWeb.NocLive do
     </div>
 
     <section class="card">
+      <h2>Activity <small>as it happens</small></h2>
+      <ul class="list activity">
+        <li :for={e <- visible_events(@events, @admin)} class={kind(e)}>
+          <span class="dot sev"></span><strong>{describe(e)}</strong><em>{ago(e["time"], @s["at"])}</em>
+        </li>
+      </ul>
+      <p :if={visible_events(@events, @admin) == []} class="muted">Nothing yet. Alerts, routers going up or down, payments and customers connecting show here.</p>
+    </section>
+
+    <section class="card">
       <h2>Top customers online <small>by data downloaded this session</small></h2>
       <table>
         <thead><tr><th>Customer</th><th>Service</th><th>Router</th><th>IP</th><th>Online for</th><th>Down</th><th>Up</th></tr></thead>
@@ -97,9 +138,35 @@ defmodule NetopsLiveWeb.NocLive do
         </tbody>
       </table>
     </section>
-    <p class="foot">Updated {clock(@s["at"])} · live, no refresh needed</p>
+    <p class="foot">Updated {clock(@s["at"])} · live, no refresh needed{lag_text(@lag_ms, @events_error)}</p>
     """
   end
+
+  @doc "Money events are for admins only."
+  def visible_events(events, admin), do: Enum.reject(events || [], &(&1["admin"] == true and not admin)) |> Enum.take(25)
+
+  def describe(%{"type" => "alert.opened"} = e), do: "Alert: #{e["title"]}"
+  def describe(%{"type" => "alert.resolved"} = e), do: "Resolved: #{e["title"]}"
+  def describe(%{"type" => "router.down"} = e), do: "#{e["name"]} went offline"
+  def describe(%{"type" => "router.up"} = e), do: "#{e["name"]} is back online"
+  def describe(%{"type" => "payment.received"} = e), do: "Payment KSh #{money(e["amount"])} from #{e["name"]} (#{e["method"]})"
+  def describe(%{"type" => "payment.reversed"} = e), do: "Payment reversed: KSh #{money(e["amount"])} from #{e["name"]}"
+  def describe(%{"type" => "ticket.opened"} = e), do: "New ticket: #{e["title"]}"
+  def describe(%{"type" => "customer.added"} = e), do: "New customer: #{e["name"]}"
+  def describe(%{"type" => "session.start"} = e), do: "#{who(e)} connected on #{e["router"]}"
+  def describe(%{"type" => "session.stop"} = e), do: "#{who(e)} disconnected#{if e["cause"] not in [nil, ""], do: " (#{e["cause"]})", else: ""}"
+  def describe(%{"type" => t}), do: t
+  def describe(_), do: "—"
+
+  defp who(e), do: if(e["name"] not in [nil, ""], do: e["name"], else: e["username"])
+
+  def kind(%{"type" => t}) when t in ["alert.opened", "router.down"], do: "critical"
+  def kind(%{"type" => t}) when t in ["alert.resolved", "router.up", "payment.received"], do: "good"
+  def kind(_), do: "info"
+
+  def lag_text(_, err) when is_binary(err), do: " · activity paused: #{err}"
+  def lag_text(ms, _) when is_number(ms), do: " · events #{Float.round(ms / 1000, 1)} s behind"
+  def lag_text(_, _), do: ""
 
   defp routers_up(s), do: Enum.count(s["routers"], & &1["online"])
   defp routers_down(s), do: length(s["routers"]) - routers_up(s)

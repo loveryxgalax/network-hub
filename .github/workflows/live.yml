@@ -1,0 +1,63 @@
+# Tests for both services, and the Phoenix live-view image built here (not on the server) and pushed to GHCR.
+# On the server: LIVE_IMAGE=ghcr.io/<owner>/netops-live:latest, then `docker compose pull live && docker compose --profile live up -d live`.
+name: live
+on:
+  push:
+    branches: [main, claude/always-online-hosting]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+  phoenix:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: live
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.1"
+          elixir-version: "1.17.3"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            live/deps
+            live/_build
+          key: mix-${{ runner.os }}-${{ hashFiles('live/mix.exs', 'live/mix.lock') }}
+      - run: mix deps.get
+      - run: mix test
+  image:
+    if: github.event_name == 'push'
+    needs: [node, phoenix]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: live
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/netops-live:latest
+            ghcr.io/${{ github.repository_owner }}/netops-live:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

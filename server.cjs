@@ -32,6 +32,7 @@ function connectRequest(store,sp,req){
 }
 function createApp(options={}){
  const store=new Store(options.dataDir||process.env.NETWORK_DATA_DIR||path.join(__dirname,'data'));
+ require('./lib/outbox.cjs').watch(store);
  for(const operation of store.list('acsTasks').filter(t=>t.status==='Sending'))store.put('acsTasks',{...operation,status:'Uncertain',error:'The server restarted before the ACS receipt was saved. Check the ACS and device before reconciling.'},operation);
  // Passive (a rehearsal copy on a new server): everything works for checking, but no automatic SMS/email to
  // customers or staff, no auto-deactivation and no router changes are started, so they never happen twice.
@@ -675,10 +676,15 @@ function createApp(options={}){
  // Phoenix reads data from the internal live feed below; it has no database and changes nothing.
  const liveToken=options.liveToken??process.env.NETWORK_LIVE_TOKEN,liveUrl=options.liveUrl??process.env.NETWORK_LIVE_URL;
  const liveTarget=liveUrl?new URL(liveUrl):null,liveSockets=new Set();
- const liveHeaders=(req,user)=>{const h={...req.headers};delete h['x-netops-user'];delete h['x-netops-proxy'];h.host=liveTarget.host;h['x-netops-user']=Buffer.from(JSON.stringify({id:user.id,name:user.name,email:user.email,role:user.role})).toString('base64url');h['x-netops-proxy']=liveToken;h['x-forwarded-proto']='https';return h;};
+ // Who may open the live view: everyone but field installers, or only the roles in NETWORK_LIVE_ROLES (e.g. "admin").
+ const liveRoles=String(options.liveRoles??process.env.NETWORK_LIVE_ROLES??'').split(',').map(r=>r.trim()).filter(Boolean),liveAllowed=user=>user.role!=='installer'&&(!liveRoles.length||liveRoles.includes(user.role));
+ // Phoenix re-checks the sign-in with this id (an HMAC of the stored session hash), so signing out of netops ends the live view too.
+ const liveSid=user=>crypto.createHmac('sha256',liveToken).update(String(user.token)).digest('hex');
+ const liveOrigin=req=>{const o=req.headers.origin;if(!o)return false;const ok=new Set([publicUrl?.origin,'https://'+req.headers.host,'http://'+req.headers.host].filter(Boolean));return ok.has(o);};
+ const liveHeaders=(req,user)=>{const h={...req.headers};delete h['x-netops-user'];delete h['x-netops-proxy'];delete h['x-netops-session'];h.host=liveTarget.host;h['x-netops-user']=Buffer.from(JSON.stringify({id:user.id,name:user.name,email:user.email,role:user.role})).toString('base64url');h['x-netops-proxy']=liveToken;h['x-netops-session']=liveSid(user);h['x-forwarded-proto']='https';return h;};
  function liveProxy(req,res,url){
   const user=auth(req);if(!user){res.writeHead(302,{Location:'/#dashboard'});return res.end();}
-  if(user.role==='installer'){res.writeHead(403,{'Content-Type':'text/plain'});return res.end('The live view is not available to field installers.');}
+  if(!liveAllowed(user)){res.writeHead(403,{'Content-Type':'text/plain'});return res.end(user.role==='installer'?'The live view is not available to field installers.':'The live view is limited to some roles on this server. Ask an admin.');}
   if(!liveTarget||!liveToken){res.writeHead(503,{'Content-Type':'text/html; charset=utf-8'});return res.end('<!doctype html><meta charset="utf-8"><title>Live view</title><body style="font-family:sans-serif;padding:40px"><h1>Live view is not running</h1><p>The Phoenix live service is not set up on this server yet (NETWORK_LIVE_URL and NETWORK_LIVE_TOKEN). The rest of netops works as usual.</p><p><a href="/">Back to netops</a></p></body>');}
   const up=http.request({host:liveTarget.hostname,port:liveTarget.port||80,method:req.method,path:url.pathname+url.search,headers:liveHeaders(req,user)},r=>{res.removeHeader('Content-Security-Policy');res.writeHead(r.statusCode,r.headers);r.pipe(res);});
   up.on('error',()=>{if(!res.headersSent){res.writeHead(502,{'Content-Type':'text/plain'});res.end('The live view is not answering. Try again in a minute.');}else res.destroy();});
@@ -687,7 +693,7 @@ function createApp(options={}){
  server.on('upgrade',(req,socket,head)=>{
   const url=new URL(req.url,'http://localhost'),user=auth(req);
   const refuse=code=>socket.end(`HTTP/1.1 ${code}\r\nConnection: close\r\n\r\n`,()=>socket.destroy());
-  if(!url.pathname.startsWith('/live/')||!user||user.role==='installer'||!liveTarget||!liveToken)return refuse('403 Forbidden');
+  if(!url.pathname.startsWith('/live/')||!user||!liveAllowed(user)||!liveTarget||!liveToken||!liveOrigin(req))return refuse('403 Forbidden');
   liveSockets.add(socket);socket.on('close',()=>liveSockets.delete(socket));
   const up=http.request({host:liveTarget.hostname,port:liveTarget.port||80,method:'GET',path:url.pathname+url.search,headers:liveHeaders(req,user)});
   up.on('upgrade',(r,upSocket,upHead)=>{socket.write('HTTP/1.1 101 Switching Protocols\r\n'+Object.entries(r.headers).map(([k,v])=>`${k}: ${v}`).join('\r\n')+'\r\n\r\n');if(upHead?.length)socket.write(upHead);if(head?.length)upSocket.write(head);upSocket.pipe(socket).pipe(upSocket);
@@ -699,7 +705,15 @@ function createApp(options={}){
  // Internal live feed for Phoenix: separate port, private network only, bearer token.
  const liveFeed=liveToken?http.createServer((req,res)=>{
   try{const given=Buffer.from(String(req.headers.authorization||'').replace(/^Bearer /,'')),expected=Buffer.from(liveToken);if(given.length!==expected.length||!crypto.timingSafeEqual(given,expected))throw error(401,'Unauthorized');
-   const where=new URL(req.url,'http://localhost').pathname;if(req.method==='GET'&&where==='/internal/live')return json(res,200,require('./lib/live.cjs').snapshot(store));throw error(404,'Not found');
+   const u=new URL(req.url,'http://localhost'),where=u.pathname,ob=require('./lib/outbox.cjs');if(req.method!=='GET')throw error(405,'Method not allowed');
+   if(where==='/internal/live')return json(res,200,require('./lib/live.cjs').snapshot(store));
+   // v1: snapshot with the event cursor it matches, events after a cursor, and the sign-in check.
+   if(where==='/internal/v1/snapshot'){const seq=ob.last(store);return json(res,200,{...require('./lib/live.cjs').snapshot(store),seq});}
+   if(where==='/internal/v1/events')return json(res,200,{...ob.since(store,u.searchParams.get('after'),u.searchParams.get('limit')??200),at:Date.now()});
+   if(where==='/internal/v1/session'){const sid=String(u.searchParams.get('sid')||'');if(!/^[a-f0-9]{64}$/.test(sid))return json(res,200,{valid:false});
+    for(const r of store.db.prepare('SELECT s.token,u.id,u.role,u.email FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.expires>? AND u.active=1').all(Date.now())){const mine=crypto.createHmac('sha256',liveToken).update(String(r.token)).digest();if(crypto.timingSafeEqual(mine,Buffer.from(sid,'hex')))return json(res,200,{valid:liveAllowed(r),role:r.role,email:r.email});}
+    return json(res,200,{valid:false});}
+   throw error(404,'Not found');
   }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'Live feed error'});}
  }):null;
  // FreeRADIUS bridge (rlm_rest). Separate port that only the private Compose network reaches; never routed by the tunnel.

@@ -9,6 +9,8 @@ defmodule NetopsLiveWeb.Endpoint do
     websocket: [connect_info: [:x_headers, session: @session_options]],
     longpoll: false
 
+  # Health first: private network only (the hub forwards nothing but /live).
+  plug NetopsLiveWeb.Health
   plug Plug.Static, at: "/live", from: :netops_live, gzip: false, only: NetopsLiveWeb.static_paths()
   plug Plug.RequestId
   plug Plug.Parsers, parsers: [:urlencoded], pass: ["*/*"]

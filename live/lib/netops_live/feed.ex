@@ -17,7 +17,7 @@ defmodule NetopsLive.Feed do
 
   @impl true
   def init(_) do
-    if interval() > 0 and url(), do: send(self(), :poll)
+    if interval() > 0 and (url() || NetopsLive.Hub.api_url()), do: send(self(), :poll)
     {:ok, %{snapshot: nil, error: nil}}
   end
 
@@ -51,18 +51,11 @@ defmodule NetopsLive.Feed do
     %{state | snapshot: snapshot, error: nil}
   end
 
+  # The v1 snapshot (with its event cursor) unless an explicit feed URL is configured.
   defp fetch do
-    headers = [{~c"authorization", String.to_charlist("Bearer " <> Application.fetch_env!(:netops_live, :token))}]
-
-    case :httpc.request(:get, {String.to_charlist(url()), headers}, [timeout: 5_000, connect_timeout: 3_000], body_format: :binary) do
-      {:ok, {{_, 200, _}, _, body}} ->
-        case Jason.decode(body) do
-          {:ok, data} when is_map(data) -> {:ok, data}
-          _ -> {:error, "the feed did not return JSON"}
-        end
-
-      {:ok, {{_, status, _}, _, _}} -> {:error, "the feed answered #{status}"}
-      {:error, reason} -> {:error, "cannot reach the feed (#{inspect(reason)})"}
+    case url() do
+      nil -> NetopsLive.Hub.get("/snapshot")
+      u -> NetopsLive.Hub.get_url(u)
     end
   end
 

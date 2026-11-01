@@ -1,4 +1,4 @@
-# Phoenix live view (Phase 1). Built on the server, where the Hex package registry is reachable.
+# Phoenix live view. Built by CI (.github/workflows/live.yml → GHCR) or on the server.
 FROM hexpm/elixir:1.17.3-erlang-27.1.2-debian-bookworm-20241016-slim AS build
 ENV MIX_ENV=prod
 WORKDIR /app
@@ -13,7 +13,7 @@ RUN cp deps/phoenix/priv/static/phoenix.min.js deps/phoenix_live_view/priv/stati
  && mix compile && mix release
 
 FROM debian:bookworm-20241016-slim
-RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates curl && rm -rf /var/lib/apt/lists/* \
  && sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8 MIX_ENV=prod PHX_SERVER=true
 WORKDIR /app
@@ -21,4 +21,5 @@ RUN useradd --system --home /app live
 COPY --from=build --chown=live /app/_build/prod/rel/netops_live ./
 USER live
 EXPOSE 4000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD curl -fsS http://127.0.0.1:4000/healthz || exit 1
 CMD ["/app/bin/netops_live", "start"]
