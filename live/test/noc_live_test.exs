@@ -61,6 +61,8 @@ defmodule NetopsLiveWeb.NocLiveTest do
     assert html =~ "RB951 is unreachable"
 
     NetopsLive.Feed.publish(put_in(@snapshot, ["online", "total"], 42))
+    # publish is a cast: a call to the feed returns only after it has broadcast, so the update is already on its way.
+    _ = NetopsLive.Feed.latest()
     assert render(view) =~ ">42<"
 
     {:ok, _view, operator_html} = live(through_hub("operator"), "/live")
