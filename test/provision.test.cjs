@@ -26,7 +26,7 @@ test('services: refuses the uplink, used ports and overlapping networks; the scr
  assert.ok(stop>0&&stop<firstChange);
  for(const check of ['pppoe-server server print count-only','/ip hotspot print count-only','/radius print count-only where comment~"netops"','bridge port print count-only where interface=$p','/ip address print count-only where interface=$p','dst-address=10.5.0.0/22'])assert.ok(body.indexOf(check)>=0&&body.indexOf(check)<firstChange,check);
  assert.match(body,/\/ip hotspot add name="netops-hotspot" interface="netops-bridge"/);assert.match(body,/pppoe-server server add service-name="netops" interface="netops-bridge"/);
- assert.match(body,/ranges=10\.5\.0\.2-10\.5\.3\.254/);assert.match(body,/out-interface="ether1" action=masquerade/);assert.match(body,/check-certificate=yes/);
+ assert.match(body,/ranges=10\.5\.0\.2-10\.5\.3\.254/);assert.match(body,/interface list member add list="LAN" interface="netops-bridge"/);assert.match(body,/ppp profile set \[find where name="netops-ppp"\] interface-list=LAN/);assert.match(body,/out-interface="ether1" action=masquerade/);assert.match(body,/check-certificate=yes/);
  assert.ok(!/reboot|package|reset-configuration|\/user (add|set|remove)/.test(body),'never reboots, upgrades, resets or touches users');
  const paste=pv.pasteScript(body,'R1');assert.match(paste,/:local run do=\{/);assert.match(paste,/:put \[\$run\]/);
  // The job carries the spec and rebuilds the same script.
