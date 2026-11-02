@@ -317,6 +317,15 @@ body[data-theme=bento] .tile-otg .ico{width:40px;height:40px;border-radius:50%;b
 body[data-theme=bento] .tile-otg small{opacity:.7}
 body[data-theme=bento] .tile-help{background:#fff;border-radius:var(--radius);padding:22px;display:flex;flex-direction:column;gap:6px}
 body[data-theme=bento] .tile-help a{text-decoration:none;font-weight:700;color:var(--brand)}
+/* Each title on the same line as its icon: logo + name, WiFi icon + On-the-Go title, "Need help?" + numbers. */
+body[data-theme=bento] .bento-hero.tile-brand{display:grid;grid-template-columns:auto 1fr;align-items:center;align-content:end;column-gap:14px;row-gap:8px}
+body[data-theme=bento] .bento-hero.tile-brand .logo{position:relative;top:auto;left:auto;margin:0}
+body[data-theme=bento] .bento-hero.tile-brand h1{margin:0;min-width:0;overflow-wrap:anywhere}
+body[data-theme=bento] .bento-hero.tile-brand p{grid-column:1/-1}
+body[data-theme=bento] .bento-hero.tile-otg{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:14px;row-gap:4px}
+body[data-theme=bento] .bento-hero.tile-otg small{grid-column:2}
+body[data-theme=bento] .bento-hero.tile-help{display:grid;grid-template-columns:auto 1fr;align-items:baseline;column-gap:10px;row-gap:6px}
+body[data-theme=bento] .bento-hero.tile-help a{grid-column:2;min-width:0;overflow-wrap:anywhere}
 body[data-theme=bento] .pkgs{grid-template-columns:repeat(2,1fr)}
 body[data-theme=bento] .pkg{border:0;background:var(--bg);border-radius:18px}
 body[data-theme=bento] .pkg.pop{background:var(--brand-soft)}
