@@ -8,6 +8,7 @@ This project was reconstructed from observed workflows. It does not use Texin or
 
 ## Non-negotiable equipment rules
 
+- Production routers CCR (CCR2004), HEX (hEX S Ikutha) and RBX (RB951 Kyandula) are off limits: do not run, queue or suggest any command, script, job or test on them. All tests and new features are tried on the test router TEST-1 (hAP lite, WireGuard 10.99.0.2) only.
 - Never update RouterOS.
 - Never reboot a MikroTik.
 - Do not disconnect subscribers or change customer service without a new, explicit user instruction.
