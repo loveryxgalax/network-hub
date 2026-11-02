@@ -78,5 +78,6 @@ test('HTTP: link a MikroTik end to end (bundle once per link, checks, in-service
   const busy=await api('provision/'+id+'/services','POST',spec);assert.equal(busy.status,409);assert.match(busy.body.error,/already serves customers/);
   // Re-issue for the same router keeps its WireGuard address and says so.
   const again=await api('provision','POST',{routerId:id,radius:'none',wireguard:true});assert.equal(again.status,201);assert.match(again.body.warnings[0],/already has 10\.99\.0\./);
+  const fresh=await api('provision','POST',{routerId:id,radius:'none',wireguard:true,newWireguardKey:true});assert.equal(fresh.status,201);assert.equal(fresh.body.warnings.length,0);assert.ok(fresh.body.parts.some(p=>/WireGuard tunnel to netops \(10\.99\.0\.2\)/.test(p)),'new key, same address');assert.equal(st.list('wgPeers').filter(p=>p.routerId===id).length,1);
  }finally{await app.close();fs.rmSync(dir,{recursive:true,force:true});}
 });

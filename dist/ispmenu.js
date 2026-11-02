@@ -941,12 +941,14 @@ Object.assign(pages,{
    <p class="muted small">Letters, numbers, spaces, dot and dash. netops RADIUS recognises the router by this name.</p>
    <label class="check-label"><input type="checkbox" name="identity" checked> Set this name on the router (System → Identity)</label>
    <label class="check-label"><input type="checkbox" name="wireguard" ${o.wireguard?'checked':'disabled'}> WireGuard tunnel to netops (private network; needed for netops RADIUS and Winbox through netops)${o.wireguard?'':' — set up WireGuard first (Operations → WireGuard & Winbox access)'}</label>
+   <label class="check-label" id="lk-newkey" hidden><input type="checkbox" name="newWireguardKey"> This router was reset (or lost its WireGuard tunnel): give it a new WireGuard key. The old key stops working.</label>
    <label>RADIUS<select name="radius"><option value="none">No RADIUS change (keep what the router uses now)</option><option value="test" ${o.wireguard&&o.radiusSecret?'':'disabled'}>netops RADIUS for test logins only (username@${H(o.realm||'kade')})</option><option value="all" ${o.wireguard&&o.radiusSecret?'':'disabled'}>netops RADIUS for all logins (new router)</option></select></label>
    ${o.radiusSecret?'':'<p class="muted small">netops RADIUS options need RADIUS_SECRET set for the hub and WireGuard set up.</p>'}
    <label class="check-label"><input type="checkbox" name="runner" checked> Job runner: lets netops set up PPPoE/Hotspot in the next steps and run the jobs you confirm (disconnect, reset device, push login page…). It never runs anything you did not confirm.</label>
    <button class="button primary" ${o.publicOrigin?'':'disabled'}>Continue</button></form></section>`;
-  const f=$('#lk-f');f.onsubmit=async e=>{e.preventDefault();const v=new FormData(f),b=$('button.primary',f);b.disabled=true;
-   const input={name:v.get('name'),routerId:v.get('routerId')||undefined,identity:v.get('identity')==='on',wireguard:v.get('wireguard')==='on',radius:v.get('radius'),runner:v.get('runner')==='on'};
+  const f=$('#lk-f');f.routerId.onchange=()=>{$('#lk-newkey').hidden=!f.routerId.value;};
+  f.onsubmit=async e=>{e.preventDefault();const v=new FormData(f),b=$('button.primary',f);b.disabled=true;
+   const input={name:v.get('name'),routerId:v.get('routerId')||undefined,identity:v.get('identity')==='on',wireguard:v.get('wireguard')==='on',radius:v.get('radius'),runner:v.get('runner')==='on',newWireguardKey:v.get('newWireguardKey')==='on'};
    if(!input.routerId&&!String(input.name||'').trim()){toast('Enter the router name');b.disabled=false;return;}
    try{const r=await api('provision','POST',input);lk.routerId=r.router.id;lk.result=r;lk.step=2;lkSave();toast(`${r.router.name} registered. Paste the line on the router.`);pages.routerLink(id);}catch(err){toast(err.message);b.disabled=false;}};
  },
