@@ -318,10 +318,13 @@ body[data-theme=bento] .tile-otg small{opacity:.7}
 body[data-theme=bento] .tile-help{background:#fff;border-radius:var(--radius);padding:22px;display:flex;flex-direction:column;gap:6px}
 body[data-theme=bento] .tile-help a{text-decoration:none;font-weight:700;color:var(--brand)}
 /* Each title on the same line as its icon: logo + name, WiFi icon + On-the-Go title, "Need help?" + numbers. */
-body[data-theme=bento] .bento-hero.tile-brand{display:grid;grid-template-columns:auto 1fr;align-items:center;align-content:end;column-gap:14px;row-gap:8px}
-body[data-theme=bento] .bento-hero.tile-brand .logo{position:relative;top:auto;left:auto;margin:0}
-body[data-theme=bento] .bento-hero.tile-brand h1{margin:0;min-width:0;overflow-wrap:anywhere}
-body[data-theme=bento] .bento-hero.tile-brand p{grid-column:2}
+/* Logo as tall as the name + tagline block (sized from the text by portal.js; 54px until measured). */
+body[data-theme=bento] .bento-hero.tile-brand{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;align-content:flex-end;flex-wrap:nowrap;gap:14px}
+body[data-theme=bento] .bento-hero.tile-brand{align-items:flex-end}
+body[data-theme=bento] .bento-hero.tile-brand .logo{position:relative;top:auto;left:auto;margin:0;width:54px;height:54px;flex:none;border-radius:14px}
+body[data-theme=bento] .bento-hero.tile-brand .tb-text{min-width:0;position:relative}
+body[data-theme=bento] .bento-hero.tile-brand h1{margin:0 0 4px;line-height:1.1;overflow-wrap:anywhere}
+body[data-theme=bento] .bento-hero.tile-brand p{margin:0;line-height:1.35}
 body[data-theme=bento] .bento-hero.tile-otg{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:14px;row-gap:4px}
 body[data-theme=bento] .bento-hero.tile-otg small{grid-column:2}
 body[data-theme=bento] .bento-hero.tile-help{display:flex;flex-wrap:wrap;flex-direction:row;align-items:baseline;gap:4px 8px}

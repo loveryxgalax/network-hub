@@ -121,6 +121,10 @@ function render(){
  $$('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));$$('[data-i18n-ph]').forEach(e=>e.placeholder=t(e.dataset.i18nPh));
  $$('[data-i18n-theme=eyebrow]').forEach(e=>{e.textContent=tc('e');e.classList.toggle('hide',!tc('e'));});$$('[data-i18n-theme=accountTitle]').forEach(e=>e.textContent=tc('a'));$$('[data-headline]').forEach(e=>e.textContent=tc('h')||CFG.brandName);
  $$('[data-logo]').forEach(e=>e.innerHTML=`<img src="${esc(CFG.logoUrl||'/img/kade-mark.png')}" alt="">`);
+ // Bento: the logo is exactly as tall as the brand name + tagline beside it, on any screen and in any language.
+ {const tb=document.querySelector('.tile-brand'),tx=tb&&tb.querySelector('.tb-text'),lg=tb&&tb.querySelector('.logo');
+  if(tx&&lg&&!tb.dataset.sized){tb.dataset.sized='1';const fit=()=>{const h=Math.round(tx.getBoundingClientRect().height);if(h>0){const v=Math.max(40,Math.min(h,120))+'px';lg.style.width=v;lg.style.height=v;}};
+   fit();if(window.ResizeObserver)new ResizeObserver(fit).observe(tx);else window.addEventListener('resize',fit);}}
  $$('[data-phone]').forEach(e=>{e.classList.toggle('hide',!CFG.phone);e.href=`tel:${CFG.phone.replace(/\s/g,'')}`;e.textContent=CFG.phone;});
  $$('[data-whatsapp]').forEach(e=>{e.classList.toggle('hide',!CFG.whatsapp);e.href=`https://wa.me/${intl(CFG.whatsapp)}`;e.textContent=`WhatsApp ${CFG.whatsapp}`;});
  // Bento help tile: one line, "Need help? Call 0181… or WhatsApp 0181…".
