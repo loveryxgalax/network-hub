@@ -20,3 +20,4 @@ table{width:100%;border-collapse:collapse}th{background:var(--primary);color:#ff
 .empty{text-align:center;padding:40px}
 @media (max-width:640px){.bars li{grid-template-columns:100px 1fr 34px}table{font-size:12.5px}}
 .list li.good .sev{background:#17a35b}.activity li strong{font-weight:600}
+.list li .acts{display:flex;gap:6px;margin-left:auto}.list li .acts button{border:1px solid var(--line,#d0d7e2);background:transparent;color:inherit;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;min-height:32px}.notice{padding:10px 14px;border-radius:10px;background:#ecfdf3;border:1px solid #16a34a;cursor:pointer}.notice.bad{background:#fef3f2;border-color:#b42318}

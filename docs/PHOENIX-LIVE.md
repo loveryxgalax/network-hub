@@ -49,6 +49,15 @@ To turn it off: `docker compose stop live` and remove `NETWORK_LIVE_URL` from `.
   `echo "LIVE_IMAGE=ghcr.io/loveryxgalax/netops-live:latest" >> .env && docker compose pull live && docker compose --profile live up -d live`
   (the package must be readable by the server: make it public in GitHub → Packages, or `docker login ghcr.io`).
 
+## Phase 4: actions from the live screen (Nov 2026)
+
+- Open alerts on the live screen have **Acknowledge** and **Resolve** buttons (not for viewers or installers).
+- Phoenix sends the action and the viewer's session id to the hub (`POST /internal/v1/actions`, private network,
+  shared token). Node checks the session is still signed in, applies the same rules as the dashboard, writes the
+  change and audits it under that person's name. Phoenix never writes anything.
+- Only listed actions are accepted (`alert.acknowledge`, `alert.resolve`, `alert.reopen`); anything else is refused.
+- The change reaches every open screen through the event stream ("alert.acknowledged" / "alert.resolved").
+
 ## Status
 
 - Node side (feed, sign-in check, page and websocket pass-through): built and tested.

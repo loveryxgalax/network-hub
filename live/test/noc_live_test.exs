@@ -131,6 +131,26 @@ defmodule NetopsLiveWeb.NocLiveTest do
     assert build_conn() |> get("/live") |> response(403)
   end
 
+  test "actions: acknowledge and resolve go to the hub with the session; viewers get no buttons; errors are shown" do
+    snap = put_in(@snapshot, ["alerts"], [%{"id" => "a1", "title" => "RB951 is unreachable", "severity" => "critical", "status" => "Open", "since" => 1_789_990_000_000}])
+    NetopsLive.Feed.publish(snap)
+    _ = NetopsLive.Feed.latest()
+    {:ok, view, html} = live(through_hub(), "/live")
+    assert html =~ "Acknowledge"
+    html = view |> element("button[phx-value-act=acknowledge][phx-value-id=a1]") |> render_click()
+    assert html =~ "acknowledged"
+    assert {@sid, "alert.acknowledge", "a1"} in NetopsLive.TestActions.calls()
+
+    NetopsLive.TestActions.set({:error, "Your netops sign-in has ended. Sign in again."})
+    html = view |> element("button[phx-value-act=resolve][phx-value-id=a1]") |> render_click()
+    assert html =~ "sign-in has ended"
+    NetopsLive.TestActions.set({:ok, %{"alert" => %{"title" => "RB951 is unreachable", "status" => "Resolved"}}})
+
+    {:ok, _v, viewer_html} = live(through_hub("viewer"), "/live")
+    refute viewer_html =~ "Acknowledge"
+    assert viewer_html =~ "RB951 is unreachable"
+  end
+
   test "helpers" do
     alias NetopsLiveWeb.NocLive
     assert NocLive.money(1_234_567) == "1,234,567"

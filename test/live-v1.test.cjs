@@ -48,3 +48,24 @@ test('internal v1: snapshot with cursor, events, sign-in check that ends on logo
   seen=null;const r=await fetch(origin+'/live',{headers:{Cookie:c3}});assert.equal(r.status,403);assert.equal(seen,null,'nothing reached Phoenix');
  }finally{await app.close();upstream.closeAllConnections();await new Promise(r=>upstream.close(r));fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('internal v1 actions: alerts acknowledged/resolved by the signed-in viewer, audited; refused after sign-out',async()=>{
+ const upstream=http.createServer((req,res)=>{res.writeHead(200);res.end('ok');});const upPort=await listen(upstream);let seen=null;upstream.on('request',req=>{seen=req.headers;});
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'v1a-')),token='live-token-for-tests-0123456789';
+ const app=createApp({dataDir:dir,collector:false,publicOrigin:'https://network.example.test',liveToken:token,liveUrl:'http://127.0.0.1:'+upPort});
+ const port=await listen(app.server),feedPort=await listen(app.liveFeed),origin='http://127.0.0.1:'+port;
+ const act=(input,tok=token)=>fetch('http://127.0.0.1:'+feedPort+'/internal/v1/actions',{method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(input)}).then(async r=>({status:r.status,body:await r.json()}));
+ try{const owner=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'act@example.test',password:'fixture-owner-password-123'})});const cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
+  await fetch(origin+'/live',{headers:{Cookie:cookie}});const sid=seen['x-netops-session'];
+  const a=app.store.put('alerts',{title:'RB951 is unreachable',status:'Open',severity:'critical'});
+  assert.equal((await act({sid,action:'alert.acknowledge',id:a.id},'wrong-token-wrong-token-wrong-tok')).status,401,'needs the shared token');
+  assert.equal((await act({sid:'0'.repeat(64),action:'alert.acknowledge',id:a.id})).status,401,'unknown session');
+  assert.equal((await act({sid,action:'router.reboot',id:a.id})).status,400,'only whitelisted actions');
+  assert.equal((await act({sid,action:'alert.resolve',id:'00000000-0000-4000-8000-000000000000'})).status,404);
+  const r=await act({sid,action:'alert.acknowledge',id:a.id});assert.equal(r.status,200);assert.equal(r.body.alert.status,'Acknowledged');assert.equal(app.store.get('alerts',a.id).acknowledgedBy,'act@example.test');
+  assert.ok(app.store.db.prepare("SELECT 1 FROM audit WHERE action LIKE 'Acknowledged alert:%'").get(),'audited');
+  const ev=require('../lib/outbox.cjs').since(app.store,0).events.map(e=>e.type);assert.ok(ev.includes('alert.acknowledged'));
+  assert.equal((await act({sid,action:'alert.resolve',id:a.id})).body.alert.status,'Resolved');
+  await fetch(origin+'/api/logout',{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},body:'{}'});
+  assert.equal((await act({sid,action:'alert.reopen',id:a.id})).status,401,'signed out: no more actions');
+ }finally{await app.close();upstream.closeAllConnections();await new Promise(r=>upstream.close(r));fs.rmSync(dir,{recursive:true,force:true});}
+});

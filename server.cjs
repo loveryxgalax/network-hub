@@ -75,6 +75,11 @@ function createApp(options={}){
   if(req.headers['if-none-match']===a.etag){res.writeHead(304);return res.end();}
   const ae=String(req.headers['accept-encoding']||''),body=a.br&&/\bbr\b/.test(ae)?a.br:a.gz&&/\bgzip\b/.test(ae)?a.gz:a.raw;
   res.writeHead(200,{'Content-Type':type,'Content-Length':body.length,...(body===a.br?{'Content-Encoding':'br'}:body===a.gz?{'Content-Encoding':'gzip'}:{})});res.end(req.method==='HEAD'?undefined:body);}
+ // Acknowledge / resolve / reopen a device alert, recording who and when. Used by the dashboard and by the live view.
+ function alertAction(user,id,act){if(!user||user.role==='installer')throw error(403,'Not allowed');if(!['acknowledge','resolve','reopen'].includes(act))throw error(400,'Unknown alert action');
+  const a=store.get('alerts',String(id||''));if(!a)throw error(404,'Alert not found');const now=Date.now();
+  const next=act==='resolve'?{status:'Resolved',resolvedAt:now,resolvedBy:user.email}:act==='acknowledge'?{status:'Acknowledged',acknowledgedAt:now,acknowledgedBy:user.email}:{status:'Open',resolvedAt:null,resolvedBy:null};
+  const saved=store.put('alerts',{...a,...next},a);store.audit(user,(act==='resolve'?'Resolved':act==='acknowledge'?'Acknowledged':'Reopened')+' alert: '+a.title,a.id);return saved;}
  function readDevice(d){const configured=!!store.db.prepare('SELECT device_id FROM secrets WHERE device_id=?').get(d.driver==='routeros-script'?'agent:'+d.id:d.id),stale=!d.lastCheck||Date.now()-d.lastCheck>Math.max(pollMs*3,60000);return {...d,connectionConfigured:configured,status:d.driver==='routeros-script'?(!configured?'unconfigured':!d.lastSeen?'pending':Date.now()-d.lastSeen>90000?'offline':'online'):d.type==='onu'&&d.parentId?(stale?'stale':d.status||'unknown'):d.driver==='none'?'unconfigured':!d.lastCheck?'pending':stale?'stale':d.status||'unknown'};}
  function dashboard(){const devices=store.list('devices').map(readDevice),counts=type=>({total:devices.filter(d=>d.type===type).length,online:devices.filter(d=>d.type===type&&d.status==='online').length});return {sampledAt:Date.now(),availability:store.availability(),workspace:store.setting('workspace'),devices,cards:{routers:counts('router'),olts:counts('olt'),onus:counts('onu')},alerts:store.list('alerts').filter(a=>a.status!=='Resolved'),jobs:store.list('jobs'),audit:store.db.prepare('SELECT a.*,COALESCE(u.name,\'Collector\') user FROM audit a LEFT JOIN users u ON u.id=a.user_id ORDER BY a.id DESC LIMIT 20').all(),balance:store.db.prepare('SELECT COALESCE(sum(amount),0) amount FROM ledger').get().amount/100};}
  function recordSnapshot(device,snapshot){const current=store.get('devices',device.id);if(!current||current.driver!==device.driver||current.endpoint!==device.endpoint)return {online:false};
@@ -395,9 +400,7 @@ function createApp(options={}){
   if(route==='/api/reports'&&method==='GET'){if(user.role==='installer')throw error(403,'Reports are not available to field installers');const key=['period','from','to'].map(k=>url.searchParams.get(k)||'').join('|'),hit=reportsCache.get(key);if(hit&&Date.now()-hit.at<60000)return json(res,200,hit.value);const value=reports.build(store,{period:url.searchParams.get('period')||'month',from:url.searchParams.get('from'),to:url.searchParams.get('to')});reportsCache.set(key,{at:Date.now(),value});if(reportsCache.size>50)reportsCache.delete(reportsCache.keys().next().value);return json(res,200,value);}
   // Device alerts: acknowledge (someone is on it) or resolve, recording who did it and when.
   const alertAct=route.match(/^\/api\/alerts\/([a-f0-9-]{36})\/(acknowledge|resolve|reopen)$/);
-  if(alertAct&&method==='POST'){if(user.role==='installer')throw error(403,'Not allowed');const a=store.get('alerts',alertAct[1]);if(!a)throw error(404,'Alert not found');const now=Date.now(),act=alertAct[2];
-   const next=act==='resolve'?{status:'Resolved',resolvedAt:now,resolvedBy:user.email}:act==='acknowledge'?{status:'Acknowledged',acknowledgedAt:now,acknowledgedBy:user.email}:{status:'Open',resolvedAt:null,resolvedBy:null};
-   const saved=store.put('alerts',{...a,...next},a);store.audit(user,(act==='resolve'?'Resolved':act==='acknowledge'?'Acknowledged':'Reopened')+' alert: '+a.title,a.id);return json(res,200,saved);}
+  if(alertAct&&method==='POST')return json(res,200,alertAction(user,alertAct[1],alertAct[2]));
   if(route==='/api/pppoe-pool'){role(user,['admin']);if(method==='GET')return json(res,200,pppoePool.overview(store));if(method==='PUT'){const saved=pppoePool.save(store,await body(req));store.audit(user,'Updated PPPoE network '+saved.network+(saved.enabled?' (on)':' (off)'),'pppoe-pool');return json(res,200,pppoePool.overview(store));}}
   if(route==='/api/pppoe-pool/reassign'&&method==='POST'){role(user,['admin']);const input=await body(req);if(input.confirm!=='REASSIGN')throw error(400,'Type REASSIGN to confirm');const r=pppoePool.reassignAll(store);store.audit(user,'Reassigned all PPPoE addresses ('+r.cleared+' customers)','pppoe-pool');return json(res,200,r);}
   if(route==='/api/router-audit'&&method==='GET'){if(user.role==='installer')throw error(403,'Not allowed');return json(res,200,{items:require('./lib/audit-routers.cjs').audit(store)});}
@@ -751,9 +754,17 @@ function createApp(options={}){
   up.on('error',()=>socket.destroy());up.end();
  });
  // Internal live feed for Phoenix: separate port, private network only, bearer token.
- const liveFeed=liveToken?http.createServer((req,res)=>{
+ const liveFeed=liveToken?http.createServer(async(req,res)=>{
   try{const given=Buffer.from(String(req.headers.authorization||'').replace(/^Bearer /,'')),expected=Buffer.from(liveToken);if(given.length!==expected.length||!crypto.timingSafeEqual(given,expected))throw error(401,'Unauthorized');
-   const u=new URL(req.url,'http://localhost'),where=u.pathname,ob=require('./lib/outbox.cjs');if(req.method!=='GET')throw error(405,'Method not allowed');
+   const u=new URL(req.url,'http://localhost'),where=u.pathname,ob=require('./lib/outbox.cjs');
+   // Actions from the live view (Phase 4): Phoenix sends the viewer's session id; Node checks it, the role and the
+   // action exactly as for the dashboard, writes and audits. Phoenix itself never writes anything.
+   if(where==='/internal/v1/actions'&&req.method==='POST'){const input=await body(req,4096),sid=String(input.sid||'');if(!/^[a-f0-9]{64}$/.test(sid))throw error(401,'Sign in again');
+    let who=null;for(const r of store.db.prepare('SELECT s.token,u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.expires>? AND u.active=1').all(Date.now())){if(crypto.timingSafeEqual(crypto.createHmac('sha256',liveToken).update(String(r.token)).digest(),Buffer.from(sid,'hex'))){who=r;break;}}
+    if(!who||!liveAllowed(who))throw error(401,'Your netops sign-in has ended. Sign in again.');
+    const m=/^alert\.(acknowledge|resolve|reopen)$/.exec(String(input.action||''));if(!m)throw error(400,'Unknown action');
+    const saved=alertAction(who,input.id,m[1]);return json(res,200,{ok:true,alert:{id:saved.id,title:saved.title,status:saved.status},by:who.email});}
+   if(req.method!=='GET')throw error(405,'Method not allowed');
    if(where==='/internal/live')return json(res,200,require('./lib/live.cjs').snapshot(store));
    // v1: snapshot with the event cursor it matches, events after a cursor, and the sign-in check.
    if(where==='/internal/v1/snapshot'){const seq=ob.last(store);return json(res,200,{...require('./lib/live.cjs').snapshot(store),seq});}

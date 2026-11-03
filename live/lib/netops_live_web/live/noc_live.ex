@@ -17,8 +17,29 @@ defmodule NetopsLiveWeb.NocLive do
 
     {snapshot, error} = Feed.latest()
     {events, stats} = Events.recent()
-    {:ok, assign(socket, snapshot: snapshot, error: error, events: events, lag_ms: stats.lag_ms, events_error: stats.error, session_failures: 0, page_title: "Live")}
+    {:ok, assign(socket, snapshot: snapshot, error: error, events: events, lag_ms: stats.lag_ms, events_error: stats.error, session_failures: 0, notice: nil, page_title: "Live")}
   end
+
+  # Actions (Phase 4): acknowledge or resolve an alert. Node checks the sign-in and the role, writes and audits;
+  # the change comes back to every screen through the event stream and the next snapshot.
+  @impl true
+  def handle_event("alert", %{"id" => id, "act" => act}, socket) when act in ["acknowledge", "resolve"] do
+    if can_act?(socket.assigns.user) do
+      case NetopsLive.Hub.action(socket.assigns[:sid], "alert." <> act, id) do
+        {:ok, %{"alert" => a}} -> {:noreply, assign(socket, notice: {:ok, "#{a["title"]}: #{String.downcase(a["status"] || "")}"})}
+        {:ok, _} -> {:noreply, assign(socket, notice: {:ok, "Done"})}
+        {:error, reason} -> {:noreply, assign(socket, notice: {:error, to_string(reason)})}
+      end
+    else
+      {:noreply, assign(socket, notice: {:error, "Your role cannot change alerts"})}
+    end
+  end
+
+  def handle_event("dismiss", _, socket), do: {:noreply, assign(socket, notice: nil)}
+
+  def can_act?(%{"role" => role}) when role in ["installer", "viewer"], do: false
+  def can_act?(%{"role" => _}), do: true
+  def can_act?(_), do: false
 
   @impl true
   def handle_info({:snapshot, snapshot}, socket), do: {:noreply, assign(socket, snapshot: snapshot, error: nil)}
@@ -60,9 +81,10 @@ defmodule NetopsLiveWeb.NocLive do
   end
 
   def render(assigns) do
-    assigns = assign(assigns, admin: assigns.user["role"] == "admin", s: assigns.snapshot)
+    assigns = assign(assigns, admin: assigns.user["role"] == "admin", act: can_act?(assigns.user), s: assigns.snapshot)
 
     ~H"""
+    <p :if={@notice} class={["notice", elem(@notice, 0) == :error && "bad"]} phx-click="dismiss">{elem(@notice, 1)}</p>
     <p :if={@error} class="stale">Live data paused: {@error}. Showing the last update.</p>
     <section class="tiles">
       <div class="tile blue"><small>Customers online</small><b>{@s["online"]["total"]}</b><em>{@s["online"]["hotspot"]} hotspot · {@s["online"]["pppoe"]} PPPoE</em></div>
@@ -99,7 +121,11 @@ defmodule NetopsLiveWeb.NocLive do
         <h2>Open alerts</h2>
         <ul class="list">
           <li :for={a <- @s["alerts"]} class={a["severity"]}>
-            <span class="dot sev"></span><strong>{a["title"]}</strong><em>{ago(a["since"], @s["at"])}</em>
+            <span class="dot sev"></span><strong>{a["title"]}</strong><em>{if a["status"] == "Acknowledged", do: "acknowledged · ", else: ""}{ago(a["since"], @s["at"])}</em>
+            <span :if={@act and a["id"]} class="acts">
+              <button :if={a["status"] != "Acknowledged"} type="button" phx-click="alert" phx-value-id={a["id"]} phx-value-act="acknowledge">Acknowledge</button>
+              <button type="button" phx-click="alert" phx-value-id={a["id"]} phx-value-act="resolve" data-confirm="Resolve this alert?">Resolve</button>
+            </span>
           </li>
         </ul>
         <p :if={@s["alerts"] == []} class="muted">All clear.</p>
