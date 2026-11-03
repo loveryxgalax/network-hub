@@ -1188,7 +1188,7 @@ pages.routerProfile=async function(){
  const sessTable=(items,empty)=>items.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>USER</th><th>ADDRESS</th><th>MAC ADDRESS</th><th>SINCE</th><th>DATA</th></tr></thead><tbody>${items.slice(0,25).map(x=>`<tr><td><b>${H(x.username)}</b>${x.name?`<small>${H(x.name)}</small>`:''}</td><td>${H(x.ip||'—')}</td><td><code>${H(x.mac||'—')}</code></td><td>${x.since?H(ago(x.since)):'—'}</td><td>${H(bytes((x.down||0)+(x.up||0)))}</td></tr>`).join('')}</tbody></table></div>${items.length>25?`<p class="muted small" style="padding:8px 14px">Showing 25 of ${items.length}. See Hotspot or PPPoE → Online sessions for all.</p>`:''}`:`<p class="muted" style="padding:16px">${empty}</p>`;
  body.innerHTML=`
  <div class="rtp-bar">
-  ${NetworkPermissions.equipment(state.session.user.role)?ib('Connection script','script','data-router-agent="'+d.id+'"','primary'):''}
+  ${NetworkPermissions.equipment(state.session.user.role)?ib('Connection script','file','data-router-agent="'+d.id+'"','primary'):''}
   ${lk('Router jobs','clock','router-jobs')}${lk('Health','activity','router-health')}${lk('Logs','info','system-logs')}${lk('WireGuard','shield','wireguard')}
   ${ib('Refresh','refresh','id="rtp-refresh"')}
   ${canEdit?ib('Edit','pen','data-edit-kind="devices" data-id="'+d.id+'"'):''}
@@ -1197,7 +1197,7 @@ pages.routerProfile=async function(){
  <section class="card rtp-audit"><div class="rtp-head"><h2>${icon('shield',18)} Configuration audit</h2><button class="button secondary" id="rtp-check">${icon('refresh',15)} Run config check</button></div>
   ${checks.length?`<div class="rtp-checks">${checks.map(c=>`<div class="rtp-check ${c.ok?'ok':'bad'}"><span>${icon(c.ok?'check':'warning',16)}</span><div><b>${H(c.label)}</b><small>${H(c.detail||'')}</small>${c.ok||!c.fix?'':`<em>${H(c.fix)}</em>`}</div></div>`).join('')}</div>`:'<p class="muted" style="padding:14px 16px">No checks yet.</p>'}</section>
  <section class="card"><div class="rtp-head"><h2>${icon('file',18)} Configuration backups</h2><span class="muted small">${d.backupCount} saved · kept 30 days</span></div>
-  ${d.backups.length?`<div class="rtp-list">${d.backups.map(b=>`<div class="rtp-row"><div><b>${H(ago(b.time))}</b><small>${b.size?H((b.size/1024).toFixed(1))+' KB':''}${b.added!=null?` · +${b.added} / −${b.removed} changes`:''}</small></div><div class="row-actions"><a class="ra-btn" title="View" aria-label="View" href="/api/backups/${d.id}/${b.id}" target="_blank" rel="noopener">${icon('eye',16)}</a><a class="ra-btn" title="Download" aria-label="Download" href="/api/backups/${d.id}/${b.id}/download">${icon('arrowup',16)}</a></div></div>`).join('')}</div>`:'<p class="muted" style="padding:14px 16px">No backups yet. A copy is taken automatically every night at 03:00.</p>'}</section>
+  ${d.backups.length?`<div class="rtp-list">${d.backups.map(b=>`<div class="rtp-row"><div><b>${H(ago(b.time))}</b><small>${b.size?H((b.size/1024).toFixed(1))+' KB':''}${b.added!=null?` · +${b.added} / −${b.removed} changes`:''}</small></div><div class="row-actions"><a class="ra-btn" title="View" aria-label="View" href="/api/backups/${d.id}/${b.id}" target="_blank" rel="noopener">${icon('eye',16)}</a><a class="ra-btn" title="Download" aria-label="Download" href="/api/backups/${d.id}/${b.id}/download">${icon('download',16)}</a></div></div>`).join('')}</div>`:'<p class="muted" style="padding:14px 16px">No backups yet. A copy is taken automatically every night at 03:00.</p>'}</section>
  <div class="rtp-two">
   <section class="card"><div class="rtp-head"><h2>${icon('server',18)} Device info</h2><span class="status ${online?'online':'offline'}">${online?'Online':'Offline'}</span></div>
    <div class="rtp-info">${kv('Identity',i.identity)}${kv('Board',i.model)}${kv('RouterOS',i.version)}${kv('Architecture',i.architecture)}${kv('Uptime',i.uptime)}${kv('CPU load',i.cpu==null?'':i.cpu+'%')}${kv('CPU count',i.cpuCount)}${kv('Total memory',i.memoryTotalMb?i.memoryTotalMb+' MB':'')}${kv('Free memory',i.memoryFreeMb!=null?i.memoryFreeMb+' MB':'')}${kv('Interfaces',i.interfaces||'')}${kv('Location',d.location)}${kv('Serial',i.serial)}</div>
@@ -1207,7 +1207,7 @@ pages.routerProfile=async function(){
   <section class="card"><div class="rtp-head"><h2>${icon('shield',18)} Access &amp; remote</h2></div>
    <div class="rtp-info">${kv('WireGuard address',d.wg?d.wg.address:'Not set up')}${kv('Router reports',d.credentials.agent?'Script installed':'No script yet')}${kv('Job runner',d.credentials.jobs?'Installed':'Not installed')}${kv('IP (from router)',d.ip)}</div>
    <p class="muted small" style="padding:0 16px 8px">Winbox reaches this router over its WireGuard address. netops never stores the router's login or changes it.</p>
-   <div class="rtp-btns">${lk('Winbox access','shield','wireguard')}${lk('Install job runner','script','router-jobs')}</div>
+   <div class="rtp-btns">${lk('Winbox access','shield','wireguard')}${lk('Install job runner','box','router-jobs')}</div>
    <hr class="rtp-sep"><h3 class="rtp-h3">Support contact (captive portal)</h3><p class="muted small">Shown to customers on this router's WiFi page when they need help. Falls back to the ISP contact if empty.</p>
    <form id="rtp-support" class="rtp-form"><label>Support phone<input name="supportPhone" value="${H(d.portal.supportPhone||'')}" inputmode="tel" placeholder="0712 345 678" ${canEdit?'':'disabled'}></label><label>Support WhatsApp<input name="supportWhatsapp" value="${H(d.portal.supportWhatsapp||'')}" inputmode="tel" placeholder="0712 345 678" ${canEdit?'':'disabled'}></label>${canEdit?'<button class="button primary" type="submit">Save support contact</button>':''}</form></section>
  </div>
@@ -1252,3 +1252,14 @@ document.addEventListener('click',e=>{for(const m of document.querySelectorAll('
  new MutationObserver(()=>{clearTimeout(scan.t);scan.t=setTimeout(scan,30);}).observe(document.documentElement,{childList:true,subtree:true});
 })();
 
+// Row actions as icons (with a tooltip) so tables stay narrow: Edit, Delete, View, Download, Renew, Payment and the like.
+// Only short, exact labels are converted; buttons with any other text are left alone.
+(function(){
+ const MAP={edit:['pen',''],delete:['warning','danger'],remove:['warning','danger'],forget:['warning','danger'],revoke:['warning','danger'],view:['eye',''],open:['eye',''],download:['download',''],copy:['file',''],renew:['refresh',''],payment:['receipt',''],pay:['receipt',''],resolve:['check',''],acknowledge:['check',''],approve:['check',''],reopen:['refresh',''],send:['chat',''],disconnect:['bolt',''],reset:['refresh',''],print:['file',''],details:['info',''],logs:['info',''],invoice:['file',''],receipt:['receipt','']};
+ const SEL='td .ra-btn,.row-actions .ra-btn,td .button,td button.button,td a.button,.row-actions .button,.sl-acts .button,.sl-acts button.button,.list-row .button';
+ const run=()=>{for(const b of document.querySelectorAll(SEL)){if(b.dataset.ic||b.classList.contains('pf-tile')||b.closest('.pf-actions,.rtp-bar,.kd2,.page-tabs'))continue;
+   const label=(b.textContent||'').trim(),m=MAP[label.toLowerCase()];b.dataset.ic='1';if(!m||b.children.length>1)continue;
+   b.title=label;b.setAttribute('aria-label',label);b.classList.add('ic-btn');if(m[1])b.classList.add('ic-'+m[1]);b.innerHTML=icon(m[0],16);}
+  for(const h of document.querySelectorAll('dialog .modal-heading')){const t=(h.querySelector('h2')?.textContent||'').trim(),i=t?t[0].toUpperCase():'';if(i&&h.dataset.ini!==i)h.dataset.ini=i;}};
+ let tm;new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(run,40);}).observe(document.documentElement,{childList:true,subtree:true});run();
+})();
