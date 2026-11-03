@@ -41,3 +41,20 @@ test('MAC prefix policy and split bandwidth in RADIUS',async()=>{
   r=await auth('11:22:33:44:55:66');assert.equal(r.status,401,'other router refused');
  }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('evict free users: only free-mode sessions, only when free mode is off, once each',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'fe-')),{Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs'),jobs=require('../lib/jobs.cjs'),fe=require('../lib/freeevict.cjs'),st=new Store(dir);try{
+  const r=st.put('devices',{name:'TEST-1',type:'router',driver:'none',ip:'10.99.0.2'});st.secret('jobs:'+r.id,{token:'x'});const now=Date.now();
+  const sess=(u,id)=>st.db.prepare("INSERT INTO records(kind,id,body,created,updated) VALUES('radiusSessions',?,?,?,?)").run(id,JSON.stringify({username:u,nas:'10.99.0.2',nasName:'TEST-1',sessionId:id,startedAt:now-6e4,updatedAt:now,stoppedAt:null}),now,now);
+  sess('free-0123456789ab','s1');sess('paidcustomer','s2');
+  assert.equal(fe.freeSessions(st,now).length,1);
+  const a=fe.evict(st,jobs,radius,null,now);assert.equal(a.queued,1);assert.equal(st.list('routerJobs')[0].params.username,'free-0123456789ab');
+  assert.equal(fe.evict(st,jobs,radius,null,now).queued,0,'not twice');
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('IP conflict scan finds duplicates and out-of-pool addresses',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ic-')),{Store}=require('../lib/store.cjs'),pool=require('../lib/pppoepool.cjs'),st=new Store(dir);try{
+  pool.save(st,{network:'10.50.0.0/16',enabled:true});
+  st.put('subscribers',{name:'A',username:'a',service:'pppoe',pppoeIp:'10.50.0.5'});st.put('subscribers',{name:'B',username:'b',service:'pppoe',pppoeIp:'10.50.0.5'});st.put('subscribers',{name:'C',username:'c',service:'pppoe',pppoeIp:'192.168.9.9'});
+  const r=pool.conflicts(st);assert.ok(r.items.some(x=>x.type==='Same address twice'&&x.ip==='10.50.0.5'));assert.ok(r.items.some(x=>x.type==='Outside the pool'&&x.ip==='192.168.9.9'));
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
