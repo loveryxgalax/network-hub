@@ -208,7 +208,7 @@ function createApp(options={}){
    const smsT=route.match(/^\/api\/sms-templates\/([a-f0-9-]{36})$/);if(smsT){role(user,['admin','manager']);if(method==='PUT'){const t=billing.saveLibrary(store,await body(req),smsT[1]);store.audit(user,'Updated SMS template '+t.name,t.id);return json(res,200,t);}if(method==='DELETE'){billing.deleteLibrary(store,smsT[1]);store.audit(user,'Deleted an SMS template',smsT[1]);return json(res,200,{ok:true});}}
   if(route.startsWith('/api/billing/')||route==='/api/billing'){
    if(user.role==='installer')throw error(403,'Billing is not available to field installers');
-   if(route==='/api/billing'&&method==='GET')return json(res,200,billing.overview(store));
+   if(route==='/api/billing'&&method==='GET')return json(res,200,{...billing.overview(store),defaults:billing.TEMPLATES});
    role(user,['admin']);
    if(route==='/api/billing/settings'&&method==='PUT'){const saved=billing.updateSettings(store,await body(req));store.audit(user,'Updated SMS reminders','billing');return json(res,200,saved);}
    if(route==='/api/billing/sms'&&method==='PUT'){const saved=billing.setSmsConfig(store,await body(req));store.audit(user,'Updated SMS provider','billing');return json(res,200,saved);}
