@@ -537,3 +537,5 @@ body[data-loading=progress] .boot-bar i{display:block;height:100%;width:40%;back
 #lc-sheet button{all:unset;cursor:pointer;display:grid;gap:3px;border:1.5px solid #dbe3f0;border-radius:14px;padding:14px 16px;min-height:44px}
 #lc-sheet button:hover,#lc-sheet button:focus-visible{border-color:var(--brand,#0a3cff);box-shadow:0 0 0 3px rgba(10,60,255,.15)}
 #lc-sheet b{font-size:16px}#lc-sheet span{font-size:13.5px;color:#55657a}
+
+.share-code{display:grid;gap:2px;margin:10px 0;padding:10px 12px;border:1px dashed currentColor;border-radius:12px;opacity:.95}.share-code b{font-size:20px;letter-spacing:2px;font-family:ui-monospace,Consolas,monospace}.share-code small{opacity:.8}

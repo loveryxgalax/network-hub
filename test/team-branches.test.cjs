@@ -38,3 +38,17 @@ test('RADIUS timeout alerts name whose server it is',()=>{
   assert.equal(cu.radiusLabel(st,t1,k).severity,'critical');assert.match(cu.radiusLabel(st,t1,k).title,/^netops RADIUS/);
  }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('sharing code: friend joins a multi-device package as one of its devices',()=>{
+ const {Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs'),landing=require('../lib/landing.cjs'),sc=require('../lib/sharecode.cjs'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'sc-')),st=new Store(dir);try{
+  const plan=st.put('plans',{name:'Duo',service:'hotspot',price:20,durationValue:1,durationUnit:'days',devices:2,downloadMbps:5,uploadMbps:5});
+  const one=st.put('plans',{name:'Solo',service:'hotspot',price:10,durationValue:1,durationUnit:'days',devices:1});
+  const o=st.put('subscribers',{name:'Mary Wanjiru',username:'mary1',service:'hotspot',planId:plan.id,status:'active',expiresAt:Date.now()+864e5});radius.setPassword(st,o.id,'pw12345');
+  assert.equal(sc.preview(st,'SAAAAAAA'),null,'off by default');
+  st.setting('landingConfig',{show:{shareCode:true}});const code=sc.codeOf(st,o);assert.match(code,/^S[A-Z0-9]{7}$/);
+  assert.equal(sc.codeOf(st,st.put('subscribers',{name:'S',username:'s1',service:'hotspot',planId:one.id})),null,'single-device packages get no code');
+  const pv=landing.account(st,code);assert.equal(pv.share,true);assert.equal(pv.owner,'Mary');assert.equal(pv.phone,undefined,'no private details');
+  const auth=u=>radius.authorize(st,{'User-Name':u,'Calling-Station-Id':'AA:BB:CC:DD:EE:01'});
+  assert.equal(auth(code.toLowerCase()).status,200,'friend logs in with the code');
+  assert.equal(st.get('subscribers',o.id).username,'mary1','owner unchanged');
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
