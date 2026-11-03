@@ -260,6 +260,11 @@ function createApp(options={}){
    const j=jobs.create(store,{routerId:input.routerId,type:input.type,params,confirm:input.confirm,user});store.audit(user,'Queued router job: '+j.label+' on '+j.routerName,j.id);return json(res,201,j);}
   // Link a MikroTik (admins): create the router and its one-line link command, follow its first reports, and on a new
   // router set up PPPoE/Hotspot through the job runner after the admin types the router's name.
+  // Forget a router and everything netops stored about it (database only; nothing is sent to the router).
+  const forgetRoute=route.match(/^\/api\/routers\/([a-f0-9-]{36})\/forget$/);
+  if(forgetRoute&&method==='POST'){role(user,['admin']);const pg=require('./lib/purge.cjs'),input=await body(req);
+   if(input.apply!==true)return json(res,200,pg.plan(store,forgetRoute[1],{customers:input.customers===true}));
+   const done=pg.run(store,forgetRoute[1],{customers:input.customers===true,confirm:input.confirm},user);agentAccepted.delete(done.router.id);agentAccepted.delete('discovery:'+done.router.id);return json(res,200,{ok:true,summary:done.summary});}
   if(route==='/api/provision/options'&&method==='GET'){role(user,['admin']);const srv=wireguard.server(store);return json(res,200,{publicOrigin:publicUrl?.origin||null,wireguard:!!srv.publicKey,radiusSecret:!!radiusSecret,realm:radius.settings(store).realm||''});}
   if(route==='/api/provision'&&method==='POST'){role(user,['admin']);if(!publicUrl)throw error(409,'Set NETWORK_PUBLIC_ORIGIN to the HTTPS address of netops first');const pv=require('./lib/provision.cjs'),input=await body(req);
    const existing=input.routerId?store.get('devices',String(input.routerId)):null;if(input.routerId&&existing?.type!=='router')throw error(404,'Router not found');

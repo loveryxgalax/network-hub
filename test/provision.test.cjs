@@ -81,3 +81,33 @@ test('HTTP: link a MikroTik end to end (bundle once per link, checks, in-service
   const fresh=await api('provision','POST',{routerId:id,radius:'none',wireguard:true,newWireguardKey:true});assert.equal(fresh.status,201);assert.equal(fresh.body.warnings.length,0);assert.ok(fresh.body.parts.some(p=>/WireGuard tunnel to netops \(10\.99\.0\.2\)/.test(p)),'new key, same address');assert.equal(st.list('wgPeers').filter(p=>p.routerId===id).length,1);
  }finally{await app.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('forget a router: preview, typed name, removes only that router\'s data; payments stay; customers optional',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'fg-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://netops.example.test'});
+ const port=await listen(app.server),origin='http://127.0.0.1:'+port;
+ try{const owner=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'f@example.test',password:'fixture-owner-password-123'})});const cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
+  const api=async(r,input)=>{const x=await fetch(origin+'/api/'+r,{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf,Host:'netops.example.test'},body:JSON.stringify(input)});return {status:x.status,body:await x.json()};};
+  const st=app.store,radius=require('../lib/radius.cjs'),billing=require('../lib/billing.cjs');
+  const t1=st.put('devices',{name:'TEST-1',type:'router',driver:'routeros-script'}),hex=st.put('devices',{name:'HEX',type:'router',driver:'routeros-script'});
+  for(const r of [t1,hex]){st.setting('customerDiscovery:'+r.id,{lastReport:1});st.setting('routerHealth:'+r.id,{time:1});st.secret('agent:'+r.id,{tokenHash:'x'});st.put('alerts',{title:r.name+' down',deviceId:r.id,status:'Open'});st.put('routerJobs',{routerId:r.id,type:'disconnect',status:'succeeded'});}
+  st.put('wgPeers',{kind:'router',routerId:t1.id,name:'TEST-1',address:'10.99.0.2',publicKey:'k',enabled:true});
+  const plan=st.put('plans',radius.plan({name:'Day',service:'hotspot',downloadMbps:5,uploadMbps:2,price:50,durationValue:1,durationUnit:'days',routerIds:[t1.id,hex.id]}));
+  const c=st.put('subscribers',radius.subscriber(st,{name:'Test One',username:'test1',service:'hotspot',planId:plan.id,routerId:t1.id}));radius.setPassword(st,c.id,'pass1234');
+  const keep=st.put('subscribers',radius.subscriber(st,{name:'Hex Customer',username:'hexc',service:'hotspot',planId:plan.id,routerId:hex.id}));
+  billing.pay(st,c.id,{amount:50,reference:'TESTPAY1',method:'cash'});
+  radius.accounting(st,{'Acct-Status-Type':'Start','Acct-Session-Id':'s1','User-Name':'test1','NAS-Identifier':'TEST-1','NAS-IP-Address':'10.99.0.2'});
+  radius.accounting(st,{'Acct-Status-Type':'Start','Acct-Session-Id':'s2','User-Name':'hexc','NAS-Identifier':'HEX'});
+  const pv=await api('routers/'+t1.id+'/forget',{customers:true});assert.equal(pv.status,200);
+  assert.deepEqual([pv.body.summary.alerts,pv.body.summary.routerJobs,pv.body.summary.wireguardPeers,pv.body.summary.radiusSessions,pv.body.summary.customersOnIt],[1,1,1,1,1]);
+  assert.ok(st.get('devices',t1.id),'preview changes nothing');
+  assert.equal((await api('routers/'+t1.id+'/forget',{apply:true,customers:true,confirm:'HEX'})).status,400,'typed name must match');
+  const done=await api('routers/'+t1.id+'/forget',{apply:true,customers:true,confirm:'TEST-1'});assert.equal(done.status,200);
+  assert.equal(st.get('devices',t1.id),null);assert.equal(st.setting('customerDiscovery:'+t1.id),null);assert.equal(st.secret('agent:'+t1.id),null);
+  assert.equal(st.list('alerts').filter(a=>a.deviceId===t1.id).length,0);assert.equal(st.list('wgPeers').length,0);
+  assert.equal(st.get('subscribers',c.id),null,'customer moved to Recently deleted');assert.equal(st.list('deletedSubscribers').length,1);
+  assert.equal(st.list('subscriberPayments').length,1,'payments are never deleted');
+  assert.deepEqual(st.get('plans',plan.id).routerIds,[hex.id]);
+  // HEX untouched.
+  assert.ok(st.get('devices',hex.id));assert.ok(st.setting('customerDiscovery:'+hex.id));assert.ok(st.secret('agent:'+hex.id));assert.ok(st.get('subscribers',keep.id));
+  assert.equal(st.list('alerts').filter(a=>a.deviceId===hex.id).length,1);assert.equal(st.sessionsSince(0).filter(x=>x.nasName==='HEX').length,1);
+ }finally{await app.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
