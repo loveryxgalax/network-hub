@@ -438,6 +438,25 @@ function createApp(options={}){
    if(route==='/api/radius/manual-connect'&&method==='GET'){return json(res,200,{items:store.list('manualConnects').sort((a,b)=>b.time-a.time).slice(0,300)});}
    if(route==='/api/radius/manual-connect'&&method==='POST'){write();const input=await body(req);
     // An existing customer: one period of their own package without a payment, with a reason and the expiry before/after.
+    // Modes (handoff §21.4): normal = their own package (one period or until a chosen time), optionally with a cash or
+    // cheque receipt that goes through the normal payment path; grace = connect now, pay later (no money recorded,
+    // max 14 days, once per 30 days); trial = free trial for a customer who never paid (max 7 days, once).
+    if(input.subscriberId&&['grace','trial'].includes(input.mode)||input.subscriberId&&['cash','cheque'].includes(input.payment)){const mode=input.mode==='grace'||input.mode==='trial'?input.mode:'normal',why=String(input.reason||'').trim();if(why.length<4)throw error(400,'Give a reason');
+     const s=store.get('subscribers',String(input.subscriberId));if(!s)throw error(404,'Customer not found');{const sc=access.scope(store,user);if(sc&&!access.allowed(sc,s,compensation.routerOf(store)))throw error(403,'This customer is on a router you do not manage');}const p=store.get('plans',s.planId);if(!p)throw error(409,'The customer has no package');
+     if(mode==='normal'){const cash=input.payment==='cash',ref=cash?'CASH'+Date.now().toString(36).toUpperCase().slice(-8):String(input.reference||'').trim().toUpperCase();if(!cash&&!/^[A-Z0-9_-]{3,30}$/.test(ref))throw error(400,'Enter the cheque number');
+      const amount=billing.priceOf(s,p);if(!(amount>0))throw error(409,'This package is free; connect without a payment instead');
+      const r=billing.pay(store,s.id,{amount,reference:(cash?'':'CHQ-')+ref,method:cash?'cash':'bank',note:(cash?'Cash at the office':'Cheque '+ref+' (not yet cleared)')+' · '+why.slice(0,120)});
+      const after=store.get('subscribers',s.id);store.put('manualConnects',{subscriberId:s.id,username:s.username,name:s.name,planName:p.name,before:s.expiresAt??null,after:after.expiresAt,reason:why.slice(0,200),grant:cash?'cash':'cheque',amount,by:user.email,time:Date.now()});
+      store.audit(user,`Manual connect with ${cash?'cash':'cheque'} KSh ${amount}: ${s.username}`,s.id);try{statics.sync(store,jobs,radius.stateOf,user);}catch{}return json(res,201,{ok:true,payment:r?.payment?.id||null,expiresAt:after.expiresAt});}
+     const until=typeof input.until==='number'?input.until:Date.parse(input.until||''),now=Date.now(),maxDays=mode==='grace'?14:7;if(!Number.isFinite(until)||until<=now)throw error(400,'Choose when the '+(mode==='grace'?'grace period':'free trial')+' ends');if(until-now>maxDays*864e5)throw error(400,`A ${mode==='grace'?'grace period':'free trial'} lasts at most ${maxDays} days`);
+     const past=store.list('manualConnects').filter(x=>x.subscriberId===s.id&&x.grant===mode);
+     if(mode==='trial'&&(s.paidEver||past.length))throw error(409,'Free trial is only for a customer who has never paid or had a trial');
+     if(mode==='grace'&&past.some(x=>now-x.time<30*864e5))throw error(409,'This customer already had a grace period in the last 30 days');
+     if(s.expiresAt&&s.expiresAt>=until)throw error(409,'The customer is already paid beyond that time');
+     let rec;store.transaction(()=>{const cur=store.get('subscribers',s.id);store.put('subscribers',{...cur,status:'active',deactivatedReason:'',expiresAt:until,grant:mode,graceOwed:mode==='grace'?billing.priceOf(cur,p):null,graceFrom:mode==='grace'?Math.max(now,cur.expiresAt||0):null},cur);
+      rec=store.put('manualConnects',{subscriberId:s.id,username:s.username,name:s.name,planName:p.name,before:s.expiresAt??null,after:until,reason:why.slice(0,200),grant:mode,by:user.email,time:now});
+      store.put('expiryChanges',{subscriberId:s.id,username:s.username,name:s.name,service:s.service,planName:p.name,before:s.expiresAt??null,after:until,how:mode==='grace'?'Grace period':'Free trial',by:user.email,time:now});});
+     try{statics.sync(store,jobs,radius.stateOf,user);}catch{}store.audit(user,`${mode==='grace'?'Grace period':'Free trial'} for ${s.username} until ${new Date(until).toISOString()} (${why.slice(0,80)})`,s.id);return json(res,201,rec);}
     if(input.subscriberId){const why=String(input.reason||'').trim();if(why.length<4)throw error(400,'Give a reason for connecting without payment');let rec;
      store.transaction(()=>{const s=store.get('subscribers',String(input.subscriberId));if(!s)throw error(404,'Customer not found');{const sc=access.scope(store,user);if(sc&&!access.allowed(sc,s,compensation.routerOf(store)))throw error(403,'This customer is on a router you do not manage');}const p=store.get('plans',s.planId);if(!p)throw error(409,'The customer has no package');
       const before=s.expiresAt??null,after=Math.max(Date.now(),s.expiresAt||0)+radius.planMs(p);store.put('subscribers',{...s,status:'active',deactivatedReason:'',expiresAt:after},s);
