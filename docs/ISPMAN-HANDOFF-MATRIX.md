@@ -189,7 +189,7 @@ Update this file with every increment.
 | 20.2 Permanent override vs flight speed | Done | Flight speed changes the current session only. |
 | 20.3 Payment-reference sharing / migration (ISP → router → customer) | Done | |
 | 20.4 Phone OTP verified state | Skip | netops has no phone OTP login; nothing to override. |
-| 20.5 Extend with quick increments | Partial | Renew by periods and outage compensation exist; quick 30 min…3 months buttons not built. |
+| 20.5 Extend with quick increments | Done | Profile → Extend: +30 min … +3 months from the current expiry, or an exact time; reason required; not a payment. |
 | 20.6 Package change applies on reconnect | Done | Existing behaviour (RADIUS reply at next login). |
 | 20.7 PPPoE max connections + split bandwidth | Done | Limit only when set on the customer. Divisor = the configured maximum (not live sessions), so speeds never change while sessions join or leave. |
 | 20.8 PPPoE IP reservation (Framed-IP-Address) | Done | PPPoE network / Assign IPs. |
