@@ -6,7 +6,7 @@ not switched keep using ISPman the whole time.
 ## Stage 0: deploy netops RADIUS (no customer impact)
 
 1. On the VM: `cd ~/network-hub && git pull && docker compose up -d --build hub`
-2. Follow `docs/RADIUS.md` step 1: WireGuard, Azure UDP 51820, the two `.env` secrets,
+2. Follow `docs/RADIUS.md` step 1: WireGuard, UDP 51820 reachable, the two `.env` secrets,
    `docker compose --profile radius up -d --build`.
 3. In netops → Subscribers & plans:
    * **Plans**: recreate your ISPman packages with the *same names* (needed for import).

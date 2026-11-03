@@ -13,6 +13,11 @@ if [ "${1:-}" = "--install" ]; then
 fi
 command -v jq >/dev/null || apt-get install -y jq >/dev/null
 cd "$dir"
+# Tell netops this server's WireGuard public key, port and public address (used only while the page is still empty).
+# Set WG_ENDPOINT in .env (a host name or IP) if the address detected below is not the one routers should use.
+endpoint=$(grep -s '^WG_ENDPOINT=' .env | head -1 | cut -d= -f2- | tr -d '"' || true)
+[ -n "$endpoint" ] || endpoint=$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || true)
+if [ -n "$endpoint" ]; then docker compose exec -T hub node lib/wg-cli.cjs server "$(wg show wg0 public-key)" "$(wg show wg0 listen-port)" "$endpoint" >/dev/null || true; fi
 json=$(docker compose exec -T hub node lib/wg-cli.cjs peers)
 umask 077
 # Keep [Interface] from wg0.conf; replace every [Peer] with the list from netops.

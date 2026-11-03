@@ -5,7 +5,7 @@ accounting (**Subscribers & plans** in the sidebar). The MikroTiks keep doing th
 firewall); only the RADIUS server they ask changes.
 
 ```
-MikroTik ──WireGuard (UDP 51820)──▶ Azure VM wg0 10.99.0.1 ──▶ FreeRADIUS (1812/1813) ──▶ hub :4318 (private)
+MikroTik ──WireGuard (UDP 51820)──▶ the server's wg0 10.99.0.1 ──▶ FreeRADIUS (1812/1813) ──▶ hub :4318 (private)
 ```
 
 * FreeRADIUS checks PAP, CHAP and MS-CHAP passwords. The hub decides who may log in, returns
@@ -22,7 +22,7 @@ MikroTik ──WireGuard (UDP 51820)──▶ Azure VM wg0 10.99.0.1 ──▶ F
 cd ~/network-hub && git pull
 sudo bash deployment/wireguard/setup-server.sh
 ```
-In the Azure portal: VM → Networking → Add inbound port rule → UDP 51820 → Allow.
+Make sure UDP 51820 reaches the server from the internet: allow it in the server's firewall (the setup script does this for ufw) and, if your provider or your own router sits in front of the server, add the allow rule or port forward there.
 
 Add to `~/network-hub/.env` (two new random values):
 ```

@@ -1,7 +1,8 @@
 #!/bin/bash
 # One-time: turn the netops server into the WireGuard hub (10.99.0.1) that MikroTiks connect to for RADIUS.
 # Run on the VM: sudo bash deployment/wireguard/setup-server.sh
-# Afterwards open UDP 51820 inbound in the Azure network security group.
+# Afterwards make sure UDP 51820 can reach this server from the internet (the server's own firewall, plus your
+# provider's firewall or your router's port forward if the server sits behind one).
 set -euo pipefail
 [ "$(id -u)" = 0 ] || { echo "Run with sudo"; exit 1; }
 apt-get install -y wireguard-tools >/dev/null
@@ -16,4 +17,6 @@ mkdir -p /etc/systemd/system/docker.service.d
 printf '[Unit]\nAfter=wg-quick@wg0.service\nWants=wg-quick@wg0.service\n' > /etc/systemd/system/docker.service.d/after-wireguard.conf
 systemctl daemon-reload
 echo "WireGuard is up. Server public key: $(wg show wg0 public-key)"
-echo "Next: open UDP 51820 inbound in Azure, then add each MikroTik with deployment/wireguard/add-router.sh"
+if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then ufw allow 51820/udp >/dev/null && echo "ufw: allowed UDP 51820"; fi
+echo "Next: make sure UDP 51820 reaches this server from the internet (provider firewall or router port forward), then run: sudo bash deployment/wireguard/sync-peers.sh --install"
+echo "netops fills in the WireGuard server details by itself once the sync timer runs."
