@@ -89,7 +89,7 @@ test('alerts: acknowledge and resolve record who; points award; self-service lin
   const sub=(await api('radius/subscribers','POST',{name:'Ann Mutua',username:'ann',service:'hotspot',planId:plan.id,password:'pw123456'})).body;
   assert.equal((await api('radius/subscribers/'+sub.id+'/award-points','POST',{points:5,reason:''})).status,400);
   const aw=await api('radius/subscribers/'+sub.id+'/award-points','POST',{points:5,reason:'Referral'});assert.equal(aw.body.subscriber.points,5);
-  const ss=await api('radius/subscribers/'+sub.id+'/self-service','POST',{});assert.equal(ss.body.link,'https://network.example.test/portal/?account=ann');
+  const ss=await api('radius/subscribers/'+sub.id+'/self-service','POST',{});assert.match(ss.body.link,/^https:\/\/network\.example\.test\/portal\/account\.html\?t=/);
   assert.equal((await api('radius/subscribers/'+sub.id+'/self-service','POST',{send:true})).status,400,'no phone');
  }finally{await new Promise(r=>app.server.close(r));fs.rmSync(dir,{recursive:true,force:true});}
 });
