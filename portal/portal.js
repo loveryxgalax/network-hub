@@ -322,6 +322,16 @@ function openAdvertise(){let d=$('#adv-dialog');if(!d){d=document.createElement(
   catch(err){b.disabled=false;$('#adv-msg').textContent=err.message;}};}
 // Scheduled maintenance notice (set in netops → Settings → Scheduled maintenance).
 let MAINT=null;
+// "Login or purchase" landing: customers who already paid go straight to their account instead of hunting past prices.
+function loginChoice(){if(!CFG.show?.loginChoice||params.get('account')||params.get('expired')||params.get('ps')||document.getElementById('lc-sheet'))return;try{if(sessionStorage.getItem('lc-done'))return;}catch{}
+ const L=(LANG||'en').slice(0,2),tx={en:['Welcome','I already paid','Log in with my account, code or payment','Buy a package','See packages and prices'],sw:['Karibu','Nimeshalipa','Ingia kwa akaunti, nambari au malipo','Nunua kifurushi','Angalia vifurushi na bei'],fr:['Bienvenue','J’ai déjà payé','Connexion avec mon compte, code ou paiement','Acheter un forfait','Voir les forfaits et les prix']}[L]||null;const w=tx||['Welcome','I already paid','Log in with my account, code or payment','Buy a package','See packages and prices'];
+ const esc2=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const d=document.createElement('div');d.id='lc-sheet';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');d.setAttribute('aria-label',w[0]);
+ d.innerHTML=`<div class="lc-box"><h2>${esc2(CFG.brandName||w[0])}</h2><button type="button" data-lc="login"><b>${esc2(w[1])}</b><span>${esc2(w[2])}</span></button><button type="button" data-lc="buy"><b>${esc2(w[3])}</b><span>${esc2(w[4])}</span></button></div>`;
+ d.style.cssText='position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(10,20,30,.55)';document.body.append(d);
+ const done=()=>{try{sessionStorage.setItem('lc-done','1');}catch{}d.remove();};
+ d.querySelector('[data-lc=login]').onclick=()=>{done();const f=document.getElementById('acc');if(f){f.scrollIntoView({block:'center'});f.focus();}};d.querySelector('[data-lc=buy]').onclick=done;
+ d.querySelector('[data-lc=login]').focus();}
 function showMaint(){if(!MAINT||document.getElementById('maint-note'))return;const n=document.createElement('div');n.id='maint-note';n.setAttribute('role','status');
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  n.innerHTML=`<strong>${esc(MAINT.title)}</strong><span>${esc(MAINT.message)}${MAINT.until?' · until '+esc(new Date(MAINT.until).toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'})):''}</span>`;
@@ -335,7 +345,7 @@ async function boot(){
   try{if(!localStorage.getItem('portal-lang'))LANG=CFG.defaultLang||LANG;}catch{LANG=CFG.defaultLang||LANG;}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;
- render();bootDone();showMaint();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
+ render();bootDone();showMaint();loginChoice();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
  detectSession();checkAdmin();here();loadAdPlans();
  // Self-service link from netops (?account=USERNAME): open that account straight away.
  const deep=(params.get('account')||'').trim().slice(0,64);if(deep&&CFG.show.accessAccount!==false){$('#acc').value=deep;setTimeout(()=>{$('#acc').scrollIntoView({block:'center'});$('#accForm').requestSubmit();},200);}
