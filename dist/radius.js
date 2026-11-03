@@ -20,7 +20,7 @@ function planEditor(id){const p=radiusView.data.plans.find(x=>x.id===id)||{servi
   radiusField('Plan name',`<input name="name" required maxlength="120" value="${h(p.name||'')}" placeholder="Home 10 Mbps">`)+
   `<div class="form-grid">${radiusField('For',`<select name="service">${radiusOptions([['pppoe','PPPoE'],['hotspot','Hotspot'],['both','PPPoE and Hotspot']],p.service)}</select>`)+radiusField('Price (KSh)',`<input name="price" type="number" min="0" step="1" required value="${h(p.price??'')}">`)+
   radiusField('Download (Mbps)',`<input name="downloadMbps" type="number" min="0.064" step="0.001" required value="${h(p.downloadMbps??'')}">`)+radiusField('Upload (Mbps)',`<input name="uploadMbps" type="number" min="0.064" step="0.001" required value="${h(p.uploadMbps??'')}">`)+
-  radiusField('Lasts',`<input name="durationValue" type="number" min="1" max="1000" required value="${h(p.durationValue)}">`)+radiusField('Unit',`<select name="durationUnit">${radiusOptions([['hours','Hours'],['days','Days'],['weeks','Weeks'],['months','Months (30 days)']],p.durationUnit)}</select>`)+
+  radiusField('Lasts',`<input name="durationValue" type="number" min="1" max="1000" required value="${h(p.durationValue)}">`)+radiusField('Unit',`<select name="durationUnit">${radiusOptions([['minutes','Minutes'],['hours','Hours'],['days','Days'],['weeks','Weeks'],['months','Months (30 days)']],p.durationUnit)}</select>`)+
   radiusField('Devices at once (hotspot)',`<input name="devices" type="number" min="1" max="50" value="${h(p.devices)}">`)}</div>`+
   radiusField('Description (optional)',`<input name="description" maxlength="500" value="${h(p.description||'')}">`),
   id?'Save plan':'Create plan',input=>api(id?'radius/plans/'+id:'radius/plans',id?'PATCH':'POST',input));}

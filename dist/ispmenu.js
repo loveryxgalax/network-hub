@@ -1129,7 +1129,7 @@ function slRows(items,fn,empty){if(!items.length)return `<div class="list-empty"
  return `<article class="sl-row ${r.level||'info'} ${r.dim?'acked':''}"><span class="sl-ic" aria-hidden="true">${icon(r.icon||(r.level==='error'?'warning':r.level==='warning'?'bell':r.level==='ok'?'check':'info'),16)}</span>
   <div class="sl-main"><div class="sl-top"><strong>${r.title}</strong>${r.badges||''}</div>${r.message?`<p>${r.message}</p>`:''}${(r.kv||[]).length?`<div class="sl-meta">${r.kv.filter(([,v])=>v!==''&&v!=null).map(([k,v])=>`<span class="sl-kv"><em>${H(k)}</em>${v}</span>`).join('')}</div>`:''}</div>
   <div class="sl-side">${r.time?`<time title="${H(stamp(r.time))}">${H(ago(r.time))}</time>`:''}${r.actions?`<div class="sl-acts">${r.actions}</div>`:''}</div></article>`;}).join('')}</div>`;}
-const ROUTES={'router-link':'routerLink',maintenance:'maintenancePage',branches:'branchesPage','comms-whatsapp':'whatsappPage',me:'mePage','ad-sales':'adSalesPage','comms-mailout':'mailoutPage','promo-campaigns':'campaignsPage','pay-wallets':'walletsPage',loyalty:'loyaltyPage','st-logs':'staticLogs','system-logs':'systemLogs','cust-new':'customers','cust-inactive':'customers','cust-hotspot':'customers','cust-pppoe':'customers','pp-network':'pppoeNetwork',deleted:'deletedPage',notifications:'deviceAlerts','hs-sessions':'hsSessions','pp-sessions':'hsSessions','hs-auth':'hsAuth','pp-auth':'hsAuth','hs-acct':'hsAcct','pp-acct':'hsAcct','hs-connect':'hsConnect','hs-servers':'hsServers','hs-requests':'requests','hs-manual':'manual','hs-vouchers':'vouchers','comms-campaigns':'campaigns','pay-reports':'reports','pay-ledger':'ledger','wireguard':'wireguardPage','hs-engage':'engage','pp-expired':'expiredPage','comms-email':'emailPage','ops-onboarding':'onboarding','ops-stock':'stockRequests','pay-payouts':'payouts','pay-card':'card','captive':'captive','cust-table':'customers','st-customers':'statics','st-expiring':'statics','st-settings':'statics','hs-roaming':'roaming','bulk':'bulk','router-jobs':'routerJobs','speed-rules':'speedRules','outages':'outages','audit':'audit','config-backups':'backups','upgrades':'upgrades','nbr-map':'nbrmap','promos':'promos','overdue':'overdue','router-health':'health'};
+const ROUTES={'router-profile':'routerProfile','router-link':'routerLink',maintenance:'maintenancePage',branches:'branchesPage','comms-whatsapp':'whatsappPage',me:'mePage','ad-sales':'adSalesPage','comms-mailout':'mailoutPage','promo-campaigns':'campaignsPage','pay-wallets':'walletsPage',loyalty:'loyaltyPage','st-logs':'staticLogs','system-logs':'systemLogs','cust-new':'customers','cust-inactive':'customers','cust-hotspot':'customers','cust-pppoe':'customers','pp-network':'pppoeNetwork',deleted:'deletedPage',notifications:'deviceAlerts','hs-sessions':'hsSessions','pp-sessions':'hsSessions','hs-auth':'hsAuth','pp-auth':'hsAuth','hs-acct':'hsAcct','pp-acct':'hsAcct','hs-connect':'hsConnect','hs-servers':'hsServers','hs-requests':'requests','hs-manual':'manual','hs-vouchers':'vouchers','comms-campaigns':'campaigns','pay-reports':'reports','pay-ledger':'ledger','wireguard':'wireguardPage','hs-engage':'engage','pp-expired':'expiredPage','comms-email':'emailPage','ops-onboarding':'onboarding','ops-stock':'stockRequests','pay-payouts':'payouts','pay-card':'card','captive':'captive','cust-table':'customers','st-customers':'statics','st-expiring':'statics','st-settings':'statics','hs-roaming':'roaming','bulk':'bulk','router-jobs':'routerJobs','speed-rules':'speedRules','outages':'outages','audit':'audit','config-backups':'backups','upgrades':'upgrades','nbr-map':'nbrmap','promos':'promos','overdue':'overdue','router-health':'health'};
 const original=window.render;
 window.render=function(){
  const id=state.page,preset=PRESETS[id];
@@ -1169,6 +1169,64 @@ document.addEventListener('click',e=>{const l=e.target.closest('#navigation .nav
 const chromeOriginal=window.chrome;window.chrome=function(){const q=document.querySelector('#navigation .nav-search input'),had=q&&document.activeElement===q;chromeOriginal();organise();badges();pins();if(had){const n=document.querySelector('#navigation .nav-search input');if(n){n.value=navQuery;n.focus();}}};
 async function loadCounts(){if(!state.session?.user||state.session.user.role==='installer'||document.hidden)return;try{counts={...counts,...await api('nav-counts')};badges();pins();refreshSysBadge();}catch{}}
 setInterval(loadCounts,60000);setTimeout(loadCounts,1500);
+// One MikroTik's own page: actions, health checks, backups, device facts, WireGuard, support contact, free mode, PPPoE network and who is connected.
+pages.routerProfile=async function(){
+ const id=new URLSearchParams((location.hash.split('?')[1]||'')).get('id')||'';
+ if(!id){location.hash='mikrotiks';return;}
+ shell('MikroTik','Loading…','');const body=$('#im-body');
+ const H=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),ago=t=>{if(!t)return 'never';const m=Math.max(0,Math.round((Date.now()-t)/60000));return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago';};
+ let d;try{d=await api('routers/'+id+'/profile');}catch(e){body.innerHTML=`<div class="card"><p class="muted" style="padding:20px">${H(e.message)}</p></div>`;return;}
+ const admin=state.session.user.role==='admin',canEdit=['admin','manager'].includes(state.session.user.role),i=d.info,online=d.status==='online';
+ const bytes=n=>{n=Number(n)||0;for(const [u,x] of [['GB',1073741824],['MB',1048576],['KB',1024]])if(n>=x)return (n/x).toFixed(1)+' '+u;return n+' B';};
+ const bc=document.querySelector('#breadcrumb');if(bc)bc.textContent='MikroTik · '+d.name;
+ const h1=document.querySelector('#main h1');if(h1)h1.textContent=d.name;const sub=h1&&h1.nextElementSibling;if(sub)sub.textContent=[i.model,i.version?'RouterOS '+i.version:'',d.lastSeen?'last seen '+ago(d.lastSeen):'never seen'].filter(Boolean).join(' · ');
+ const ib=(label,ic,attrs,cls='secondary')=>`<button class="button ${cls} rtp-act" ${attrs} title="${H(label)}">${icon(ic,16)}<span>${H(label)}</span></button>`;
+ const lk=(label,ic,hash,cls='secondary')=>`<a class="button ${cls} rtp-act" href="#${hash}" title="${H(label)}">${icon(ic,16)}<span>${H(label)}</span></a>`;
+ const kv=(k,v)=>v===''||v==null?'':`<div class="rtp-kv"><span>${H(k)}</span><b>${H(v)}</b></div>`;
+ const checks=d.audit?d.audit.checks:[];
+ const bars=(label,pct)=>pct==null?'':`<div class="rtp-meter"><span>${H(label)}</span><div><i style="width:${Math.min(100,pct)}%;background:${pct>85?'var(--bad,#dc2626)':pct>65?'#d97706':'#16a34a'}"></i></div><b>${pct}%</b></div>`;
+ const sessTable=(items,empty)=>items.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>USER</th><th>ADDRESS</th><th>MAC ADDRESS</th><th>SINCE</th><th>DATA</th></tr></thead><tbody>${items.slice(0,25).map(x=>`<tr><td><b>${H(x.username)}</b>${x.name?`<small>${H(x.name)}</small>`:''}</td><td>${H(x.ip||'—')}</td><td><code>${H(x.mac||'—')}</code></td><td>${x.since?H(ago(x.since)):'—'}</td><td>${H(bytes((x.down||0)+(x.up||0)))}</td></tr>`).join('')}</tbody></table></div>${items.length>25?`<p class="muted small" style="padding:8px 14px">Showing 25 of ${items.length}. See Hotspot or PPPoE → Online sessions for all.</p>`:''}`:`<p class="muted" style="padding:16px">${empty}</p>`;
+ body.innerHTML=`
+ <div class="rtp-bar">
+  ${NetworkPermissions.equipment(state.session.user.role)?ib('Connection script','script','data-router-agent="'+d.id+'"','primary'):''}
+  ${lk('Router jobs','clock','router-jobs')}${lk('Health','activity','router-health')}${lk('Logs','info','system-logs')}${lk('WireGuard','shield','wireguard')}
+  ${ib('Refresh','refresh','id="rtp-refresh"')}
+  ${canEdit?ib('Edit','pen','data-edit-kind="devices" data-id="'+d.id+'"'):''}
+  ${admin?ib('Forget router','warning','data-delete-kind="devices" data-id="'+d.id+'"','danger'):''}
+ </div>
+ <section class="card rtp-audit"><div class="rtp-head"><h2>${icon('shield',18)} Configuration audit</h2><button class="button secondary" id="rtp-check">${icon('refresh',15)} Run config check</button></div>
+  ${checks.length?`<div class="rtp-checks">${checks.map(c=>`<div class="rtp-check ${c.ok?'ok':'bad'}"><span>${icon(c.ok?'check':'warning',16)}</span><div><b>${H(c.label)}</b><small>${H(c.detail||'')}</small>${c.ok||!c.fix?'':`<em>${H(c.fix)}</em>`}</div></div>`).join('')}</div>`:'<p class="muted" style="padding:14px 16px">No checks yet.</p>'}</section>
+ <section class="card"><div class="rtp-head"><h2>${icon('file',18)} Configuration backups</h2><span class="muted small">${d.backupCount} saved · kept 30 days</span></div>
+  ${d.backups.length?`<div class="rtp-list">${d.backups.map(b=>`<div class="rtp-row"><div><b>${H(ago(b.time))}</b><small>${b.size?H((b.size/1024).toFixed(1))+' KB':''}${b.added!=null?` · +${b.added} / −${b.removed} changes`:''}</small></div><div class="row-actions"><a class="ra-btn" title="View" aria-label="View" href="/api/backups/${d.id}/${b.id}" target="_blank" rel="noopener">${icon('eye',16)}</a><a class="ra-btn" title="Download" aria-label="Download" href="/api/backups/${d.id}/${b.id}/download">${icon('arrowup',16)}</a></div></div>`).join('')}</div>`:'<p class="muted" style="padding:14px 16px">No backups yet. A copy is taken automatically every night at 03:00.</p>'}</section>
+ <div class="rtp-two">
+  <section class="card"><div class="rtp-head"><h2>${icon('server',18)} Device info</h2><span class="status ${online?'online':'offline'}">${online?'Online':'Offline'}</span></div>
+   <div class="rtp-info">${kv('Identity',i.identity)}${kv('Board',i.model)}${kv('RouterOS',i.version)}${kv('Architecture',i.architecture)}${kv('Uptime',i.uptime)}${kv('CPU load',i.cpu==null?'':i.cpu+'%')}${kv('CPU count',i.cpuCount)}${kv('Total memory',i.memoryTotalMb?i.memoryTotalMb+' MB':'')}${kv('Free memory',i.memoryFreeMb!=null?i.memoryFreeMb+' MB':'')}${kv('Interfaces',i.interfaces||'')}${kv('Location',d.location)}${kv('Serial',i.serial)}</div>
+   <div class="rtp-meters">${bars('CPU',i.cpu)}${bars('Memory',i.memoryUsedPct)}</div>
+   ${i.wans.length?`<div class="rtp-wans"><b>Internet gateways</b>${i.wans.map(w=>`<span class="rtp-chip ${w.active?'on':''}">${H(w.gateway)} · distance ${H(w.distance)}${w.active?' · active':''}</span>`).join('')}</div>`:''}
+   <p class="rtp-conn ${online?'ok':'off'}">${icon(online?'check':'warning',15)} ${online?'Connected to netops':'Not reporting right now'}</p></section>
+  <section class="card"><div class="rtp-head"><h2>${icon('shield',18)} Access &amp; remote</h2></div>
+   <div class="rtp-info">${kv('WireGuard address',d.wg?d.wg.address:'Not set up')}${kv('Router reports',d.credentials.agent?'Script installed':'No script yet')}${kv('Job runner',d.credentials.jobs?'Installed':'Not installed')}${kv('IP (from router)',d.ip)}</div>
+   <p class="muted small" style="padding:0 16px 8px">Winbox reaches this router over its WireGuard address. netops never stores the router's login or changes it.</p>
+   <div class="rtp-btns">${lk('Winbox access','shield','wireguard')}${lk('Install job runner','script','router-jobs')}</div>
+   <hr class="rtp-sep"><h3 class="rtp-h3">Support contact (captive portal)</h3><p class="muted small">Shown to customers on this router's WiFi page when they need help. Falls back to the ISP contact if empty.</p>
+   <form id="rtp-support" class="rtp-form"><label>Support phone<input name="supportPhone" value="${H(d.portal.supportPhone||'')}" inputmode="tel" placeholder="0712 345 678" ${canEdit?'':'disabled'}></label><label>Support WhatsApp<input name="supportWhatsapp" value="${H(d.portal.supportWhatsapp||'')}" inputmode="tel" placeholder="0712 345 678" ${canEdit?'':'disabled'}></label>${canEdit?'<button class="button primary" type="submit">Save support contact</button>':''}</form></section>
+ </div>
+ <div class="rtp-three">
+  <section class="card rtp-mini"><label class="rtp-switch"><input type="checkbox" id="rtp-isolate" ${d.portal.isolate?'checked':''} ${canEdit?'':'disabled'}><i></i><b>Isolate device</b></label><p class="muted small">When on, this router only shows packages assigned to it and uses the payment settings assigned to it.</p></section>
+  <section class="card rtp-mini"><div class="rtp-head"><h3 class="rtp-h3">Free mode</h3><span class="status ${d.freeMode.enabled?'warning':'offline'}">${d.freeMode.enabled?'On now':'Off'}</span></div><p class="muted small">Free mode is switched for the whole network: customers claim one free package with a single button.</p><a class="button secondary" href="#speed-rules">Open free mode ${icon('arrowup',14)}</a></section>
+  <section class="card rtp-mini"><h3 class="rtp-h3">PPPoE network</h3><div class="rtp-info one">${kv('Network',d.pppoe.network||'Not set')}${kv('Next address',d.pppoe.next||'—')}</div><div class="rtp-btns">${lk('Network & IP pool','network','pp-network')}</div></section>
+ </div>
+ ${d.servers.length?`<section class="card"><div class="rtp-head"><h2>${icon('wifi',18)} Hotspot servers</h2></div><div class="table-wrap"><table class="data-table"><thead><tr><th>SERVER</th><th>INTERFACE</th><th>PROFILE</th><th>POOL</th><th>CONNECTED</th></tr></thead><tbody>${d.servers.map(x=>`<tr><td><b>${H(x.name)}</b></td><td>${H(x.interface||'—')}</td><td>${H(x.profile||'—')}</td><td>${H(x.addressPool||'—')}</td><td>${x.connected}</td></tr>`).join('')}</tbody></table></div></section>`:''}
+ <div class="rtp-two"><section class="card"><div class="rtp-head"><h2>Hotspot active users</h2><span class="muted small">${d.hotspotActive.length} online</span></div>${sessTable(d.hotspotActive,'Nobody is connected through the hotspot on this router.')}</section>
+  <section class="card"><div class="rtp-head"><h2>PPPoE active</h2><span class="muted small">${d.pppoeActive.length} online</span></div>${sessTable(d.pppoeActive,'No PPPoE customers are connected through this router.')}</section></div>`;
+ const reload=()=>pages.routerProfile();
+ $('#rtp-check').onclick=async()=>{toast('Checking…');reload();};
+ const rf=$('#rtp-refresh');if(rf)rf.onclick=reload;
+ const sf=$('#rtp-support');if(sf)sf.onsubmit=async e=>{e.preventDefault();try{await api('router-portal/'+d.id,'PUT',{...d.portal,supportPhone:sf.supportPhone.value,supportWhatsapp:sf.supportWhatsapp.value});toast('Support contact saved');}catch(x){toast(x.message);}};
+ const iso=$('#rtp-isolate');if(iso)iso.onchange=async()=>{try{await api('router-portal/'+d.id,'PUT',{...d.portal,isolate:iso.checked});toast(iso.checked?'Device isolated':'Isolation off');}catch(x){iso.checked=!iso.checked;toast(x.message);}};
+};
+// Router names in the Routers list open this page instead of the small pop-up.
+window.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-device]');if(!b)return;const dv=(state.rows?.devices||[]).find(x=>x.id===b.dataset.device);if(!dv||dv.type!=='router')return;e.preventDefault();e.stopImmediatePropagation();location.hash='router-profile?id='+dv.id;},true);
 })();
 
 document.addEventListener('click',e=>{for(const m of document.querySelectorAll('details.ct-menu[open]'))if(!m.contains(e.target)||e.target.closest('.ct-menu-list button,.ct-menu-list a'))m.open=false;});
@@ -1193,3 +1251,4 @@ document.addEventListener('click',e=>{for(const m of document.querySelectorAll('
   for(const el of document.querySelectorAll('#detail-content *')){if(el.children.length===0&&/undefined/.test(el.textContent))el.textContent=el.textContent.replace(/undefined(\s*\/\s*undefined)?\s*Mbps/g,'— (no speed set)').replace(/\bundefined\b/g,'—');}};
  new MutationObserver(()=>{clearTimeout(scan.t);scan.t=setTimeout(scan,30);}).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
