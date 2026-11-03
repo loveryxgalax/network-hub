@@ -335,3 +335,13 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 #main .card{max-width:100%;min-width:0;box-sizing:border-box}
 .radius-sms-grid{grid-template-columns:repeat(auto-fit,minmax(min(360px,100%),1fr))!important}
 .tpl-save{justify-content:flex-start}
+/* ---- WhatsApp providers ---- */
+.wa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:12px;margin-bottom:16px}
+.wa-card{border:1px solid var(--border);border-radius:14px;background:var(--card);padding:16px;display:grid;gap:8px;align-content:start}
+.wa-card.on{border-color:color-mix(in srgb,var(--primary) 50%,transparent);background:linear-gradient(135deg,var(--primary-soft),var(--card) 70%)}
+.wa-head{display:flex;gap:12px;align-items:flex-start}.wa-head b{font-size:15px}.wa-head small{display:block;color:var(--muted);font-size:12px}
+.wa-ico{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);display:grid;place-items:center;color:var(--primary);background:var(--card);flex:none}
+.wa-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:var(--primary-soft);color:var(--primary);font-size:11px;font-weight:700;vertical-align:middle}
+.wa-card .link-button{justify-self:start;font-weight:700;color:var(--primary)}
+.tpl-switch input{z-index:1}
+#wa-route .tpl-card:has(.tpl-switch input:not(:checked)) .form-grid{display:none}

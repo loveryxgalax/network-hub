@@ -206,6 +206,15 @@ function createApp(options={}){
   if(route==='/api/portal/hotspot-login.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="login.html"'});return res.end(portal.hotspotLoginPage(publicUrl?.origin||'https://netops.kadenetworks.com'));}
    if(route==='/api/sms-templates'){if(method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,{items:billing.library(store)});}role(user,['admin','manager']);if(method==='POST'){const t=billing.saveLibrary(store,await body(req));store.audit(user,'Saved SMS template '+t.name,t.id);return json(res,201,t);}}
    const smsT=route.match(/^\/api\/sms-templates\/([a-f0-9-]{36})$/);if(smsT){role(user,['admin','manager']);if(method==='PUT'){const t=billing.saveLibrary(store,await body(req),smsT[1]);store.audit(user,'Updated SMS template '+t.name,t.id);return json(res,200,t);}if(method==='DELETE'){billing.deleteLibrary(store,smsT[1]);store.audit(user,'Deleted an SMS template',smsT[1]);return json(res,200,{ok:true});}}
+  // WhatsApp gateway: providers, routing per message type (SMS fallback), test message.
+  if(route==='/api/whatsapp'||route.startsWith('/api/whatsapp/')){const wa=require('./lib/whatsapp.cjs');
+   if(route==='/api/whatsapp'&&method==='GET'){role(user,['admin','manager']);return json(res,200,wa.publicConfig(store));}
+   role(user,['admin']);
+   if(route==='/api/whatsapp/provider'&&method==='PUT'){const r=wa.setConfig(store,await body(req,8192));store.audit(user,'Set WhatsApp provider '+r.provider,'whatsapp');return json(res,200,r);}
+   if(route==='/api/whatsapp/routing'&&method==='PUT'){wa.setRouting(store,await body(req,8192));store.audit(user,'Changed WhatsApp routing','whatsapp');return json(res,200,wa.publicConfig(store));}
+   if(route==='/api/whatsapp/test'&&method==='POST'){const n=billing.phone((await body(req)).to);if(!n)throw error(400,'Enter a Kenyan mobile number');const r=await wa.test(store,n);store.audit(user,'Sent WhatsApp test ('+(r.ok?'ok':'failed')+')','whatsapp');return json(res,200,r);}
+   if(route==='/api/whatsapp'&&method==='DELETE'){const r=wa.remove(store);store.audit(user,'Removed WhatsApp provider','whatsapp');return json(res,200,r);}
+   throw error(404,'Not found');}
   if(route.startsWith('/api/billing/')||route==='/api/billing'){
    if(user.role==='installer')throw error(403,'Billing is not available to field installers');
    if(route==='/api/billing'&&method==='GET')return json(res,200,{...billing.overview(store),defaults:billing.TEMPLATES});
