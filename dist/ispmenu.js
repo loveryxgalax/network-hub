@@ -1172,3 +1172,24 @@ setInterval(loadCounts,60000);setTimeout(loadCounts,1500);
 })();
 
 document.addEventListener('click',e=>{for(const m of document.querySelectorAll('details.ct-menu[open]'))if(!m.contains(e.target)||e.target.closest('.ct-menu-list button,.ct-menu-list a'))m.open=false;});
+
+// Customer profile actions as grouped icon tiles (Money · Connection · Account · Danger) instead of a wall of
+// text buttons. Works on the buttons the profile already renders, so every action keeps its own handler.
+(function(){
+ const RULES=[[/renew/i,'refresh','money'],[/stk/i,'phone','money'],[/record payment|^pay/i,'receipt','money'],[/invoice/i,'file','money'],[/adjust wallet|deposit/i,'wallet','money'],[/refund/i,'arrowup','money'],[/extend/i,'clock','money'],[/payment ref/i,'card','money'],[/points/i,'pie','money'],
+  [/^connect|connect now/i,'wifi','conn'],[/disconnect/i,'bolt','conn'],[/reset/i,'refresh','conn'],[/flight/i,'activity','conn'],[/speed override/i,'chart','conn'],[/^activate/i,'check','conn'],[/deactivate/i,'eyeoff','conn'],[/convert|static ip|to static|to pppoe/i,'network','conn'],[/max conn|mac binding/i,'router','conn'],
+  [/^edit/i,'pen','acct'],[/phone/i,'phone','acct'],[/pin/i,'shield','acct'],[/self-service/i,'globe','acct'],[/portal/i,'eye','acct'],[/access logs|logs/i,'info','acct'],[/sms/i,'chat','acct'],[/ticket/i,'headset','acct'],[/family|child/i,'userplus','acct'],[/voucher/i,'box','acct'],[/password|credential/i,'shield','acct'],
+  [/delete/i,'warning','danger']];
+ const GROUPS=[['money','Money'],['conn','Connection'],['acct','Account'],['danger','']];
+ function iconize(box){if(!box||box.dataset.iconized)return;const card=box.closest('.pf-actcard');const boxes=card?[...card.querySelectorAll('.pf-actions')]:[box];const btns=boxes.flatMap(x=>[...x.querySelectorAll(':scope > button, :scope > a.button')]);if(btns.length<4)return;boxes.forEach(x=>{x.dataset.iconized='1';if(x!==box)x.remove();});
+  const by={money:[],conn:[],acct:[],danger:[]};
+  for(const b of btns){const label=b.textContent.trim(),r=RULES.find(([re])=>re.test(label))||[null,'settings','acct'];const danger=r[2]==='danger'||b.classList.contains('danger');
+   b.title=label;b.setAttribute('aria-label',label);b.classList.add('pf-tile');if(danger)b.classList.add('pf-danger');
+   b.innerHTML=`<span class="pf-tile-ic">${icon(r[1],18)}</span><span class="pf-tile-l">${label.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span>`;by[r[2]].push(b);}
+  box.innerHTML='';box.classList.add('pf-tiles');
+  for(const [k,l] of GROUPS){if(!by[k].length)continue;const g=document.createElement('div');g.className='pf-group pf-g-'+k;if(l)g.innerHTML=`<h4>${l}</h4>`;const row=document.createElement('div');row.className='pf-row';for(const b of by[k])row.append(b);g.append(row);box.append(g);}}
+ const scan=()=>{for(const b of document.querySelectorAll('.pf-actions:not([data-iconized])'))iconize(b);
+  // "undefined / undefined Mbps" when a package has no speed set: show a dash instead.
+  for(const el of document.querySelectorAll('#detail-content *')){if(el.children.length===0&&/undefined/.test(el.textContent))el.textContent=el.textContent.replace(/undefined(\s*\/\s*undefined)?\s*Mbps/g,'— (no speed set)').replace(/\bundefined\b/g,'—');}};
+ new MutationObserver(()=>{clearTimeout(scan.t);scan.t=setTimeout(scan,30);}).observe(document.documentElement,{childList:true,subtree:true});
+})();

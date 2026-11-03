@@ -596,3 +596,28 @@ dialog{overflow-x:hidden}
 @media(max-width:1100px){.bl-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bl-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:720px){.bl-card .table-wrap{margin:0 -14px -14px!important}}
 .page-tabs{flex-direction:row!important;grid-auto-flow:column!important;align-items:center}.page-tabs a{display:inline-flex!important}
+
+/* Customer profile: grouped icon tiles */
+.pf-actions.pf-tiles{display:grid!important;gap:12px!important;grid-template-columns:none!important}
+.pf-group h4{margin:0 0 6px;font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.pf-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.pf-actions .button.pf-tile,.pf-tile{all:unset;box-sizing:border-box;cursor:pointer;display:grid!important;justify-items:center;align-content:center;gap:6px;min-height:68px!important;padding:8px 6px!important;border:1px solid var(--border)!important;border-radius:10px!important;background:var(--card)!important;color:var(--ink)!important;text-align:center;transition:border-color .15s,background .15s,transform .15s;width:auto!important}
+.pf-tile:hover,.pf-tile:focus-visible{border-color:var(--primary)!important;background:color-mix(in srgb,var(--primary) 6%,var(--card))!important;transform:translateY(-1px)}
+.pf-tile:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.pf-tile-ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:#eef2ff;color:#3550e6}
+.pf-g-money .pf-tile-ic{background:#e7f6ef;color:#13895f}.pf-g-conn .pf-tile-ic{background:#e6f6fb;color:#0a8db0}.pf-g-acct .pf-tile-ic{background:#f1edff;color:#6d4ae0}
+.pf-tile.pf-danger .pf-tile-ic,.pf-g-danger .pf-tile-ic{background:#fdeaea;color:#d14343}.pf-g-danger .pf-tile{border-color:#f5c2c2!important}
+.pf-tile-l{font-size:12px;font-weight:600;line-height:1.2;white-space:normal}
+.pf-tile[disabled]{opacity:.45;cursor:not-allowed}
+/* Profile summary tiles: one compact row */
+#detail-content .pf-stats,#detail-content .pf-sum{gap:8px!important}
+@media(max-width:720px){.pf-row{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px}.pf-tile{min-height:62px!important}.pf-tile-ic{width:30px;height:30px}.pf-tile-l{font-size:11.5px}}
+/* Profile: compact summary chips, inline usage filters, chart fits */
+.pf .rh-chips{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px!important;margin:8px 0!important;padding:0!important}
+.pf .rh-chip{margin:0!important;padding:8px 10px!important;border-radius:8px!important;min-height:0!important}
+.pf .rh-chip b{font-size:15px}
+.pf-ucontrols{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto minmax(0,1fr);gap:6px!important}
+.pf-ucontrols select,.pf-ucontrols input{width:100%!important;min-width:0;margin:0!important;font-size:14px}
+.pf-usage{overflow:hidden;max-width:100%}.pf-usage>div{min-width:0;flex:1 1 0}.pf-usage small{font-size:9px;overflow:hidden}
+.pf .button.small,.pf [download]{border-radius:8px}
+@media (max-width:640px){.pf .rh-chips{grid-template-columns:repeat(2,minmax(0,1fr))}.pf-ucontrols{grid-template-columns:1fr 1fr}.pf-ucontrols span{display:none}.pf-ucontrols select{grid-column:1/-1}.pf-ucontrols input{font-size:16px}.pf-usage>div:nth-child(odd) small{visibility:hidden}}
