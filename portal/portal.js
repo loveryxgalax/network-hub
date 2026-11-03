@@ -320,15 +320,22 @@ function openAdvertise(){let d=$('#adv-dialog');if(!d){d=document.createElement(
  $('#adv-form').onsubmit=async e=>{e.preventDefault();const f=e.target,b=f.querySelector('[type=submit]');b.disabled=true;$('#adv-msg').textContent='';
   try{const r=await call('adorders',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(f)))});f.innerHTML=`<h2>${esc(t('advThanks'))}</h2><p>${esc(t('advNext',{ref:r.ref,price:kes(r.price)}))}${adContact?' '+esc(t('advCall',{phone:adContact})):''}</p><div class="adv-actions"><button type="button" class="btn" id="adv-done">OK</button></div>`;$('#adv-done').onclick=()=>d.close();}
   catch(err){b.disabled=false;$('#adv-msg').textContent=err.message;}};}
+// Scheduled maintenance notice (set in netops → Settings → Scheduled maintenance).
+let MAINT=null;
+function showMaint(){if(!MAINT||document.getElementById('maint-note'))return;const n=document.createElement('div');n.id='maint-note';n.setAttribute('role','status');
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ n.innerHTML=`<strong>${esc(MAINT.title)}</strong><span>${esc(MAINT.message)}${MAINT.until?' · until '+esc(new Date(MAINT.until).toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'})):''}</span>`;
+ n.style.cssText='position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:center;align-items:center;padding:10px 14px;background:#fff4e0;color:#7a4b00;border-bottom:1px solid #f0d49a;font-size:14px;line-height:1.4;text-align:center';
+ document.body.prepend(n);}
 async function boot(){
  render();
  const q=params.get('theme');
  try{
-  const cq=new URLSearchParams();if(router.mac)cq.set('mac',router.mac);if(params.get('ip'))cq.set('ip',params.get('ip'));if(params.get('nas'))cq.set('nas',params.get('nas'));const d=await call('config'+(cq.toString()?'?'+cq:''));CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};applyPreview();plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;cardOn=!!d.paystack;freeMode=d.freeMode||null;engage=d.engage||{ads:[],quiz:null};state='ok';
+  const cq=new URLSearchParams();if(router.mac)cq.set('mac',router.mac);if(params.get('ip'))cq.set('ip',params.get('ip'));if(params.get('nas'))cq.set('nas',params.get('nas'));const d=await call('config'+(cq.toString()?'?'+cq:''));MAINT=d.maintenance||null;CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};applyPreview();plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;cardOn=!!d.paystack;freeMode=d.freeMode||null;engage=d.engage||{ads:[],quiz:null};state='ok';
   try{if(!localStorage.getItem('portal-lang'))LANG=CFG.defaultLang||LANG;}catch{LANG=CFG.defaultLang||LANG;}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;
- render();bootDone();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
+ render();bootDone();showMaint();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
  detectSession();checkAdmin();here();loadAdPlans();
  // Self-service link from netops (?account=USERNAME): open that account straight away.
  const deep=(params.get('account')||'').trim().slice(0,64);if(deep&&CFG.show.accessAccount!==false){$('#acc').value=deep;setTimeout(()=>{$('#acc').scrollIntoView({block:'center'});$('#accForm').requestSubmit();},200);}
