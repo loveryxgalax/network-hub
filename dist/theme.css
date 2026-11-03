@@ -5,10 +5,14 @@
 @font-face{font-family:"Maven Pro";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/maven-pro-700.woff2") format("woff2")}
 @font-face{font-family:"Maven Pro";font-style:normal;font-weight:800;font-display:swap;src:url("/fonts/maven-pro-800.woff2") format("woff2")}
 
-:root{--bg:#f2f5f8;--card:#fff;--ink:#0f1d2a;--muted:#667685;--border:#e3e9ef;--teal:#0032fd;--teal-soft:#e6f5f2;--good:#13895f;--warn:#b7791f;--bad:#d14343;--input:#fff;--shadow:0 1px 2px #0f1d2a0d,0 8px 24px #0f1d2a0a;--side:#0b1a24;--side-2:#112634;--side-ink:#b9c8d3;--accent:#0032fd;--radius:12px}
+:root{--bg:#f2f5f8;--card:#fff;--ink:#0f1d2a;--muted:#566574;--border:#e3e9ef;--teal:#0032fd;--teal-soft:#e6f5f2;--good:#13895f;--warn:#b7791f;--bad:#d14343;--input:#fff;--shadow:0 1px 2px #0f1d2a0d,0 8px 24px #0f1d2a0a;--side:#0b1a24;--side-2:#112634;--side-ink:#b9c8d3;--accent:#0032fd;--radius:12px}
 :root[data-theme=dark],[data-theme=dark]{--bg:#0a141c;--card:#101e29;--ink:#e3ebf1;--muted:#8fa2b1;--border:#1d3141;--teal:#5a7dff;--teal-soft:#123331;--good:#4fd39b;--warn:#f0b75a;--bad:#f27b7b;--input:#0d1923;--shadow:0 1px 2px #0006,0 8px 24px #0004;--side:#071118;--side-2:#0d1d28}
 
-html,body,body *,button,input,select,textarea,h1,h2,h3,.stat-value,.metric-value,.brand-label,.brand-mark,.auth-brand,kbd,code,pre{font-family:"Maven Pro"!important}
+/* Body text uses the system UI font: it is hinted for the screen it runs on (Segoe UI on Windows, SF on Apple, Roboto on Android), so small text stays sharp. Maven Pro stays for headings, figures and the brand. */
+html,body,body *,button,input,select,textarea{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif!important}
+h1,h2,h3,.stat-value,.metric-value,.kd-value,.brand-label,.brand-label *,.brand-mark,.auth-brand,.auth-brand *{font-family:"Maven Pro",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif!important}
+kbd,code,pre,code *,pre *{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace!important}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 body{font-size:14px;background:var(--bg)}
 body *{letter-spacing:normal}
 .page-heading .eyebrow,.metric-title,.data-table thead th,.brand-label>span,#navigation .nav-group{letter-spacing:1.1px!important}
@@ -51,7 +55,7 @@ main{padding-top:28px}
 .subscriber-cards>.card,.sites-cards>.card{min-width:0;width:auto!important}
 .metric-card{padding:20px!important;display:flex;gap:14px;align-items:flex-start;transition:transform .15s,box-shadow .15s}
 .metric-card:hover{transform:translateY(-1px);box-shadow:0 2px 4px #0f1d2a12,0 14px 30px #0f1d2a12}
-.metric-title{font-size:11px!important;font-weight:700!important;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)!important;white-space:normal}
+.metric-title{font-size:12px!important;font-weight:700!important;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)!important;white-space:normal}
 .metric-value{font-size:30px!important;font-weight:700!important;letter-spacing:-.6px;line-height:1.15;margin:6px 0 4px}
 .metric-card p{color:var(--muted);font-size:12.5px}
 
@@ -70,7 +74,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--teal)!important;box-s
 /* Tables */
 .table-wrap{overflow:auto}
 .data-table{width:100%;border-collapse:separate;border-spacing:0}
-.data-table thead th{position:sticky;top:0;z-index:1;background:color-mix(in srgb,var(--bg) 70%,var(--card));color:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;padding:11px 16px;border-bottom:1px solid var(--border);white-space:nowrap}
+.data-table thead th{position:sticky;top:0;z-index:1;background:color-mix(in srgb,var(--bg) 70%,var(--card));color:var(--muted);font-size:11.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;padding:11px 16px;border-bottom:1px solid var(--border);white-space:nowrap}
 .data-table tbody td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13.5px}
 .data-table tbody tr:hover td{background:color-mix(in srgb,var(--teal) 5%,var(--card))}
 .data-table tbody tr:last-child td{border-bottom:0}
