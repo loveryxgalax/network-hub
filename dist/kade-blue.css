@@ -345,3 +345,97 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .wa-card .link-button{justify-self:start;font-weight:700;color:var(--primary)}
 .tpl-switch input{z-index:1}
 #wa-route .tpl-card:has(.tpl-switch input:not(:checked)) .form-grid{display:none}
+
+/* ---- 2026-11 polish: calmer tables, checkbox labels, no overlapping text ---- */
+.data-table thead th,.ct-wrap thead th{background:var(--th-bg,#f3f5fa)!important;color:#465569!important;border-bottom:1px solid var(--border)!important;font-size:11.5px!important;font-weight:700!important;letter-spacing:.6px!important;white-space:nowrap}
+[data-theme=dark] .data-table thead th,[data-theme=dark] .ct-wrap thead th{--th-bg:#13232f;color:#9fb2c1!important}
+.data-table thead tr:first-child th:first-child{border-top-left-radius:10px}.data-table thead tr:first-child th:last-child{border-top-right-radius:10px}
+.data-table td{overflow-wrap:anywhere;word-break:normal}.data-table td strong,.data-table td b{overflow-wrap:anywhere}
+.data-table td small{display:block;margin-top:2px;color:var(--muted);line-height:1.35}
+.data-table td code{font-size:12.5px}
+/* A checkbox or radio and its words stay together on one line, wherever they are. */
+label:has(> input[type=checkbox]):not(.tpl-switch):not(.switch):not(.toggle),label:has(> input[type=radio]):not(.tpl-switch):not(.switch){display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:10px!important;text-align:left!important;grid-template-columns:none!important;width:auto}
+label:not(.tpl-switch):not(.switch):not(.toggle) > input[type=checkbox],label:not(.tpl-switch):not(.switch) > input[type=radio]{width:18px!important;height:18px!important;min-width:18px!important;min-height:0!important;flex:0 0 18px!important;margin:0!important;padding:0!important;accent-color:var(--primary,#0032fd)}
+fieldset{min-width:0}
+fieldset:has(label > input[type=checkbox]){display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 18px}
+fieldset:has(label > input[type=checkbox]) > legend{grid-column:1/-1}
+/* Long alert titles and SMS details wrap inside their own column. */
+.data-table td,.data-table th{min-width:0}.data-table td > div,.data-table td > span{max-width:100%}
+.data-table td [class*=detail],.data-table td .sms-detail,.data-table td .muted{overflow-wrap:anywhere}
+
+/* Customers list */
+.ct-shortcuts{display:flex!important;flex-wrap:wrap;gap:8px;margin:-6px 0 16px!important}
+.ct-shortcuts a{display:inline-flex!important;align-items:center;gap:8px;background:var(--card)!important;color:var(--ink)!important;border:1px solid var(--border);border-radius:999px!important;padding:7px 14px!important;font-size:13px!important;font-weight:600!important;box-shadow:none!important}
+.ct-shortcuts a:hover{border-color:var(--primary);color:var(--primary)!important}.ct-shortcuts a b{background:var(--teal-soft,#e6edff);color:var(--primary);border-radius:999px;padding:0 8px;font-size:12px}
+.ct-shortcuts svg{width:15px;height:15px;order:-1;color:var(--primary)}
+.ct-menu{position:relative;display:inline-block}.ct-menu summary{list-style:none;cursor:pointer}.ct-menu summary::-webkit-details-marker{display:none}
+.ct-menu summary::after{content:"";display:inline-block;margin-left:8px;border:4px solid transparent;border-top-color:currentColor;transform:translateY(2px)}
+.ct-menu-list{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:210px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px #0f1d2a26;padding:6px;display:grid}
+.ct-menu-list a,.ct-menu-list button{all:unset;cursor:pointer;padding:9px 12px;border-radius:8px;font-size:13.5px;color:var(--ink)!important}
+.ct-menu-list a:hover,.ct-menu-list button:hover{background:var(--bg)}
+.ct-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.ct-kpi{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;transition:border-color .15s,box-shadow .15s}
+.ct-kpi:hover{border-color:#c7d2e6;box-shadow:0 4px 14px #0f1d2a0f}.ct-kpi.on{border-color:var(--primary);box-shadow:0 0 0 3px #0032fd1a}
+.ct-kpi small{display:block;color:var(--muted);font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ct-kpi b{display:block;font-size:22px;line-height:1.2;color:var(--ink);font-family:"Maven Pro",system-ui,sans-serif!important}
+.ct-kpi > span:last-child{min-width:0}
+.ct-kpi-ic{flex:0 0 36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#eef2ff;color:#3550e6}
+.k-ok .ct-kpi-ic{background:#e7f6ef;color:#13895f}.k-live .ct-kpi-ic{background:#e6f6fb;color:#0a8db0}.k-warn .ct-kpi-ic{background:#fff4e0;color:#b7791f}.k-bad .ct-kpi-ic{background:#fdeaea;color:#d14343}.k-mute .ct-kpi-ic{background:#f0f2f5;color:#5d6b7a}
+.ct-panel{padding:0!important;overflow:visible}
+.ct-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.ct-search{flex:1 1 260px;display:flex!important;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:0 12px;height:40px;background:var(--input);color:var(--muted)}
+.ct-search:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px #0032fd1a}
+.ct-search input{all:unset;flex:1;min-width:0;height:100%;color:var(--ink);font-size:14px}
+.ct-seg{display:flex;flex-wrap:wrap;background:var(--bg);border-radius:10px;padding:3px;gap:2px}
+.ct-seg button{all:unset;cursor:pointer;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#4a5768;white-space:nowrap}
+.ct-seg button em{font-style:normal;margin-left:6px;font-size:11.5px;color:var(--muted);font-weight:600}
+.ct-seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px #0f1d2a1f}.ct-seg button.on em{color:var(--primary)}
+#ct-view,.ct-sub select{height:40px;border:1px solid var(--border);border-radius:10px;background:var(--input);padding:0 10px;color:var(--ink);max-width:220px}
+.ct-ftog.on{border-color:var(--primary);color:var(--primary)}.ct-ftog b{background:var(--primary);color:#fff;border-radius:999px;padding:0 7px;font-size:11.5px;margin-left:4px}
+.ct-filters-in{padding:14px 16px;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--bg) 45%,var(--card))}
+.ct-filters-in .ct-grid label{color:#465569!important}
+.ct-sub{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 16px}.ct-grow{flex:1}
+.ct-sub .button{height:36px;padding:0 12px}.ct-sub select{height:36px}
+.ct-wide{display:inline-flex!important;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-left:4px}
+.ct-compact .data-table{min-width:880px!important}
+.ct-compact td{padding-top:12px!important;padding-bottom:12px!important}
+.ct-who{display:flex;align-items:center;gap:12px;min-width:0}.ct-who > div{min-width:0}
+.ct-who .link-button strong{font-size:14px;color:var(--ink)}.ct-who .link-button:hover strong{color:var(--primary)}
+.ct-av{flex:0 0 36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;color:hsl(var(--h) 55% 32%);background:hsl(var(--h) 70% 92%)}
+[data-theme=dark] .ct-av{color:hsl(var(--h) 70% 80%);background:hsl(var(--h) 35% 22%)}
+.ct-who small code{font-size:12px;background:none;padding:0;color:var(--muted)}
+.ct-who .ct-type{font-size:10.5px;padding:1px 7px;margin-left:4px}
+.ct-pk{font-weight:600}.ct-date{white-space:nowrap}.ct-late{color:#c0392b!important}
+.ct-st{display:grid;gap:4px;justify-items:start}.ct-st small{display:flex!important;align-items:center;gap:6px}
+.ct-dot{width:7px;height:7px;border-radius:50%;background:#b5bfca;display:inline-block}.ct-dot.on{background:#18a957;box-shadow:0 0 0 3px #18a95726}
+.ct-num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ct-acts{justify-content:flex-end}
+.ct-pager{border-top:1px solid var(--border)}
+@media(max-width:1200px){.ct-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){.ct-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ct-kpi{padding:10px 12px}.ct-kpi-ic{flex-basis:30px;height:30px}.ct-kpi b{font-size:18px}
+ .ct-bar{padding:12px}.ct-seg{overflow-x:auto;flex-wrap:nowrap;max-width:100%}#ct-view{max-width:none;flex:1}
+ .ct-compact .data-table{min-width:0!important}
+ .ct-compact td{display:flex!important;flex-wrap:wrap;justify-content:flex-end;align-items:baseline;gap:2px 12px;padding:5px 0!important;border:0!important;text-align:right}
+ .ct-compact td::before{margin-right:auto}.ct-compact td > small{flex-basis:100%;text-align:right;margin:0}
+ .ct-compact td:first-child .ct-who{justify-content:flex-start;text-align:left}.ct-compact td:first-child small{text-align:left}
+ .ct-compact td:first-child,.ct-compact td:last-child{display:block!important}
+ .ct-compact td::before{flex:0 0 auto!important;max-width:none!important}
+ .ct-compact td > *{min-width:0}.ct-compact td small{text-align:right}
+ .ct-compact td:first-child,.ct-compact td:last-child{text-align:left}.ct-compact td:first-child::before,.ct-compact td:last-child::before{display:none}
+ .ct-compact td:first-child{padding-bottom:10px!important}.ct-compact td:last-child{padding-top:10px!important}
+ .ct-compact .ct-st{justify-items:end}.ct-compact .ct-acts{width:100%;justify-content:stretch}.ct-compact .ct-acts .ra-btn{flex:1}
+ .ct-sub{gap:8px}.ct-sub > *{flex:1 1 40%}.ct-sub select{max-width:none}.ct-sub > span.muted{flex-basis:100%}.ct-grow{display:none}
+ .ct-menu-list{right:auto;left:0}}
+.ct-search input,.ct-search input:focus{border:0!important;box-shadow:none!important;background:transparent!important;padding:0!important;height:38px!important;min-height:0!important;outline:0!important;margin:0!important}
+.ct-search{flex:1 1 220px;max-width:420px}
+.ct-sub:empty{display:none}
+
+#main .ct-search input,#main .ct-search input:focus{border:0!important;box-shadow:none!important;background:transparent!important;padding:0!important}
+/* Tables: long text wraps inside its column instead of running over the next one. Short values stay on one line. */
+.data-table td{white-space:normal}
+.data-table td .status,.data-table td code,.data-table td .ra,.data-table td .row-actions,.data-table td .button,.data-table td time{white-space:nowrap}
+.data-table td:has(> small){min-width:180px}
+.data-table td.da-act{white-space:nowrap}
+.radius-message{min-width:260px;max-width:460px;line-height:1.45}.sms-detail{max-width:240px}
+/* Long lists of tick boxes: columns instead of one tall list. */
+#main :is(fieldset,div):has(> label:nth-of-type(4) > input[type=checkbox]):not(.ct-grid):not(.form-grid):not(.ra){display:grid!important;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px 18px}
+#main fieldset:has(> label:nth-of-type(4) > input[type=checkbox]) > legend{grid-column:1/-1}
