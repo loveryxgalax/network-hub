@@ -471,3 +471,4 @@ fieldset:has(label > input[type=checkbox]) > legend{grid-column:1/-1}
 .auth-invite .card{max-width:440px;width:100%;padding:28px}.auth-invite h1{margin:0 0 10px;font-size:24px}
 .auth-invite form{display:grid;gap:12px;margin-top:16px}.auth-invite label{display:grid;gap:6px;font-weight:600;font-size:13.5px}
 .auth-invite input{height:44px;border:1px solid var(--border);border-radius:10px;padding:0 12px;font-size:16px}.inv-err{color:#c0392b;min-height:1em;margin:0}
+.pn-extra{padding:20px!important;margin-top:16px;grid-column:1/-1}.pn-extra h2{margin:0 0 6px;color:var(--teal);font-size:17px}.pn-extra .ra{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.pn-extra .ra input{height:40px;border:1px solid var(--border);border-radius:10px;padding:0 12px;min-width:0;flex:1 1 180px;max-width:280px}

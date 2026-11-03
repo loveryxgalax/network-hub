@@ -203,3 +203,21 @@ Update this file with every increment.
 | 21.2 Agent newsletters | Skip | No AI provider connected; the daily summary email covers the operations report. |
 | 21.4 Manual connect modes | Done | Normal (one period or cash/cheque through the payment path), Grace (≤14 days, once per 30 days; later payment counts from the grace start), Free trial (never paid, ≤7 days, once). No fake payment is recorded for grace/trial. |
 | Scheduled maintenance (settings card) | Done | Once/weekly windows, WiFi page notice, alert SMS/email paused for those routers. |
+
+## Screenshots checkpoint 2 (206–248, 3 Nov 2026)
+| Screen | Status | Notes |
+|---|---|---|
+| 206–210, 212–213 Package editors (burst, FUP, customize, daily FUP, expiry notices, speed override, create) | Done | Per-package expiry notices (minutes/hours/days before, on expiry) already existed. |
+| 211 Hotspot configuration types (paid, free with ads, free with details, free, quiz) | Done | Free mode, ads, quizzes and paid are separate netops features. |
+| 214–216, 229 Vouchers by phone CSV, customer selector, email templates | Done | |
+| 217–220 Payment providers (M-Pesa edit, Paystack, PawaPay, JulyPay) | Skip for now | Owner asked to leave the new providers. |
+| 221–222 Add router (Ruijie, MikroTik), 223/230 TR-069 credentials | Done | |
+| 224–228 PPPoE change package, max connections, MAC binding, speed override, flight speed | Done | Max connections/split and MAC prefix/list added 3 Nov. |
+| 231–232 Router device access / support contact / public RADIUS | Done | netops RADIUS runs over the router's WireGuard tunnel; no public RADIUS switch needed. |
+| 233–234 Captive features: connect after payment, leave a message, payment-ref login, login-or-purchase | Partial | Login-or-purchase choice added; seamless sharing code not built. |
+| 235–236 Free mode themes and Evict free users | Done | Evict now or automatically; paid logins stay connected. |
+| 237 Alert settings (invitations, invoices SMS) | Skip | Platform notices for ISPman's own account. |
+| 238–240 Loyalty earning, past-payment awards, minutes/MB redemption | Done | |
+| 241–242 PPPoE IP conflicts, public IP pool | Done | Read-only conflict scan; public IPv4 pool assigned as the customer's fixed address. |
+| 243–245 Static network settings, setup and connect audit | Done | Router jobs and static sync logs. |
+| 246–248 Winbox rules, allow list, "allow all for 1 hour" | Partial | WireGuard jump box with expiring staff access; "allow all traffic" is deliberately not built. |

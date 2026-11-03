@@ -58,3 +58,11 @@ test('IP conflict scan finds duplicates and out-of-pool addresses',()=>{
   const r=pool.conflicts(st);assert.ok(r.items.some(x=>x.type==='Same address twice'&&x.ip==='10.50.0.5'));assert.ok(r.items.some(x=>x.type==='Outside the pool'&&x.ip==='192.168.9.9'));
  }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('public IP pool: public only, one customer each, release',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'pip-')),{Store}=require('../lib/store.cjs'),pool=require('../lib/pppoepool.cjs'),st=new Store(dir);try{
+  assert.throws(()=>pool.addPublic(st,{ip:'192.168.1.5'}),/private/);pool.addPublic(st,{ip:'41.90.10.5'});assert.throws(()=>pool.addPublic(st,{ip:'41.90.10.5'}),/already/);
+  const a=st.put('subscribers',{name:'A',username:'a',service:'pppoe'}),b=st.put('subscribers',{name:'B',username:'b',service:'pppoe'});
+  pool.assignPublic(st,'41.90.10.5',a.id);assert.equal(st.get('subscribers',a.id).staticIp,'41.90.10.5');assert.throws(()=>pool.assignPublic(st,'41.90.10.5',b.id),/already used/);
+  assert.throws(()=>pool.removePublic(st,'41.90.10.5'),/Release/);pool.releasePublic(st,'41.90.10.5');assert.equal(st.get('subscribers',a.id).staticIp,'');
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
