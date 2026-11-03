@@ -23,7 +23,18 @@ const THEMES={
  christmas:{label:'Christmas',swatch:'linear-gradient(#8f1a20,#5a0b10)',desc:'Falling snow on a deep festive red, twinkling lights, and packages wrapped as gifts.'},
  futuristic:{label:'Futuristic',swatch:'linear-gradient(#03050c 50%,var(--brand))',desc:'A neon grid horizon, HUD-framed panels and monospace readouts, glowing in your brand colour.'},
  bento:{label:'Bento',swatch:'conic-gradient(var(--brand) 0 25%,#0f172a 0 50%,#fff 0 75%,#e2e8f0 0)',desc:'Everything in a tidy grid of rounded tiles, like a modern app home screen.'},
- elegant:{label:'Elegant',swatch:'linear-gradient(#f7f2e9 60%,#b58a3c 60% 64%,#f7f2e9 64%)',desc:'Ivory paper, a serif display face and gold hairlines, with an arched sign-in card and packages set like a fine menu.'}
+ elegant:{label:'Elegant',swatch:'linear-gradient(#f7f2e9 60%,#b58a3c 60% 64%,#f7f2e9 64%)',desc:'Ivory paper, a serif display face and gold hairlines, with an arched sign-in card and packages set like a fine menu.'},
+ essential:{label:'Essential',swatch:'linear-gradient(#fff 55%,var(--brand) 55% 60%,#fff 60%)',desc:'Clean and quick: a bold headline, tabs for Buy a plan and Reconnect, and packages as one tidy list with radio buttons.'},
+ studio:{label:'Studio',swatch:'linear-gradient(135deg,#fbf6f2 55%,#6366f1 55%)',desc:'Warm paper tones with an indigo accent, compact two-column plan cards and a dark pay button.'},
+ festive:{label:'Festive',swatch:'linear-gradient(#14532d 50%,#fff 50%)',desc:'A fresh green seasonal look with a greeting banner, plan icons and a pine-green pay button.'},
+ blueprint:{label:'Blueprint',swatch:'linear-gradient(var(--brand) 35%,#e8efff 35%)',desc:'A solid brand header, then plans as a grid of tiles with the price in your brand colour.'},
+ showcase:{label:'Showcase',swatch:'linear-gradient(#142046 60%,#fff 60%)',desc:'Your most popular plan as a dark hero card, other plans in a slim list below.'},
+ night:{label:'Night',swatch:'linear-gradient(#10141f 60%,var(--brand) 60%)',desc:'A dark, calm screen with a glowing blue selection. Easy on the eyes after dark.'},
+ celebrate:{label:'Celebrate',swatch:'linear-gradient(#312e81 55%,#fbbf24 55%)',desc:'A bright indigo and gold look with a fresh-start banner and a deep-indigo highlighted plan.'},
+ daypass:{label:'Day Pass',swatch:'repeating-linear-gradient(90deg,#dbeafe 0 8px,#fff 8px 12px)',desc:'Plans styled like tickets with a perforated edge, in strong blue.'},
+ edition:{label:'Edition',swatch:'linear-gradient(#f7f2e9 70%,#111 70%)',desc:'A magazine layout: large serif headline, numbered plans, a black pay button.'},
+ social:{label:'Social',swatch:'linear-gradient(#5b21b6 50%,#ede9fe 50%)',desc:'Three plans side by side as tiles, with the popular one filled in deep purple.'},
+ together:{label:'Together',swatch:'linear-gradient(#9f1239 50%,#ffe4e6 50%)',desc:'A warm crimson design with a friendly line, soft pink totals and rounded plan rows.'}
 };
 const THEME_COPY={
  classic:{sw:{h:'Simamia Muunganisho Wako',e:'',a:'Akaunti yako',intro:'Karibu! Chagua kifurushi uunganishwe.'},en:{h:'Manage Your Connection',e:'',a:'Your account',intro:'Welcome! Pick a package to get connected.'}},
@@ -34,7 +45,18 @@ const THEME_COPY={
  christmas:{sw:{h:'Krismasi Njema kutoka {brand}',e:'Salamu za msimu',a:'Fikia akaunti yako',intro:'Endelea kuunganishwa msimu huu wa sikukuu.'},en:{h:'Merry Christmas from {brand}',e:"Season's greetings",a:'Access your account',intro:'Stay connected this festive season.'}},
  futuristic:{sw:{h:'{brand}',e:'Hali ya mtandao: Iko hewani',a:'Kituo cha ufikiaji',intro:'Muunganisho wa kizazi kijacho.'},en:{h:'{brand}',e:'Network status: online',a:'Access terminal',intro:'Next-generation connectivity.'}},
  bento:{sw:{h:'{brand}',e:'',a:'Simamia Muunganisho Wako',intro:'Kila kitu mahali pamoja.'},en:{h:'{brand}',e:'',a:'Manage Your Connection',intro:'Everything in one place.'}},
- elegant:{sw:{h:'{brand}',e:'Karibu',a:'Karibu tena',intro:'Muunganisho wa hali ya juu, kwa utulivu.'},en:{h:'{brand}',e:'Welcome',a:'Welcome back',intro:'Refined connectivity, quietly reliable.'}}
+ elegant:{sw:{h:'{brand}',e:'Karibu',a:'Karibu tena',intro:'Muunganisho wa hali ya juu, kwa utulivu.'},en:{h:'{brand}',e:'Welcome',a:'Welcome back',intro:'Refined connectivity, quietly reliable.'}},
+ essential:{sw:{h:'Unganika na siku yako.',e:'',a:'Unganika tena',intro:'Chagua kifurushi. Lipa. Uko mtandaoni.'},en:{h:'Connect to your day.',e:'',a:'Reconnect',intro:'Choose a plan. Pay. You\'re online.'}},
+ studio:{sw:{h:'Unganika na siku yako.',e:'',a:'Unganika tena',intro:'Chagua kifurushi. Lipa. Uko mtandaoni.'},en:{h:'Connect to your day.',e:'',a:'Reconnect',intro:'Choose a plan. Pay. You\'re online.'}},
+ festive:{sw:{h:'Unganika na siku yako.',e:'A little more connection this season.',a:'Unganika tena',intro:'Chagua kifurushi. Lipa. Uko mtandaoni.'},en:{h:'Connect to your day.',e:'A little more connection this season.',a:'Reconnect',intro:'Choose a plan. Pay. You\'re online.'}},
+ blueprint:{sw:{h:'Chagua muunganisho wako.',e:'Wi-Fi available',a:'Unganika tena',intro:'Chagua kifurushi na ulipe kwa M-Pesa.'},en:{h:'Choose your connection.',e:'Wi-Fi available',a:'Reconnect',intro:'Pick a plan and pay with M-Pesa.'}},
+ showcase:{sw:{h:'Karibu sana.',e:'',a:'Unganika tena',intro:'Thamani bora kwa matumizi ya siku nzima.'},en:{h:'Good to have you here.',e:'',a:'Reconnect',intro:'Our best value for all-day access.'}},
+ night:{sw:{h:'Tukuunganishe.',e:'',a:'Unganika tena',intro:'Chagua kifurushi, lipa, uko mtandaoni.'},en:{h:'Let\'s get you online.',e:'',a:'Reconnect',intro:'Pick a plan, pay, and you\'re connected.'}},
+ celebrate:{sw:{h:'Muunganisho wako ujao.',e:'A fresh start. A stronger connection.',a:'Unganika tena',intro:'Chagua, lipa, unganika.'},en:{h:'Your next connection.',e:'A fresh start. A stronger connection.',a:'Reconnect',intro:'Choose, pay, connect.'}},
+ daypass:{sw:{h:'Pasi yako ya Wi-Fi.',e:'',a:'Unganika tena',intro:'Chagua pasi ya data, lipa kwa M-Pesa uingie mtandaoni.'},en:{h:'Your pass to Wi-Fi.',e:'',a:'Reconnect',intro:'Choose a data pass, pay with M-Pesa and get online.'}},
+ edition:{sw:{h:'Jisikie nyumbani.',e:'',a:'Unganika tena',intro:'Ingia mtandaoni kwa pasi ya Wi-Fi. Lipa kwa usalama kwa M-Pesa.'},en:{h:'Make yourself at home.',e:'',a:'Reconnect',intro:'Get online with a Wi-Fi pass. Pay securely with M-Pesa.'}},
+ social:{sw:{h:'Chagua kifurushi. Umeingia.',e:'',a:'Unganika tena',intro:'Chagua pasi, lipa kwa M-Pesa ufurahie Wi-Fi.'},en:{h:'Pick a plan. You\'re in.',e:'',a:'Reconnect',intro:'Choose a pass, pay with M-Pesa and enjoy Wi-Fi.'}},
+ together:{sw:{h:'Chagua kifurushi chako cha Wi-Fi',e:'A little closer, wherever you are.',a:'Unganika tena',intro:'Ingia mtandaoni kwa pasi ya data, lipa kwa M-Pesa uunganike.'},en:{h:'Choose your Wi-Fi plan',e:'A little closer, wherever you are.',a:'Reconnect',intro:'Get online with a data pass, pay with M-Pesa and connect.'}}
 };
 
 /* ===================== STRINGS ===================== */
@@ -94,7 +116,7 @@ let plans=[],pppoePlans=[],mpesaOn=true,cardOn=false,state='loading',LANG='sw',s
 try{const s=localStorage.getItem('portal-lang');if(s&&STR[s])LANG=s;}catch{}
 const fmt=s=>String(s||'').replaceAll('{brand}',CFG.brandName).replaceAll('{prefix}',CFG.accountPrefix);
 const t=(k,vars={})=>fmt(STR[LANG][k]??STR.en[k]??k).replace(/\{(\w+)\}/g,(m,v)=>vars[v]??m);
-const tc=k=>fmt(THEME_COPY[CFG.theme][LANG][k]);
+const tc=k=>fmt((THEME_COPY[CFG.theme][LANG]||THEME_COPY[CFG.theme].en)[k]);
 const kes=n=>'KES '+Number(n).toLocaleString();
 const when=ms=>ms?new Date(ms).toLocaleString('en-KE',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'';
 const ICON={
@@ -350,9 +372,59 @@ async function boot(){
   try{if(!localStorage.getItem('portal-lang'))LANG=CFG.defaultLang||LANG;}catch{LANG=CFG.defaultLang||LANG;}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;
- render();bootDone();showMaint();loginChoice();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
+ render();bootDone();showMaint();loginChoice();hotspotExtras();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
  detectSession();checkAdmin();here();loadAdPlans();
  // Self-service link from netops (?account=USERNAME): open that account straight away.
  const deep=(params.get('account')||'').trim().slice(0,64);if(deep&&CFG.show.accessAccount!==false){$('#acc').value=deep;setTimeout(()=>{$('#acc').scrollIntoView({block:'center'});$('#accForm').requestSubmit();},200);}
 }
+
+/* ===================== HOTSPOT EXTRAS: connect now, voucher / M-Pesa code, My usage ===================== */
+const HX={en:{active:'You have an active connection!',pkg:'Package',exp:'Expires in {t}',auto:'You will be connected automatically in {n}s',now:'Connect now',stay:'Stay here',all:'View all packages',voucher:'Use voucher',code:'Connect with M-Pesa code',welcome:'Welcome to our Hotspot service!',paidHint:'If you already paid, just click the package paid for to auto-connect.',usageT:'My usage',usageS:'Data used, payments and subscription history',back:'Back',total:'Total data used (all time)',last30:'Used in the last 30 days',history:'History',payments:'Payments',connects:'Connects',sessions:'Sessions',recent:'Recent payments',viewAll:'View all',none:'Nothing yet',codeT:'Connect with your M-Pesa code',codeS:'Enter the confirmation code from your M-Pesa message.',codePh:'e.g. UK3IF0TW26',voucherT:'Use a voucher',voucherS:'Enter the voucher code you were given.',voucherPh:'Voucher code',go:'Connect',cancel:'Cancel',needWifi:'Connect to the Wi-Fi first, then open this page again.',active2:'Active',expired:'Expired',expIn:'Exp in {t}',min:'min',hr:'h',day:'d',down:'down',up:'up'},
+ sw:{active:'Una muunganisho unaoendelea!',pkg:'Kifurushi',exp:'Kinaisha baada ya {t}',auto:'Utaunganishwa kiotomatiki baada ya sekunde {n}',now:'Unganisha sasa',stay:'Baki hapa',all:'Angalia vifurushi vyote',voucher:'Tumia vocha',code:'Unganisha kwa msimbo wa M-Pesa',welcome:'Karibu kwenye huduma yetu ya Hotspot!',paidHint:'Ikiwa umeshalipa, bofya kifurushi ulicholipia ili kuunganishwa.',usageT:'Matumizi yangu',usageS:'Data iliyotumika, malipo na historia',back:'Rudi',total:'Jumla ya data iliyotumika',last30:'Siku 30 zilizopita',history:'Historia',payments:'Malipo',connects:'Miunganisho',sessions:'Vipindi',recent:'Malipo ya hivi karibuni',viewAll:'Ona yote',none:'Bado hakuna',codeT:'Unganisha kwa msimbo wa M-Pesa',codeS:'Weka msimbo wa uthibitisho kutoka ujumbe wa M-Pesa.',codePh:'mf. UK3IF0TW26',voucherT:'Tumia vocha',voucherS:'Weka msimbo wa vocha uliyopewa.',voucherPh:'Msimbo wa vocha',go:'Unganisha',cancel:'Ghairi',needWifi:'Unganisha kwenye Wi-Fi kwanza, kisha fungua ukurasa huu tena.',active2:'Inatumika',expired:'Imeisha',expIn:'Inaisha {t}',min:'dak',hr:'saa',day:'siku',down:'pakua',up:'pakia'}};
+const hx=(k,v={})=>String((HX[(LANG||'en').slice(0,2)]||HX.en)[k]??HX.en[k]??k).replace(/\{(\w)\}/g,(m,x)=>v[x]??'');
+const leftText=ms=>{const m=Math.max(1,Math.round(ms/60000));return m<60?m+' '+hx('min'):m<1440?Math.round(m/60)+' '+hx('hr'):Math.round(m/1440)+' '+hx('day');};
+const gb=n=>{n=Number(n)||0;for(const [u,d] of [['GB',1073741824],['MB',1048576],['KB',1024]])if(n>=d)return (n/d).toFixed(2)+' '+u;return n+' B';};
+const dur=ms=>{const m=Math.round(ms/60000);return m<1?'<1m':m<60?m+'m':m<1440?Math.floor(m/60)+'h '+(m%60)+'m':Math.floor(m/1440)+'d '+Math.floor(m%1440/60)+'h';};
+const dt=t=>t?new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Nairobi'}):'';
+async function hxJoin(path,body){const r=await call(path,{method:'POST',body:JSON.stringify({...body,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});
+ const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}
+function hxSheet(title,sub,ph,onGo,inputmode){document.getElementById('hx-sheet')?.remove();
+ const d=document.createElement('div');d.id='hx-sheet';d.className='hx-bg';d.innerHTML=`<div class="hx-sheet" role="dialog" aria-modal="true"><button class="hx-x" type="button" aria-label="${esc(hx('cancel'))}">×</button><h3>${esc(title)}</h3><p>${esc(sub)}</p><div class="hx-err" hidden></div><input autocomplete="off" autocapitalize="characters" ${inputmode?`inputmode="${inputmode}"`:''} placeholder="${esc(ph)}"><button class="btn" type="button"><span>${esc(hx('go'))}</span> ${ICON.arrow}</button></div>`;
+ document.body.append(d);const close=()=>d.remove(),inp=d.querySelector('input'),err=d.querySelector('.hx-err'),go=d.querySelector('.btn');d.querySelector('.hx-x').onclick=close;d.onclick=e=>{if(e.target===d)close();};inp.focus();
+ const run=async()=>{err.hidden=true;go.disabled=true;try{await onGo(inp.value.trim());}catch(e){err.textContent=e.message;err.hidden=false;go.disabled=false;}};go.onclick=run;inp.onkeydown=e=>{if(e.key==='Enter')run();};}
+function hxBar(){const card=$('#hotspotCard');if(!card||card.querySelector('.hx-bar')||CFG.show?.hotspot===false)return;
+ const bar=document.createElement('div');bar.className='hx-bar';bar.innerHTML=`<p class="hx-hint">${esc(hx('paidHint'))}</p><div class="hx-btns"><button type="button" class="hx-btn" id="hx-voucher">${esc(hx('voucher'))}</button><button type="button" class="hx-btn" id="hx-code">${esc(hx('code'))}</button></div>`;
+ card.querySelector('.section-head').after(bar);
+ $('#hx-voucher').onclick=()=>hxSheet(hx('voucherT'),hx('voucherS'),hx('voucherPh'),async v=>{if(!v)throw new Error(hx('voucherPh'));if(!router.login)throw new Error(hx('needWifi'));await routerLogin(v,v.toLowerCase());});
+ $('#hx-code').onclick=()=>hxSheet(hx('codeT'),hx('codeS'),hx('codePh'),async v=>{if(!router.login||!router.chapId)throw new Error(hx('needWifi'));await hxJoin('code-login',{code:v});});}
+let hxTimer=null;
+async function hxActive(){if(!router.mac||!router.login||!router.chapId||CFG.show?.autoConnect===false)return;
+ let a;try{a=await call('active?mac='+encodeURIComponent(router.mac));}catch{return;}if(!a.found)return;
+ const mark=()=>{for(const b of document.querySelectorAll('.pkg[data-pkg]'))if(b.dataset.pkg===a.planId&&!b.querySelector('.hx-chip')){b.classList.add('hx-cur');const c=document.createElement('span');c.className='hx-chip';c.textContent=a.left!=null?hx('expIn',{t:leftText(a.left)}):hx('active2');b.append(c);}};
+ mark();new MutationObserver(mark).observe($('#hotspotPkgs'),{childList:true});
+ const col=$('#packagesCol');if(!col||document.getElementById('hx-active'))return;let n=4;
+ const card=document.createElement('div');card.id='hx-active';card.className='card hx-active';
+ card.innerHTML=`<h2>✓ ${esc(hx('active'))}</h2><p class="hx-pkg">${esc(hx('pkg'))}: <b>${esc(a.plan)}</b></p>${a.left!=null?`<p class="muted small">${esc(hx('exp',{t:leftText(a.left)}))}</p>`:''}<p class="muted small" id="hx-auto">${esc(hx('auto',{n}))}</p><button type="button" class="btn" id="hx-now"><span>${esc(hx('now'))} (<b id="hx-n">${n}</b>)</span></button><div class="hx-row"><button type="button" class="hx-link" id="hx-stay">${esc(hx('stay'))}</button><a class="hx-link" href="#hotspotCard" id="hx-all">${esc(hx('all'))}</a></div><div class="msg" id="hx-msg"></div>`;
+ ($('#portal-alert')||col).after(card);
+ const go=async()=>{clearInterval(hxTimer);const b=$('#hx-now');b.disabled=true;try{await hxJoin('connect-now',{});}catch(e){b.disabled=false;$('#hx-msg').textContent=e.message;}};
+ $('#hx-now').onclick=go;$('#hx-stay').onclick=()=>{clearInterval(hxTimer);$('#hx-auto').remove();$('#hx-n').parentElement.textContent=hx('now');};$('#hx-all').onclick=e=>{e.preventDefault();clearInterval(hxTimer);$('#hotspotCard').scrollIntoView({behavior:'smooth'});};
+ hxTimer=setInterval(()=>{n--;const el=$('#hx-n');if(el)el.textContent=n;const au=$('#hx-auto');if(au)au.textContent=hx('auto',{n:Math.max(n,0)});if(n<=0)go();},1000);}
+async function hxUsageCard(){if(!router.mac||CFG.show?.myUsage===false||document.getElementById('hx-usage-card'))return;
+ let u;try{u=await call('usage?mac='+encodeURIComponent(router.mac));}catch{return;}if(!u.found)return;
+ const col=$('#packagesCol');if(!col)return;const c=document.createElement('button');c.id='hx-usage-card';c.type='button';c.className='hx-usage-card';c.innerHTML=`<span class="hx-ic">${ICON.wifi}</span><span><b>${esc(hx('usageT'))}</b><small>${esc(hx('usageS'))}</small></span><span class="hx-chev">›</span>`;col.append(c);c.onclick=()=>hxUsagePage(u);}
+function hxUsagePage(u,tab){document.getElementById('hx-usage')?.remove();
+ const page=document.createElement('div');page.id='hx-usage';page.className='hx-page';
+ const row=(l,r,m)=>`<div class="hx-r"><div><b>${esc(l)}</b>${m?`<small>${esc(m)}</small>`:''}</div><div class="hx-rr">${r}</div></div>`;
+ const view=()=>{const T=tab;let body='';
+  if(!T){body=`<div class="hx-tot"><small>${esc(hx('total'))}</small><b>${esc(gb(u.total.down+u.total.up))}</b><span>↓ ${esc(gb(u.total.down))} ${esc(hx('down'))} · ↑ ${esc(gb(u.total.up))} ${esc(hx('up'))}</span><em>${esc(hx('last30'))}: ${esc(gb(u.last30.down+u.last30.up))}</em></div>
+   <h4>${esc(hx('history'))}</h4><div class="hx-tabs">${[['payments',hx('payments')],['connects',hx('connects')],['sessions',hx('sessions')]].map(([k,l])=>`<button type="button" data-t="${k}">${esc(l)}</button>`).join('')}</div>
+   <div class="hx-rh"><h4>${esc(hx('recent'))}</h4><button type="button" class="hx-link" data-t="payments">${esc(hx('viewAll'))}</button></div>${u.payments.slice(0,3).map(p=>row(p.ref||p.plan,esc(kes(p.amount)),dt(p.time))).join('')||`<p class="muted">${esc(hx('none'))}</p>`}`;}
+  else if(T==='payments')body=`<h3 class="hx-h">${esc(hx('payments'))}</h3>`+(u.payments.map(p=>row(p.ref||p.plan,esc(kes(p.amount)),dt(p.time))).join('')||`<p class="muted">${esc(hx('none'))}</p>`);
+  else if(T==='connects')body=`<h3 class="hx-h">${esc(hx('connects'))}</h3>`+(u.connects.map(c=>row(c.plan||'—',`<span class="hx-b ${c.status}">${esc(c.status==='active'?hx('active2'):hx('expired'))}</span><br>${esc(kes(c.amount))}`,dt(c.time)+' · ↓ '+gb(c.down)+' ↑ '+gb(c.up))).join('')||`<p class="muted">${esc(hx('none'))}</p>`);
+  else body=`<h3 class="hx-h">${esc(hx('sessions'))}</h3>`+(u.sessions.map(x=>row(dt(x.start),esc(x.open?hx('active2'):dur(x.end-x.start)),'↓ '+gb(x.down)+' ↑ '+gb(x.up))).join('')||`<p class="muted">${esc(hx('none'))}</p>`);
+  page.innerHTML=`<header><button type="button" class="hx-back">← ${esc(hx('back'))}</button><b>${esc(u.account.toUpperCase())}</b></header><main>${T?'':`<h3 class="hx-h">${esc(hx('usageT'))}</h3>`}${body}</main>`;
+  page.querySelector('.hx-back').onclick=()=>{if(tab){tab=null;view();}else page.remove();};for(const b of page.querySelectorAll('[data-t]'))b.onclick=()=>{tab=b.dataset.t;view();};};
+ view();document.body.append(page);}
+function hotspotExtras(){hxBar();hxActive();hxUsageCard();}
+
 boot();

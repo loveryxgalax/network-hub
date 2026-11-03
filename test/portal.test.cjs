@@ -142,7 +142,7 @@ test('paybill endpoints are public only with the secret path',async()=>{
 });
 test('landing page settings are validated, admin-only to change, and public to read with the real packages',async()=>{
  const landing=require('../lib/landing.cjs');
- assert.throws(()=>landing.validate({...landing.DEFAULTS,theme:'neon'}),/nine designs/);assert.throws(()=>landing.validate({...landing.DEFAULTS,brandColor:'red'}),/colour/);assert.throws(()=>landing.validate({...landing.DEFAULTS,intro:'<script>'}),/intro/);
+ assert.throws(()=>landing.validate({...landing.DEFAULTS,theme:'neon'}),/one of the designs/);assert.throws(()=>landing.validate({...landing.DEFAULTS,brandColor:'red'}),/colour/);assert.throws(()=>landing.validate({...landing.DEFAULTS,intro:'<script>'}),/intro/);
  const ok=landing.validate({...landing.DEFAULTS,theme:'bento',brandColor:'#0A3CFF',phone:'+254 181 820 518x',accountPrefix:'kne!',show:{pppoe:false,hotspot:true}});assert.equal(ok.brandColor,'#0a3cff');assert.equal(ok.phone,'+254 181 820 518');assert.equal(ok.accountPrefix,'KNE');assert.equal(ok.show.pppoe,false);assert.equal(ok.show.contact,true,'unlisted sections default to shown');
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-landing-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test'});
  await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+app.server.address().port;
