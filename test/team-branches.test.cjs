@@ -52,3 +52,17 @@ test('sharing code: friend joins a multi-device package as one of its devices',(
   assert.equal(st.get('subscribers',o.id).username,'mary1','owner unchanged');
  }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('ad rotation: tiers first, delivery target, pacing, per-device cap, device targeting',()=>{
+ const {Store}=require('../lib/store.cjs'),en=require('../lib/engage.cjs'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'ad-')),st=new Store(dir);try{
+  const now=Date.now(),base={active:true,title:'x',seconds:15,weight:1};
+  const t1=en.saveAd(st,{...base,title:'Top',tier:1}),t2=en.saveAd(st,{...base,title:'Mid',tier:2}),t3=en.saveAd(st,{...base,title:'Low',tier:3});
+  for(let i=0;i<20;i++){const p=en.forPortal(st,now).ads.map(a=>a.title);assert.equal(p[0],'Top');assert.ok(!p.includes('Low'),'tier 3 only when nothing else');}
+  {const c=st.get('ads',t1.id);st.put('ads',{...c,target:5,views:5},c);}assert.ok(!en.forPortal(st,now).ads.some(a=>a.title==='Top'),'target reached');
+  assert.equal(en.onPace({target:100,from:now-10,until:now+1e6,views:50},now),false,'ahead of pace waits');
+  const cap=en.saveAd(st,{...base,title:'Cap',tier:1,perDevice:1});en.view(st,cap.id,now,'AA:BB:CC:DD:EE:FF');
+  assert.ok(!en.forPortal(st,now,{mac:'AA:BB:CC:DD:EE:FF'}).ads.some(a=>a.title==='Cap'),'per-device cap');
+  const ph=en.saveAd(st,{...base,title:'Phones',tier:1,devices:['phone']});const win='Mozilla/5.0 (Windows NT 10.0; Win64; x64)';
+  assert.ok(!en.forPortal(st,now,{ua:win}).ads.some(a=>a.title==='Phones'),'phone-only ad hidden on a computer');
+  void t2;void t3;void ph;
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
+});

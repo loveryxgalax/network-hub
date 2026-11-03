@@ -196,7 +196,7 @@ Update this file with every increment.
 | 20.9 MAC binding: learned MAC + prefix or list | Done | The learned MAC is always allowed; a customer policy also turns binding on for that customer. |
 | 20.10 Special (negotiated) price | Done | Blank = package price. Used by payments, auto-billing, portal renewals and SMS {price}; the payment row stores the price used. |
 | 20.11 Schedule reboot | Done | Router jobs have an optional Run at time. Schedule free-form script: not built on purpose (jobs are a fixed whitelist). |
-| 20.12 Live ad tiers, weight, targeting, pacing | Partial | Weekday/hour schedule and targeting exist; tier weights and pacing not built. |
+| 20.12 Live ad tiers, weight, targeting, pacing | Done | Tier 1–3 (best tier first), weight inside a tier, delivery target paced evenly over the run, max views per device per day, phone/tablet/computer and OS targeting. |
 | 20.14 / 21.3 Static ↔ PPPoE conversion | Done | |
 | 21.1 Providers: M-Pesa paybill/till, Paystack | Done | |
 | 21.1 Providers: PawaPay, ZenoPay, JulyPay, Hubtel | Missing | Next, each against the provider's current official API docs and sandbox. |
@@ -214,7 +214,7 @@ Update this file with every increment.
 | 221–222 Add router (Ruijie, MikroTik), 223/230 TR-069 credentials | Done | |
 | 224–228 PPPoE change package, max connections, MAC binding, speed override, flight speed | Done | Max connections/split and MAC prefix/list added 3 Nov. |
 | 231–232 Router device access / support contact / public RADIUS | Done | netops RADIUS runs over the router's WireGuard tunnel; no public RADIUS switch needed. |
-| 233–234 Captive features: connect after payment, leave a message, payment-ref login, login-or-purchase | Partial | Login-or-purchase choice added; seamless sharing code not built. |
+| 233–234 Captive features: connect after payment, leave a message, payment-ref login, login-or-purchase, sharing code | Done | Payment already logs the device in at once; login-or-purchase choice and seamless sharing code added (both off by default). |
 | 235–236 Free mode themes and Evict free users | Done | Evict now or automatically; paid logins stay connected. |
 | 237 Alert settings (invitations, invoices SMS) | Skip | Platform notices for ISPman's own account. |
 | 238–240 Loyalty earning, past-payment awards, minutes/MB redemption | Done | |
