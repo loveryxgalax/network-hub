@@ -181,3 +181,25 @@ Update this file with every increment.
 | 20.8 Acct logs | Done | Per session: Started, Stopped, Last update, Up, Down, Terminate cause; a second tab has the raw Start/Interim/Stop records. Kept 7 days. |
 | 20.9 Servers | Done | New page: server, SSID, router, router IP, interface/profile, connected, enabled. Read-only. Full details need customer discovery v9 on each router (Replace discovery script, a read-only print of `/ip hotspot` and the wireless SSIDs). Until then servers are listed from the sessions the routers report. Checkboxes select rows for export. Enable/disable from netops is intentionally not offered. |
 | 20.10 Manual connects | Done | Two tables with filters (Customer, Package, Team member, date): "Manual connects by team members" and "Manual connect logs" (every staff change to paid-until: manual connect, renew, edit, auto billing, with before and after). |
+
+## Handoff update §20 (1 Nov 2026) and §21 (3 Nov 2026)
+| Item | Status | Notes |
+|---|---|---|
+| 20.1 Hotspot migration import (mac, package_id, paid_until) | Missing | Next: preview with an explicit import timezone, duplicate rule, batch provenance. |
+| 20.2 Permanent override vs flight speed | Done | Flight speed changes the current session only. |
+| 20.3 Payment-reference sharing / migration (ISP → router → customer) | Done | |
+| 20.4 Phone OTP verified state | Skip | netops has no phone OTP login; nothing to override. |
+| 20.5 Extend with quick increments | Partial | Renew by periods and outage compensation exist; quick 30 min…3 months buttons not built. |
+| 20.6 Package change applies on reconnect | Done | Existing behaviour (RADIUS reply at next login). |
+| 20.7 PPPoE max connections + split bandwidth | Done | Limit only when set on the customer. Divisor = the configured maximum (not live sessions), so speeds never change while sessions join or leave. |
+| 20.8 PPPoE IP reservation (Framed-IP-Address) | Done | PPPoE network / Assign IPs. |
+| 20.9 MAC binding: learned MAC + prefix or list | Done | The learned MAC is always allowed; a customer policy also turns binding on for that customer. |
+| 20.10 Special (negotiated) price | Done | Blank = package price. Used by payments, auto-billing, portal renewals and SMS {price}; the payment row stores the price used. |
+| 20.11 Schedule reboot | Done | Router jobs have an optional Run at time. Schedule free-form script: not built on purpose (jobs are a fixed whitelist). |
+| 20.12 Live ad tiers, weight, targeting, pacing | Partial | Weekday/hour schedule and targeting exist; tier weights and pacing not built. |
+| 20.14 / 21.3 Static ↔ PPPoE conversion | Done | |
+| 21.1 Providers: M-Pesa paybill/till, Paystack | Done | |
+| 21.1 Providers: PawaPay, ZenoPay, JulyPay, Hubtel | Missing | Next, each against the provider's current official API docs and sandbox. |
+| 21.2 Agent newsletters | Skip | No AI provider connected; the daily summary email covers the operations report. |
+| 21.4 Manual connect modes | Done | Normal (one period or cash/cheque through the payment path), Grace (≤14 days, once per 30 days; later payment counts from the grace start), Free trial (never paid, ≤7 days, once). No fake payment is recorded for grace/trial. |
+| Scheduled maintenance (settings card) | Done | Once/weekly windows, WiFi page notice, alert SMS/email paused for those routers. |

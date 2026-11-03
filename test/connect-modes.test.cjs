@@ -30,3 +30,14 @@ test('manual connect modes, special price and grace baseline',async()=>{
   r=await post({subscriberId:d.id,payment:'cheque',reason:'cheque'});assert.match(r.body.error,/cheque number/);
  }finally{app.server.close();app.store.close?.();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('MAC prefix policy and split bandwidth in RADIUS',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'mp-')),{Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs'),st=new Store(dir);try{
+  const plan=st.put('plans',{name:'P',service:'pppoe',price:100,durationValue:30,durationUnit:'days',downloadMbps:20,uploadMbps:10});
+  const s=radius.saveSubscriber?null:null;void s;
+  const sub=st.put('subscribers',{name:'X',username:'x1',service:'pppoe',planId:plan.id,status:'active',expiresAt:Date.now()+864e5,boundMac:'AA:BB:CC:00:00:01',macPolicy:{mode:'prefix',prefix:'AA:BB:CC'},maxDevices:2,splitBandwidth:true});
+  radius.setPassword(st,sub.id,'pw123456');
+  const auth=m=>radius.authorize(st,{'User-Name':'x1','Framed-Protocol':'PPP','Service-Type':'Framed-User','Calling-Station-Id':m});
+  let r=await auth('AA:BB:CC:00:00:09');assert.equal(r.status,200,r.reason);assert.equal(r.attributes['reply:Mikrotik-Rate-Limit'],'5M/10M','speed split in two');
+  r=await auth('11:22:33:44:55:66');assert.equal(r.status,401,'other router refused');
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
