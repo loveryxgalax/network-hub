@@ -475,3 +475,18 @@ fieldset:has(label > input[type=checkbox]) > legend{grid-column:1/-1}
 /* A table straight under its toolbar sits right under it (no empty band). */
 .table-toolbar+.table-wrap,.table-toolbar+div>.table-wrap:first-child{margin-top:0!important}
 .as-card{padding:18px 20px!important}.as-card h2{color:var(--teal);font-size:17px}.as-plans>p{grid-column:1/-1;margin:0}
+/* System logs: compact rows */
+.sl-list{display:grid;gap:0;padding:0 !important}
+.sl-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 20px;border-top:1px solid var(--border);border-left:3px solid transparent}
+.sl-row.error{border-left-color:#d14343}.sl-row.warning{border-left-color:#e0a32e}.sl-row.info{border-left-color:#3550e6}.sl-row.acked{opacity:.65}
+.sl-ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:#eef2ff;color:#3550e6}
+.sl-row.error .sl-ic{background:#fdeaea;color:#d14343}.sl-row.warning .sl-ic{background:#fff4e0;color:#b7791f}
+.sl-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.sl-top strong{font-size:14.5px}
+.sl-cat{font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.sl-main p{margin:4px 0 6px;color:var(--ink);font-size:13.5px;overflow-wrap:anywhere}
+.sl-meta{display:flex;flex-wrap:wrap;gap:6px}
+.sl-kv{display:inline-flex;gap:6px;align-items:baseline;background:var(--bg);border-radius:6px;padding:2px 8px;font-size:12.5px;max-width:100%;overflow-wrap:anywhere}
+.sl-kv em{font-style:normal;color:var(--muted);font-size:11.5px}
+.sl-side{display:grid;justify-items:end;gap:8px;text-align:right}.sl-side time{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.sl-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.sl-acts .button{height:32px;padding:0 12px;font-size:12.5px}
+@media(max-width:720px){.sl-row{grid-template-columns:auto minmax(0,1fr);padding:12px 14px}.sl-side{grid-column:1/-1;justify-items:start;text-align:left;grid-template-columns:auto 1fr;align-items:center}.sl-acts{justify-content:flex-start}}
