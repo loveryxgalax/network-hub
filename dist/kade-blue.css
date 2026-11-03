@@ -576,3 +576,23 @@ dialog{overflow-x:hidden}
 @media (max-width:720px){.kade-quick-grid .kade-quick-btn:has(>svg:first-child){justify-content:flex-start!important;gap:8px}}
 @media (max-width:720px){.ct-menu+.ct-menu .ct-menu-list{left:auto!important;right:0!important}}
 .ct-sub+.table-wrap,.ct-sub+div .table-wrap{margin-top:0!important}
+
+/* Tabs (page-tabs): one compact bar everywhere, scrolls sideways on phones instead of stacking. */
+.page-tabs{display:flex!important;flex-wrap:nowrap!important;gap:2px!important;overflow-x:auto;scrollbar-width:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:3px;margin:0 0 14px!important;width:max-content;max-width:100%}
+.page-tabs::-webkit-scrollbar{display:none}
+.page-tabs a{display:inline-flex!important;align-items:center;flex:none!important;width:auto!important;padding:7px 14px!important;border:0!important;border-radius:7px!important;background:none!important;color:var(--muted)!important;font-size:13.5px!important;font-weight:600;white-space:nowrap;box-shadow:none!important;margin:0!important}
+.page-tabs a::before{display:none!important}
+.page-tabs a:hover{color:var(--ink)!important;background:var(--bg)!important}
+.page-tabs a.active{background:var(--primary)!important;color:#fff!important}
+/* Billing overview */
+.bl-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.ct-kpi[role=group]{cursor:default}.bl-sub{display:block;font-style:normal;font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bl-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:start}
+.bl-card{padding:16px 18px!important}.bl-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.bl-head h2{margin:0;font-size:16px}
+.bl-card .table-wrap{margin:0 -18px -16px!important}
+.bl-pays{list-style:none;margin:0;padding:0;display:grid}.bl-pays li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--border)}.bl-pays li:first-child{border-top:0}
+.bl-pays small{display:block;color:var(--muted);font-size:12px}.bl-pays b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.bl-note{display:flex;gap:6px;align-items:center;margin:4px 0 0}
+@media(max-width:1100px){.bl-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bl-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:720px){.bl-card .table-wrap{margin:0 -14px -14px!important}}
+.page-tabs{flex-direction:row!important;grid-auto-flow:column!important;align-items:center}.page-tabs a{display:inline-flex!important}
