@@ -30,3 +30,11 @@ test('invite link, branches scope, quick extend',async()=>{
   assert.equal(st.list('subscriberPayments').length,0,'extend is not a payment');
  }finally{app.server.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('RADIUS timeout alerts name whose server it is',()=>{
+ const cu=require('../lib/customers.cjs'),{Store}=require('../lib/store.cjs'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'rl-')),st=new Store(dir);try{
+  const ccr=st.put('devices',{name:'CCR',type:'router'}),t1=st.put('devices',{name:'TEST-1',type:'router'});st.put('wgPeers',{kind:'router',routerId:t1.id,address:'10.99.0.2'});
+  const k={key:'radius-unreachable',title:'x',severity:'critical'};
+  assert.equal(cu.radiusLabel(st,ccr,k).severity,'warning');assert.match(cu.radiusLabel(st,ccr,k).title,/not netops/);
+  assert.equal(cu.radiusLabel(st,t1,k).severity,'critical');assert.match(cu.radiusLabel(st,t1,k).title,/^netops RADIUS/);
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}
+});

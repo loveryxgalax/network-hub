@@ -33,6 +33,8 @@ function connectRequest(store,sp,req){
 function createApp(options={}){
  const store=new Store(options.dataDir||process.env.NETWORK_DATA_DIR||path.join(__dirname,'data'));
  require('./lib/outbox.cjs').watch(store);
+ // Relabel open RADIUS-timeout alerts on routers not linked to netops (their own RADIUS, e.g. ISPman).
+ try{const cu=require('./lib/customers.cjs');for(const a of store.list('alerts'))if(a.logKey==='radius-unreachable'&&a.status!=='Resolved'){const r=store.get('devices',a.deviceId);if(!r)continue;const k=cu.radiusLabel(store,r,{key:'radius-unreachable',title:a.title,severity:'critical'});if(k.title!==a.title||k.severity!==a.severity)store.put('alerts',{...a,title:k.title,severity:k.severity},a);}}catch{}
  for(const operation of store.list('acsTasks').filter(t=>t.status==='Sending'))store.put('acsTasks',{...operation,status:'Uncertain',error:'The server restarted before the ACS receipt was saved. Check the ACS and device before reconciling.'},operation);
  // Passive (a rehearsal copy on a new server): everything works for checking, but no automatic SMS/email to
  // customers or staff, no auto-deactivation and no router changes are started, so they never happen twice.
