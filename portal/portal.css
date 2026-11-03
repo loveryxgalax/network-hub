@@ -724,3 +724,6 @@ body[data-theme=essential] .howto,body[data-theme=studio] .howto,body[data-theme
 .hx-r{display:flex;justify-content:space-between;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:8px}.hx-r small{display:block;color:var(--muted);font-size:12px}.hx-rr{text-align:right;font-weight:700;white-space:nowrap}
 .hx-b{font-size:11px;padding:2px 8px;border-radius:99px;background:#e2e8f0;color:#475569}.hx-b.active{background:#dcfce7;color:#166534}
 .hx-active{margin:14px 0}
+.hx-loy{display:flex;align-items:center;gap:12px;margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--brand-soft)}.hx-loy small{display:block;color:var(--brand);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.hx-loy b{font-size:18px}.hx-loy .hx-ic{font-size:18px}
+.hx-redeem{margin-left:auto;border:0;border-radius:8px;background:var(--brand);color:var(--brand-ink);font:inherit;font-weight:700;padding:9px 16px;cursor:pointer}.hx-redeem:disabled{opacity:.5;cursor:default}
+.hx-back-active{display:block;text-align:center;margin-top:12px}

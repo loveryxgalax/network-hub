@@ -18,6 +18,10 @@ test('hotspot device flow: connect now, M-Pesa code, usage, loaders, new designs
   assert.equal((await post('/portal/api/code-login',{code:'WRONGCODE1',chapId:'01',chapChallenge:'0a0b0c'})).status,404);
   const cl=await post('/portal/api/code-login',{code:'uk3if0tw26',chapId:'01',chapChallenge:'0a0b0c'});assert.equal(cl.status,200);assert.equal(cl.body.username,'kne-abc123');
   const u=await get('/portal/api/usage?mac=AA:BB:CC:DD:EE:01');assert.equal(u.body.found,true);assert.equal(u.body.payments[0].ref.endsWith('TW26'),true);assert.ok(u.body.payments[0].ref.startsWith('•'));assert.equal(u.body.connects[0].status,'active');
+  const stp=require('../lib/status.cjs');assert.match(stp.page({...stp.DEFAULTS,showPackage:true},'https://network.example.test',false,''),/id="pk"[\s\S]*\/portal\/api\/active\?mac=/);assert.doesNotMatch(stp.page({...stp.DEFAULTS},'https://network.example.test',false,''),/id="pk"/);
+  const lo=require('../lib/billing.cjs');st.setting('loyalty',{enabled:true,pointsPer100:1,pointValue:2});st.put('subscribers',{...st.get('subscribers',sub.id),points:10},st.get('subscribers',sub.id));
+  const us=await get('/portal/api/usage?mac=AA:BB:CC:DD:EE:01');assert.equal(us.body.points,10);assert.equal(us.body.loyalty.enabled,true);
+  const rd=await post('/portal/api/redeem-points',{mac:'AA:BB:CC:DD:EE:01'});assert.equal(rd.status,200);assert.equal(rd.body.points,0);assert.equal(rd.body.wallet,20);
   // expired package: no auto connect
   st.put('subscribers',{...st.get('subscribers',sub.id),expiresAt:Date.now()-1000},st.get('subscribers',sub.id));
   assert.equal((await get('/portal/api/active?mac=AA:BB:CC:DD:EE:01')).body.found,false);
