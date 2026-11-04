@@ -169,3 +169,9 @@ function importDialog(){let csv='';
   });
  $('#editor-form [type=submit]').dataset.commit='';
 }
+
+// Forms that need the subscribers and packages list used to do nothing (the page threw "reading 'subscribers'") when opened
+// from a page that had not loaded it, such as the dashboard. They now load it first, then open.
+async function ensureRadiusData(){if(radiusView.data)return;const [d,b,m]=await Promise.all([api('radius'),api('billing'),api('mpesa')]);if(!radiusView.data){radiusView.data=d;radiusView.billing=b;radiusView.mpesa=m;}}
+for(const name of ['planEditor','subscriberEditor','renewSubscriber','paySubscriber']){const orig=window[name];if(typeof orig!=='function')continue;
+ window[name]=function(...args){if(radiusView.data)return orig.apply(this,args);return ensureRadiusData().then(()=>orig.apply(this,args)).catch(e=>{try{toast(e.message||'Could not load the list');}catch{}});};}

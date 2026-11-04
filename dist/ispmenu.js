@@ -1328,3 +1328,8 @@ document.addEventListener('click',e=>{for(const m of document.querySelectorAll('
   for(const h of document.querySelectorAll('dialog .modal-heading')){const t=(h.querySelector('h2')?.textContent||'').trim(),i=t?t[0].toUpperCase():'';if(i&&h.dataset.ini!==i)h.dataset.ini=i;}};
  let tm;new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(run,40);}).observe(document.documentElement,{childList:true,subtree:true});run();
 })();
+
+// A button that fails should say so instead of doing nothing: show the error as a message.
+(function(){let last=0;const say=m=>{if(!m||Date.now()-last<1500)return;last=Date.now();try{toast('Something went wrong: '+String(m).slice(0,140));}catch{}};
+ window.addEventListener('error',e=>{if(/ResizeObserver|Script error/i.test(e.message||''))return;if(e.filename&&!e.filename.startsWith(location.origin))return;say(e.message);});
+ window.addEventListener('unhandledrejection',e=>say(e.reason&&e.reason.message?e.reason.message:e.reason));})();
