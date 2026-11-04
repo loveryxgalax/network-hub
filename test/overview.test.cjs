@@ -50,7 +50,7 @@ test('PPPoE customer status matches netops subscribers to what the routers repor
  const {store,done}=fixture();try{
   const now=Date.parse('2026-10-25T12:00:00Z'),router=store.put('devices',{name:'CCR2004',type:'router',driver:'routeros-script',status:'online',lastSeen:now-1000,metrics:{}});
   const basic=store.put('plans',radius.plan({name:'Basic',service:'pppoe',downloadMbps:5,uploadMbps:5,price:1500,durationValue:30,durationUnit:'days'})),home=store.put('plans',radius.plan({name:'Standard Home',service:'pppoe',downloadMbps:10,uploadMbps:10,price:2500,durationValue:30,durationUnit:'days'}));
-  const mk=(u,plan,over={})=>store.put('subscribers',{...radius.subscriber(store,{name:u,username:u,service:'pppoe',planId:plan.id,expiresAt:now+10*86400000}),...over});
+  const mk=(u,plan,over={})=>store.put('subscribers',{...radius.subscriber(store,{name:u,username:u,service:'pppoe',planId:plan.id,expiresAt:now+3650*86400000}),...over});
   mk('on1',basic);mk('on2',basic);mk('on3',home);mk('off1',basic);mk('exp-on',home,{expiresAt:now-1000});mk('exp-off',home,{expiresAt:now-1000});mk('held',basic,{status:'suspended'});
   const ob=(name,connected=true)=>({snapshot:{present:true,connected,sessionType:connected?'ppp':null},evidence:{ppp:{name}}});
   store.setting('customerDiscovery:'+router.id,{lastReport:now,tables:{},observations:[ob('on1'),ob('ON2'),ob('on3'),ob('exp-on'),ob('stranger'),ob('off1',false)]});
