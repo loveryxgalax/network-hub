@@ -666,3 +666,8 @@ dialog.modal .modal-heading .icon-button:focus,dialog.modal .modal-heading .icon
 /* Desktop screens: show everything at 80%, like an 80% browser zoom. Phones and tablets are left alone (16px inputs stop iOS zooming in). */
 @media (min-width:1100px){html{zoom:80%}.auth-screen,.auth-invite{min-height:calc(100vh / .8)}}
 dialog.modal>.modal-heading{padding-left:22px!important;padding-right:22px!important}
+/* Customer profile tabs */
+.pf-tabs{display:flex;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:3px;overflow-x:auto;scrollbar-width:none;margin:6px 0 4px;position:sticky;top:0;z-index:2}
+.pf-tabs::-webkit-scrollbar{display:none}.pf-tabs button{flex:1 0 auto;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:600;font-size:13.5px;padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.pf-tabs button:hover{background:var(--bg);color:var(--ink)}.pf-tabs button.on{background:var(--primary);color:#fff}
+.pf-tab{display:none}.pf-tab.on{display:block}.pf-tab>h3:first-child{margin-top:6px}

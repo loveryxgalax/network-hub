@@ -1268,7 +1268,21 @@ document.addEventListener('click',e=>{for(const m of document.querySelectorAll('
    b.innerHTML=`<span class="pf-tile-ic">${icon(r[1],18)}</span><span class="pf-tile-l">${label.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</span>`;by[r[2]].push(b);}
   box.innerHTML='';box.classList.add('pf-tiles');
   for(const [k,l] of GROUPS){if(!by[k].length)continue;const g=document.createElement('div');g.className='pf-group pf-g-'+k;if(l)g.innerHTML=`<h4>${l}</h4>`;const row=document.createElement('div');row.className='pf-row';for(const b of by[k])row.append(b);g.append(row);box.append(g);}}
- const scan=()=>{for(const b of document.querySelectorAll('.pf-actions:not([data-iconized])'))iconize(b);
+ // Customer profile as tabs: Overview · Actions · Money · Sessions · Activity (the long single scroll hid most of it below the action tiles).
+ const TABS=[['overview','Overview'],['actions','Actions'],['money','Money'],['sessions','Sessions'],['activity','Activity']];
+ const tabOf=t=>/^actions$/i.test(t)||/router jobs|family/i.test(t)?'actions':/payment|invoice|money history|portal payment/i.test(t)?'money':/session/i.test(t)?'sessions':/message|ticket|notes/i.test(t)?'activity':'overview';
+ function tabify(pf){if(!pf||pf.dataset.tabs)return;const kids=[...pf.children],chips=kids.find(k=>k.classList?.contains('rh-chips'));if(!chips||!kids.some(k=>k.classList?.contains('pf-actcard')))return;pf.dataset.tabs='1';
+  const groups={overview:[],actions:[],money:[],sessions:[],activity:[]};let cur='overview',started=false;
+  for(const k of kids.slice(kids.indexOf(chips)+1)){if(k.classList.contains('pf-actcard')){cur='actions';groups.actions.push(k);cur='overview';continue;}
+   if(k.tagName==='H3'){cur=tabOf(k.textContent.trim());started=true;}
+   groups[cur].push(k);}
+  const bar=document.createElement('div');bar.className='pf-tabs';bar.setAttribute('role','tablist');
+  const panels={};for(const [k] of TABS){const d=document.createElement('div');d.className='pf-tab';d.dataset.tab=k;panels[k]=d;for(const n of groups[k])d.append(n);if(!groups[k].length)d.innerHTML='<p class="muted" style="padding:14px 2px">Nothing here yet.</p>';}
+  let saved='overview';try{saved=sessionStorage.getItem('kd-pf-tab')||'overview';}catch{}
+  const show=k=>{for(const [x,d] of Object.entries(panels))d.classList.toggle('on',x===k);for(const b of bar.children)b.classList.toggle('on',b.dataset.tab===k);try{sessionStorage.setItem('kd-pf-tab',k);}catch{}};
+  for(const [k,l] of TABS){const b=document.createElement('button');b.type='button';b.dataset.tab=k;b.textContent=l;b.setAttribute('role','tab');b.onclick=()=>show(k);bar.append(b);}
+  chips.after(bar);let last=bar;for(const [k] of TABS){last.after(panels[k]);last=panels[k];}show(saved);}
+ const scan=()=>{for(const b of document.querySelectorAll('.pf-actions:not([data-iconized])'))iconize(b);for(const pf of document.querySelectorAll('.pf:not([data-tabs])'))tabify(pf);
   // "undefined / undefined Mbps" when a package has no speed set: show a dash instead.
   for(const el of document.querySelectorAll('#detail-content *')){if(el.children.length===0&&/undefined/.test(el.textContent))el.textContent=el.textContent.replace(/undefined(\s*\/\s*undefined)?\s*Mbps/g,'— (no speed set)').replace(/\bundefined\b/g,'—');}};
  new MutationObserver(()=>{clearTimeout(scan.t);scan.t=setTimeout(scan,30);}).observe(document.documentElement,{childList:true,subtree:true});
