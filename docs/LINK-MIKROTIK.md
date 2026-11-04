@@ -17,6 +17,13 @@ What the setup creates: bridge `netops-bridge` with the chosen ports; hotspot (a
 RADIUS, login page downloaded from netops, walled garden for the netops address); PPPoE server `netops` with a pool
 and profile, PPP AAA using RADIUS with accounting; NAT masquerade out of the uplink if missing.
 
+Small routers (32 MB RAM, for example a hAP lite): tick "Small router" in step 1. netops then makes one part per pass
+(name, WireGuard, monitoring, RADIUS, job runner, customer lists) instead of one big script. Each pass has Step A
+(download only), a size check, and Step B (import), so a failure shows which step it was. Customer lists report every
+10 minutes instead of 2. Do the parts in that order and wait for the router to settle between them. If a terminal
+crashes, reboot the router once and repeat only that part. If it still crashes, use that router for basic routing and
+put the full netops role on a router with more memory. Certificate checking stays on in every mode.
+
 Server first (once, from your PC; it is safe to run again):
 
 ```

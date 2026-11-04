@@ -289,26 +289,31 @@ function createApp(options={}){
    const existing=input.routerId?store.get('devices',String(input.routerId)):null;if(input.routerId&&existing?.type!=='router')throw error(404,'Router not found');
    const name=existing?existing.name:String(input.name||'').trim();if(!pv.NAME.test(name))throw error(400,'Router name: letters, numbers, spaces, dot or dash (up to 40), starting with a letter or number');
    if(!existing&&store.list('devices').some(d=>d.type==='router'&&d.name.toLowerCase()===name.toLowerCase()))throw error(409,'A router with this name already exists. Pick it from the list to make a new link script for it.');
-   const mode=['all','test','none'].includes(input.radius)?input.radius:'none',wantWg=input.wireguard===true||mode!=='none',srv=wireguard.server(store);
+   const stages=Array.isArray(input.stages)?[...new Set(input.stages.map(String))].filter(x=>pv.STAGES.includes(x)):null;if(input.stages!==undefined&&(!stages||!stages.length))throw error(400,'Choose at least one part to install');
+   const lite=input.lite===true||!!stages;let mode=['all','test','none'].includes(input.radius)?input.radius:'none';if(stages&&stages.includes('radius')&&mode==='none')mode='test';
+   const has=k=>stages?stages.includes(k):k==='identity'?input.identity!==false:k==='wireguard'?(input.wireguard===true||mode!=='none'):k==='radius'?mode!=='none':k==='runner'?input.runner!==false:true;
+   const wantWg=has('wireguard'),srv=wireguard.server(store);if(!stages&&mode!=='none'){/* legacy: RADIUS implies WireGuard */}
+   if(stages&&mode!=='none'&&!has('radius'))mode='none';
    if(wantWg&&!srv.publicKey)throw error(409,'WireGuard is not set up on this server yet (Operations → WireGuard & Winbox access). Untick WireGuard and RADIUS, or set it up first.');
    if(mode!=='none'&&!radiusSecret)throw error(409,'RADIUS_SECRET is not set for the hub. Add it to .env (it is already there if you set up RADIUS) and restart the hub, or choose "No RADIUS" for now.');
    const parts=[],warnings=[];let device;
    store.transaction(()=>{
     const valid=validate('devices',{...(existing||{}),name,type:'router',driver:'routeros-script',endpoint:''},existing,store);device=store.put('devices',{...valid,status:'pending',lastCheck:existing?.lastCheck??null,lastSeen:existing?.lastSeen??null,lastError:'',metrics:existing?.metrics||{}},existing);
-    if(input.identity!==false)parts.push({title:'Router name (identity)',script:pv.identityScript(name)});
-    let wgAddress='';
+    if(has('identity'))parts.push({title:'Router name (identity)',script:pv.identityScript(name)});
+    let wgAddress=store.list('wgPeers').find(p=>p.routerId===device.id&&p.kind==='router')?.address||'';if(stages&&has('radius')&&!wantWg&&!wgAddress)throw error(409,'Install the WireGuard part first: netops RADIUS needs the tunnel.');
     if(wantWg){let had=store.list('wgPeers').find(p=>p.routerId===device.id&&p.kind==='router');
      // A reset router lost its tunnel: replace the peer (new key, same address when free) instead of keeping the old one.
      if(had&&input.newWireguardKey===true){store.remove('wgPeers',had.id);had=null;}
      if(had){wgAddress=had.address;warnings.push(`WireGuard: ${name} already has ${had.address}; the tunnel on the router is left as it is.`);}else{const w=wireguard.addRouter(store,{routerId:device.id,name});wgAddress=w.peer.address;parts.push({title:'WireGuard tunnel to netops ('+wgAddress+')',script:w.script.split('\n').filter(l=>!l.startsWith('# For netops RADIUS')).join('\n')});}}
-    if(mode!=='none')parts.push({title:'netops RADIUS'+(mode==='test'?' (test logins only)':''),script:pv.radiusScript({secret:radiusSecret,address:'10.99.0.1',srcAddress:wgAddress,realm:mode==='test'?(radius.settings(store).realm||'kade'):''})});
-    const at=crypto.randomBytes(32).toString('base64url');store.db.prepare('DELETE FROM secrets WHERE device_id IN (?,?)').run(device.id,'agent:'+device.id);store.secret('agent:'+device.id,{tokenHash:routerAgent.hash(at),issuedAt:Date.now()});parts.push({title:'Monitoring (read-only)',script:routerAgent.generate(publicUrl.origin,device.id,at)});
-    const dt=crypto.randomBytes(32).toString('base64url');store.secret('discovery:'+device.id,{tokenHash:routerAgent.hash(dt),issuedAt:Date.now()});parts.push({title:'Customer discovery and health (read-only)',script:customers.generate(publicUrl.origin,device.id,dt)});
-    if(input.runner!==false){const e=jobs.enroll(store,device.id);parts.push({title:'Job runner (only runs jobs you confirm in netops)',script:jobs.runnerScript(publicUrl.origin,device.id,e.token)});}
+    if(has('radius')&&mode!=='none')parts.push({title:'netops RADIUS'+(mode==='test'?' (test logins only)':''),script:pv.radiusScript({secret:radiusSecret,address:'10.99.0.1',srcAddress:wgAddress,realm:mode==='test'?(radius.settings(store).realm||'kade'):''})});
+    if(has('monitoring')){const at=crypto.randomBytes(32).toString('base64url');store.db.prepare('DELETE FROM secrets WHERE device_id IN (?,?)').run(device.id,'agent:'+device.id);store.secret('agent:'+device.id,{tokenHash:routerAgent.hash(at),issuedAt:Date.now()});parts.push({title:'Monitoring (read-only)',script:routerAgent.generate(publicUrl.origin,device.id,at)});}
+    if(has('discovery')){const dt=crypto.randomBytes(32).toString('base64url');store.secret('discovery:'+device.id,{tokenHash:routerAgent.hash(dt),issuedAt:Date.now()});parts.push({title:'Customer discovery and health (read-only)'+(lite?' every 10 minutes':''),script:customers.generate(publicUrl.origin,device.id,dt,{interval:lite?'10m':'2m'})});}
+    if(has('runner')){const e=jobs.enroll(store,device.id);parts.push({title:'Job runner (only runs jobs you confirm in netops)',script:jobs.runnerScript(publicUrl.origin,device.id,e.token)});}
    });
-   agentAccepted.delete(device.id);agentAccepted.delete('discovery:'+device.id);
-   const b=pv.saveBundle(store,device.id,pv.bundleScript(name,parts));store.audit(user,(existing?'Re-issued':'Created')+' Link a MikroTik script',device.id);
-   return json(res,201,{router:{id:device.id,name},oneLiner:pv.oneLiner(publicUrl.origin,b.id,b.token),parts:parts.map(p=>p.title),expiresAt:b.expiresAt,warnings});}
+   if(!parts.length)throw error(409,'Nothing to install in this pass: '+(warnings[0]||'the selected part is not needed')+(has('wireguard')?' If the router was reset, tick "give it a new WireGuard key".':''));
+   if(has('monitoring'))agentAccepted.delete(device.id);if(has('discovery'))agentAccepted.delete('discovery:'+device.id);
+   const script=pv.bundleScript(name,parts),b=pv.saveBundle(store,device.id,script);store.audit(user,(existing?'Re-issued':'Created')+' Link a MikroTik script',device.id);
+   return json(res,201,{router:{id:device.id,name},oneLiner:pv.oneLiner(publicUrl.origin,b.id,b.token),...(stages?{staged:true,stages,...pv.stagedCommands(publicUrl.origin,b.id,b.token,Buffer.byteLength(script))}:{}),parts:parts.map(p=>p.title),expiresAt:b.expiresAt,warnings});}
   const provRoute=route.match(/^\/api\/provision\/([a-f0-9-]{36})(?:\/(services))?$/);
   if(provRoute){role(user,['admin']);const pv=require('./lib/provision.cjs'),router=store.get('devices',provRoute[1]);if(!router||router.type!=='router')throw error(404,'Router not found');
    const state=pv.routerState(store,router),job=store.list('routerJobs').filter(j=>j.routerId===router.id&&j.type==='provision-services').sort((a,b)=>b.createdAt-a.createdAt)[0]||null,peer=store.list('wgPeers').find(p=>p.routerId===router.id&&p.kind==='router');
