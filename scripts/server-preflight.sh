@@ -22,9 +22,12 @@ grep -q "NETWORK_PUBLIC_ORIGIN: https://" docker-compose.yml && ok "public addre
 command -v wg >/dev/null && ok "wireguard tools installed" || echo "  TODO   wireguard tools not installed yet (the setup script installs them)"
 if ip link show wg0 >/dev/null 2>&1; then ok "wg0 is up"; else echo "  TODO   wg0 does not exist yet (the setup script creates it)"; fi
 if ss -lun 2>/dev/null | grep -q ':51820 '; then ok "UDP 51820 is listening on this server"; else echo "  TODO   nothing listens on UDP 51820 yet (the setup script starts it)"; fi
-if command -v ufw >/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
-  if ufw status | grep -q "51820/udp"; then ok "ufw allows UDP 51820"; else echo "  TODO   ufw is active; the setup script will allow UDP 51820"; fi
-else ok "ufw is not active on this server"; fi
+if command -v ufw >/dev/null; then
+  u=$(sudo -n ufw status 2>/dev/null || ufw status 2>/dev/null || true)
+  if [ -z "$u" ]; then echo "  NOTE   ufw is installed but its state needs sudo to read; the setup script (which runs with sudo) allows UDP 51820 if ufw is active"
+  elif echo "$u" | grep -q "Status: active"; then echo "$u" | grep -q "51820/udp" && ok "ufw is active and allows UDP 51820" || echo "  TODO   ufw is active; the setup script will allow UDP 51820"
+  else ok "ufw is not active on this server"; fi
+else ok "ufw is not installed"; fi
 echo "  NOTE   a firewall in your hosting provider's panel (outside this server) can only be checked there: UDP 51820 inbound must be allowed."
 [ "$ISSUES" -eq 0 ] && echo "preflight: nothing to fix by hand" || echo "preflight: $ISSUES item(s) need you (marked CHECK)"
 exit 0
