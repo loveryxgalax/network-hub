@@ -47,7 +47,8 @@ const paths = {
   globe:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M2 12h20 M12 2a15 15 0 0 1 0 20 M12 2a15 15 0 0 0 0 20',
   chat:'M4 4h16v12H8l-4 4z',
   bolt:'M13 2L4 14h7l-1 8 9-12h-7z',
-  pen:'M4 20l4-1 11-11-3-3L5 16z M14 6l3 3'
+  pen:'M4 20l4-1 11-11-3-3L5 16z M14 6l3 3',
+  trash:'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6 M10 11v6 M14 11v6'
 };
 const icon = (name,size=17) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name] || paths.router}"/></svg>`;
 

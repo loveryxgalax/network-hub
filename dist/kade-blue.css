@@ -685,3 +685,12 @@ dialog.modal[open]>#editor-form,dialog.modal[open]>form{flex:1 1 auto;min-height
 #editor-form>.modal-footer{margin-top:0}
 #search-dialog[open]>*:not(.modal-heading):not(::before){min-height:0}
 .ex-steps .ex-step,dialog label:has(>input[type=radio]){margin:0!important}.ex-steps{gap:8px!important}
+/* Tables keep whole words and scroll sideways instead of squeezing columns into letter-by-letter wrapping */
+.data-table td,.data-table th{overflow-wrap:normal!important;word-break:normal!important;white-space:nowrap}
+.data-table td code,.data-table td kbd{white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important}
+.data-table td.muted,.data-table td.wrap,.data-table td [class*=detail],.data-table td.sms-detail,.data-table td:has(>.muted:only-child){white-space:normal!important;overflow-wrap:break-word!important;min-width:180px;max-width:420px}
+.data-table td small{white-space:nowrap}
+.table-wrap{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+.cp-card .data-table{font-size:12.5px}.cp-card .data-table td,.cp-card .data-table th{padding:8px 10px}
+.data-table td:last-child .row-actions,.row-actions.ra{flex-wrap:nowrap}
+.cp-more>.cp-x:has(table th:nth-child(6)){grid-column:1/-1}
