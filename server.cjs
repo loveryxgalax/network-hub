@@ -379,6 +379,7 @@ function createApp(options={}){
   if(route==='/api/email'&&method==='PUT'){role(user,['admin']);const saved=emailLib.setConfig(store,await body(req));store.audit(user,'Updated email settings','email');return json(res,200,saved);}
   if(route==='/api/email/test'&&method==='POST'){role(user,['admin']);const input=await body(req),r=await emailLib.send(store,input.to,'Test email from netops','If you can read this, email from Kade Networks netops works.','test');if(!r.ok)throw error(502,'Not sent: '+r.error);return json(res,200,r);}
   if(route==='/api/alert-escalation'&&method==='PUT'){role(user,['admin']);const saved=escalation.save(store,await body(req));store.audit(user,'Updated alert escalation','alerts');return json(res,200,saved);}
+  if(route==='/api/cpe/register'&&method==='POST'){role(user,['admin','manager','operator','support','network-technician','technician','installer']);return json(res,200,require('./lib/cpelink.cjs').register(store,await body(req),user));}
   if(route==='/api/onboarding'&&method==='GET'){if(user.role==='viewer')throw error(403,'Not available to viewers');return json(res,200,onboarding.board(store));}
   if(route==='/api/onboarding'&&method==='POST'){role(user,['admin','manager','operator','support','network-technician','technician']);const saved=onboarding.create(store,await body(req),user);store.audit(user,'Added lead '+saved.name,saved.id);return json(res,201,saved);}
   const obRoute=route.match(/^\/api\/onboarding\/([a-f0-9-]{36})(?:\/(convert))?$/);
@@ -621,7 +622,7 @@ function createApp(options={}){
     if(method==='GET')return json(res,200,acs.config(store));
     if(method==='POST'){role(user,['admin']);const input=await body(req);try{const result=await acs.configure(store,input);store.audit(user,'Connected independent ACS','acs');return json(res,200,result);}catch(cause){throw error(400,cause.message);}}
    }
-   if(route==='/api/acs/devices'&&method==='GET'){try{return json(res,200,await acs.list(store));}catch(cause){throw error(502,cause.message);}}
+   if(route==='/api/acs/devices'&&method==='GET'){try{const rows=await acs.list(store);try{require('./lib/cpelink.cjs').verify(store,rows.devices||rows);}catch{}return json(res,200,rows);}catch(cause){throw error(502,cause.message);}}
    if(route==='/api/acs/faults'&&method==='GET'){try{return json(res,200,await acs.faults(store));}catch(cause){throw error(502,cause.message);}}
    if(route==='/api/acs/tasks'&&method==='GET')return json(res,200,store.list('acsTasks'));
    const tracking=route.match(/^\/api\/acs\/tasks\/([^/]+)\/reconcile$/);if(tracking&&method==='POST'){
