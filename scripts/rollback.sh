@@ -17,6 +17,8 @@ git diff --stat "$ref" HEAD | tail -n 25
 git checkout "$ref" -- .
 # files created after the tag are removed too, so the tree matches the tag exactly
 git diff --name-only --diff-filter=A "$ref" HEAD | while read -r f; do [ -n "$f" ] && git rm -q -f -- "$f" || true; done
+# the rollback and reset tools themselves always stay, so you can use them again afterwards
+git checkout HEAD -- scripts/rollback.sh scripts/reset-keep-admin.cjs docs/ROLLBACK-AND-RESET.md test/reset-script.test.cjs 2>/dev/null || true
 git commit -q -m "Roll back to $ref" -m "Restores the files exactly as they were at $ref. Roll forward again with: scripts/rollback.sh <newer tag or commit> --apply"
 git push -u origin "$branch"
 echo "Rolled back to $ref and pushed. Auto-deploy will rebuild within about 2 minutes."

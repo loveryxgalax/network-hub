@@ -8,6 +8,7 @@ COPY server.cjs ./
 COPY lib ./lib
 COPY dist ./dist
 COPY portal ./portal
+COPY scripts/reset-keep-admin.cjs ./scripts/reset-keep-admin.cjs
 RUN mkdir /data && chown node:node /data
 USER node
 VOLUME /data
