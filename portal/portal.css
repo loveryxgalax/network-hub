@@ -824,3 +824,13 @@ body[data-theme=spotlight] .topbar .help .help-num,body[data-theme=christmas] .t
  .topbar .help .help-num .hi{width:14px;height:14px}
  .lang .lg-btn .lg-car{display:none}.lang .lg-btn{padding:6px 10px;gap:5px}
 }
+
+/* Name + help block is exactly as tall as the logo, with the two lines tight together */
+.topbar .logo{width:46px;height:46px}
+.topbar .wrap>div[style*="min-width"]{display:flex;flex-direction:column;justify-content:space-between;height:46px}
+.topbar .brand-name{line-height:1.1;margin:0}
+.topbar .help{margin:0;line-height:1;gap:6px}
+.topbar .help .help-num{min-height:24px;padding:0}
+.topbar .help .help-wa{min-width:24px;height:24px;padding:0 4px}
+.topbar .help .help-wa .hi{width:15px;height:15px}
+.topbar .wrap{flex-wrap:nowrap}

@@ -163,7 +163,7 @@ function render(){
  // Header help: tap the number to call, tap the green WhatsApp icon to chat. No menu.
  {const ph=CFG.phone||'',wa=CFG.whatsapp||'';
   for(const hp of $$('.topbar .help')){if(!ph&&!wa){hp.innerHTML='';continue;}
-   hp.innerHTML=`<span class="help-t">${esc(t('needHelp'))}</span>`+(ph?`<a class="help-num" href="tel:${esc(ph.replace(/\s/g,''))}" aria-label="${esc(t('call'))} ${esc(ph)}">${HI_PH}<b>${esc(ph)}</b></a>`:'')+(ph&&wa?'<span class="help-sep" aria-hidden="true"></span>':'')+(wa?`<a class="help-wa" href="https://wa.me/${esc(intl(wa))}" rel="noopener" aria-label="${esc(t('whatsapp'))} ${esc(wa)}" title="${esc(t('whatsapp'))} ${esc(wa)}">${HI_WA}${ph?'':`<b>${esc(wa)}</b>`}</a>`:'');}}
+   hp.innerHTML=`<span class="help-t">${esc(t('needHelp'))}</span>`+(wa?`<a class="help-wa" href="https://wa.me/${esc(intl(wa))}" rel="noopener" aria-label="${esc(t('whatsapp'))} ${esc(wa)}" title="${esc(t('whatsapp'))} ${esc(wa)}">${HI_WA}${ph?'':`<b>${esc(wa)}</b>`}</a>`:'')+(ph?`<a class="help-num" href="tel:${esc(ph.replace(/\s/g,''))}" aria-label="${esc(t('call'))} ${esc(ph)}">${HI_PH}<b>${esc(ph)}</b></a>`:'');}}
  // Chat button: type a message to us (becomes a support ticket), or call / WhatsApp from the same card.
  {const ph=CFG.phone||'',wa=CFG.whatsapp||'',on=CFG.show.chat!==false,saved=(()=>{try{return JSON.parse(localStorage.getItem('portal-chat')||'{}');}catch{return {};}})();
   const links=[ph&&`<a href="tel:${esc(ph.replace(/\s/g,''))}">${ICON.phone}<span>${t('call')}</span></a>`,wa&&`<a href="https://wa.me/${esc(intl(wa))}" rel="noopener">${ICON.chat}<span>${t('whatsapp')}</span></a>`].filter(Boolean).join('');
