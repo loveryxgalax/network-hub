@@ -54,3 +54,11 @@ docker compose --profile live --profile radius up -d hub live
 Not touched by this script: WireGuard peers already added on the server host (the host's sync script removes them when it
 next syncs an empty list), FreeRADIUS and the optional GenieACS/Mongo data, and the routers themselves. Routers keep their own
 configuration; reset or remove the old ones on the router side if you reuse them.
+
+## 3. Delete data from the website (no command line)
+
+Sidebar → Account → **Delete data** (admins only). Every feature (customers, payments, packages, vouchers, campaigns, adverts,
+routers, alerts, tickets, stock, logs, staff accounts and more) has a card with its count, **Choose…** (tick the items to delete) and
+**Delete all**. You type DELETE to confirm. A backup of the database is saved first in the data folder's `backups/` (at most one per
+ten minutes, newest 10 kept). Admin accounts are never deleted. Deleting a router here uses the same "forget router" clean-up as
+the MikroTik page; nothing is sent to the router.

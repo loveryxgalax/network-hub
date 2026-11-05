@@ -280,6 +280,11 @@ function createApp(options={}){
   // Link a MikroTik (admins): create the router and its one-line link command, follow its first reports, and on a new
   // router set up PPPoE/Hotspot through the job runner after the admin types the router's name.
   // Forget a router and everything netops stored about it (database only; nothing is sent to the router).
+  const clRoute=route.match(/^\/api\/cleanup(?:\/([a-z-]+))?$/);
+  if(clRoute){role(user,['admin']);const cl=require('./lib/cleanup.cjs');
+   if(!clRoute[1]&&method==='GET')return json(res,200,{categories:cl.overview(store,user)});
+   if(clRoute[1]&&method==='GET')return json(res,200,cl.items(store,clRoute[1],{q:url.searchParams.get('q')||''}));
+   if(clRoute[1]&&method==='POST'){const input=await body(req,65536);try{const r=cl.remove(store,clRoute[1],{ids:Array.isArray(input.ids)?input.ids.slice(0,2000):[],all:input.all===true,confirm:input.confirm},user);return json(res,200,r);}catch(e){throw error(e.status||400,e.message);}}}
   const forgetRoute=route.match(/^\/api\/routers\/([a-f0-9-]{36})\/forget$/);
   if(forgetRoute&&method==='POST'){role(user,['admin']);const pg=require('./lib/purge.cjs'),input=await body(req);
    if(input.apply!==true)return json(res,200,pg.plan(store,forgetRoute[1],{customers:input.customers===true}));
