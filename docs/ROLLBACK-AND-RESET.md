@@ -2,19 +2,19 @@
 
 ## 1. Roll back code and design (safe, one command)
 
-Restore points are git tags named `rollback/...`:
+Restore points are named lines in `docs/rollback-points.txt` (name → commit). Run `scripts/rollback.sh` with no arguments to list them:
 
 | Tag | What it restores |
 |---|---|
-| `rollback/before-tonight` | Everything exactly as it was before the night's testing and changes. |
-| `rollback/before-portal-redesign` | The admin as it was before the new portal designs (language dropdown, header, account page, chat, situation views, phone check). |
+| `before-tonight` | Everything exactly as it was before the night's testing and changes. |
+| `before-portal-redesign` | The admin as it was before the new portal designs (language dropdown, header, account page, chat, situation views, phone check). |
 
 On the server (or on any checkout of the branch):
 
 ```bash
 cd ~/network-hub && git pull -q
-scripts/rollback.sh rollback/before-tonight            # preview: lists the files that would change
-scripts/rollback.sh rollback/before-tonight --apply    # restore, commit and push
+scripts/rollback.sh before-tonight            # preview: lists the files that would change
+scripts/rollback.sh before-tonight --apply    # restore, commit and push
 ```
 
 It makes ONE new commit that puts the files back exactly as they were at the tag. History is kept (nothing is rewritten), so
@@ -26,7 +26,7 @@ Only code and design change. Data in the database is untouched. The newer code o
 
 Smaller step: undo just one change with `git revert <commit>` and push.
 
-To mark another restore point before more testing: `git tag rollback/<name> && git push origin rollback/<name>`.
+To mark another restore point before more testing, add a line `name <commit> description` to `docs/rollback-points.txt` (use `git rev-parse HEAD`), commit and push. Any commit hash or tag also works in place of a name.
 
 ## 2. Wipe everything except the admin
 
