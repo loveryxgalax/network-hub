@@ -154,8 +154,14 @@ test('landing page settings are validated, admin-only to change, and public to r
   const cfg=await (await fetch(origin+'/portal/api/config')).json();assert.deepEqual(cfg.plans.map(p=>p.name),['OFA MOTO']);assert.deepEqual(cfg.pppoePlans.map(p=>p.name),['Basic']);assert.equal(cfg.config.theme,'midnight');assert.equal(cfg.mpesa,true);
   const post=(route,body)=>fetch(origin+'/portal/api/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());
   // Lookups: account number inside a pasted message, a spaced PPPoE username, a phone number, unknown.
-  let a=await post('account',{query:'Dear customer, you paid KES 10 for account KNE-A52MDE. Thank you'});assert.equal(a.found,true);assert.equal(a.account,'kne-a52mde');assert.equal(a.status,'active');assert.equal(a.plan,'OFA MOTO');assert.equal(a.phone,undefined,'no contact details are returned');assert.equal(a.name,undefined);
-  a=await post('account',{query:'  christine   mwikali '});assert.equal(a.found,true);assert.equal(a.status,'expired');assert.equal(a.price,1500);
+  // From a device that is not the account\'s own, an account number only asks for the phone number on the account.
+  let lk=await post('account',{query:'Dear customer, you paid KES 10 for account KNE-A52MDE. Thank you'});assert.equal(lk.locked,true);assert.equal(lk.status,undefined);assert.equal(lk.plan,undefined);assert.match(lk.phoneHint,/^\+254•+678$/);
+  lk=await post('account',{query:'kne-a52mde',phone:'0700000000'});assert.equal(lk.locked,true);assert.equal(lk.wrong,true);
+  assert.equal((await post('account',{query:'kne-a52mde',phone:'0712345678'})).status,'active');
+  await post('account',{query:'x'});store.put('subscribers',{...store.get('subscribers',wallet.id),lastMac:'AA:BB:CC:00:00:09'},store.get('subscribers',wallet.id));
+  assert.equal((await post('account',{query:'kne-a52mde',mac:'aa-bb-cc-00-00-09'})).status,'active','the account\'s own device needs no phone check');
+  let a=await post('account',{query:'kne-a52mde',phone:'0712345678'});assert.equal(a.found,true);assert.equal(a.account,'kne-a52mde');assert.equal(a.status,'active');assert.equal(a.plan,'OFA MOTO');assert.equal(a.phone,undefined,'no contact details are returned');assert.equal(a.name,undefined);
+  a=await post('account',{query:'  christine   mwikali ',phone:'0723632248'});assert.equal(a.found,true);assert.equal(a.status,'expired');assert.equal(a.price,1500);
   assert.equal((await post('account',{query:'0723 632 248'})).account,'christine mwikali');assert.deepEqual(await post('account',{query:'nobody-here'}),{found:false});
   // Connection detection by the device the router reports.
   assert.deepEqual(await (await fetch(origin+'/portal/api/session?mac=AA:BB:CC:DD:EE:FF')).json(),{found:false});

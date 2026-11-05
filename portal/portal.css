@@ -853,3 +853,7 @@ body[data-sit=wifi-expired] #accountCol,body[data-sit=wifi-active] #accountCol{d
 .sit-offnote{margin:-4px 0 10px}
 .sit-note{padding:14px 16px;border-left:4px solid var(--brand);font-size:15px;line-height:1.45}
 body[data-sit=wifi-active] #hotspotCard.sit-collapsed{display:none}
+
+.lock-card{margin-top:12px;padding:16px;border-radius:14px;background:color-mix(in srgb,var(--brand) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--brand) 25%,var(--line))}
+.lock-card h3{margin:0 0 6px;font-size:17px}.lock-card p{margin:0 0 10px;color:var(--muted);font-size:14px}
+.lock-card input{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);margin-bottom:10px}
