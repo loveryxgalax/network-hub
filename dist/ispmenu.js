@@ -960,14 +960,22 @@ Object.assign(pages,{
     $('#hsd-go').onclick=async()=>{const b=$('#hsd-go'),conf=$('#hsd-c').value.trim(),re=$('#hsd-re').checked;if(conf!==rn){$('#hsd-m').innerHTML=notice('Not confirmed','Type the router name exactly to continue.',true);return;}b.disabled=true;
      try{for(const x of items){await hsJob(rid,'hotspot-server-remove',{name:x.name},conf);if(re&&x.interface&&x.profile&&x.addressPool)await hsJob(rid,'hotspot-server-create',{name:x.name,iface:x.interface,profile:x.profile,pool:x.addressPool},conf,Date.now()+20000);}
       $('#detail-dialog').close();toast('Queued on the router. Watch the result under Router jobs.');sel.clear();}catch(e){$('#hsd-m').innerHTML=notice('Could not queue',H(e.message),true);b.disabled=false;}};};
+   // One "Create server" entry point. It looks at the router first: if the netops bridge / a hotspot already exists it adds
+   // a server on what is there (quick); if the router has no netops setup yet it hands over to the full automatic setup wizard.
    const hsCreate=async()=>{let rj;try{rj=await api('router-jobs');}catch(e){toast(e.message);return;}const rs=rj.routers.filter(r=>r.enrolled);if(!rs.length){toast('Install the job runner on a router first (Router jobs).');return;}
-    const first=d.items.find(x=>x.routerId===rs[0].id)||{};
-    showDetails('Create hotspot server',`<div class="pf"><p>Creates a hotspot server on an interface that already exists on the router. Use the interface, profile and address pool the setup wizard created (the defaults below).</p>
-     <div class="form-grid"><label>Router<select id="hsn-r">${rs.map(r=>`<option value="${H(r.id)}">${H(r.name)}</option>`).join('')}</select></label>
-     <label>Server name<input id="hsn-n" value="${H(first.name||'netops-hotspot')}"></label><label>Interface<input id="hsn-i" value="${H(first.interface||'netops-bridge')}"></label>
-     <label>Profile<input id="hsn-p" value="${H(first.profile||'netops-hs')}"></label><label>Address pool<input id="hsn-a" value="${H(first.addressPool||'netops-hs-pool')}"></label></div>
-     <label>Type the router name to confirm<input id="hsn-c" autocomplete="off"></label><div id="hsn-m"></div><div class="pf-actions"><button class="button primary" id="hsn-go">Create</button></div></div>`);
-    $('#hsn-go').onclick=async()=>{const b=$('#hsn-go'),r=rs.find(x=>x.id===$('#hsn-r').value);b.disabled=true;try{await hsJob(r.id,'hotspot-server-create',{name:$('#hsn-n').value.trim(),iface:$('#hsn-i').value.trim(),profile:$('#hsn-p').value.trim(),pool:$('#hsn-a').value.trim()},$('#hsn-c').value.trim());$('#detail-dialog').close();toast('Queued on the router. Watch the result under Router jobs.');}catch(e){$('#hsn-m').innerHTML=notice('Could not queue',H(e.message),true);b.disabled=false;}};};
+    showDetails('Create hotspot server',`<div class="pf"><label>Router<select id="hsn-r">${rs.map(r=>`<option value="${H(r.id)}">${H(r.name)}</option>`).join('')}</select></label><div id="hsn-body"><p class="muted">Checking the router…</p></div></div>`);
+    const paintBody=async()=>{const rid=$('#hsn-r').value,r=rs.find(x=>x.id===rid),box=$('#hsn-body');box.innerHTML='<p class="muted">Checking the router…</p>';
+     let st=null;try{st=(await api('provision/'+rid)).state;}catch{}if($('#hsn-r').value!==rid)return;
+     const built=!!(st&&(st.services?.netopsBridge||st.services?.hotspots));
+     if(!built){box.innerHTML=`${notice(H(r.name)+' has no netops hotspot setup yet','The full automatic setup builds everything for you: the bridge and its ports, the address pool, DHCP, the hotspot profile and the hotspot server. It checks the router first and changes nothing if the router already serves customers.')}<div class="pf-actions"><button class="button primary" id="hsn-wiz">Continue to automatic setup</button></div>`;
+      $('#hsn-wiz').onclick=()=>{lk.routerId=rid;lk.step=3;lk.result=null;lk.spec=null;lk.preview=null;lkSave();$('#detail-dialog').close();location.hash='#router-link';};return;}
+     const first=d.items.find(x=>x.routerId===rid)||{};
+     box.innerHTML=`<p>${H(r.name)} already has the netops setup, so a server can be added straight onto it. The values below are the standard ones; change them only if your router uses other names.</p>
+      <div class="form-grid"><label>Server name<input id="hsn-n" value="${H(first.name||'netops-hotspot')}"></label><label>Interface<input id="hsn-i" value="${H(first.interface||'netops-bridge')}"></label>
+      <label>Profile<input id="hsn-p" value="${H(first.profile||'netops-hs')}"></label><label>Address pool<input id="hsn-a" value="${H(first.addressPool||'netops-hs-pool')}"></label></div>
+      <label>Type the router name <strong>${H(r.name)}</strong> to confirm<input id="hsn-c" autocomplete="off" placeholder="${H(r.name)}"></label><div id="hsn-m"></div><div class="pf-actions"><button class="button primary" id="hsn-go">Create</button></div>`;
+     $('#hsn-go').onclick=async()=>{const b=$('#hsn-go');b.disabled=true;try{await hsJob(rid,'hotspot-server-create',{name:$('#hsn-n').value.trim(),iface:$('#hsn-i').value.trim(),profile:$('#hsn-p').value.trim(),pool:$('#hsn-a').value.trim()},$('#hsn-c').value.trim());$('#detail-dialog').close();toast('Queued on the router. Watch the result under Router jobs.');}catch(e){$('#hsn-m').innerHTML=notice('Could not queue',H(e.message),true);b.disabled=false;}};};
+    $('#hsn-r').onchange=paintBody;paintBody();};
    $('#hs-new').onclick=hsCreate;$('#hs-del').onclick=()=>{const items=d.items.filter((_,i)=>sel.has(i));if(items.length)hsDelete(items);};
    for(const bt of document.querySelectorAll('[data-hsd]'))bt.onclick=()=>hsDelete([d.items[Number(bt.dataset.hsd)]]);
    $('#hs-all').checked=sel.size&&sel.size===d.items.length;$('#hs-all').onchange=e=>{sel.clear();if(e.target.checked)d.items.forEach((_,i)=>sel.add(i));paint();};
