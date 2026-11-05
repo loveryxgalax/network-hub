@@ -796,3 +796,6 @@ td.radius-actions{min-width:210px}
  .card .data-table tbody{padding:0!important}
  main .card{padding-left:14px;padding-right:14px}
 }
+/* Checkboxes never stretch to the generic input height (table select boxes looked like tall pills) */
+input[type=checkbox],input[type=radio]{min-height:0!important}
+input.hs-cb.hs-cb{width:22px!important;height:22px!important;min-width:0!important;min-height:0!important;border-radius:7px}
