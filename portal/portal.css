@@ -839,3 +839,6 @@ body[data-theme=spotlight] .topbar .help .help-num,body[data-theme=christmas] .t
 .topbar .help .help-num{min-height:20px}
 .topbar .help .help-wa{min-width:20px;height:20px;padding:0 3px}
 .topbar .help .help-wa .hi{width:13px;height:13px}
+
+.hx-adm{margin:0 0 10px;padding:10px 14px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:10px;font-size:13px;font-weight:600}
+.hx-active .btn:disabled{opacity:.55;cursor:not-allowed}

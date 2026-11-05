@@ -4,10 +4,11 @@
 // dst, chapId, chapChallenge, error in the address; after a payment the customer is logged in through the router.
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const params=new URLSearchParams(location.search);
+const ADM=!!params.get('viewas');
 const router={login:params.get('login')||'',dst:params.get('dst')||'',chapId:params.get('chapId')||'',chapChallenge:params.get('chapChallenge')||'',mac:params.get('mac')||''};
 // Live "on the portal now" count for the netops dashboard: the view shown, pinged every 10 s while the page is visible.
 const presence={page:'Packages',service:'hotspot',tab:Math.random().toString(36).slice(2,10),timer:null};
-function here(page,service){if(page)presence.page=page;if(service)presence.service=service;if(params.get('admin')||params.get('frame'))return;
+function here(page,service){if(page)presence.page=page;if(service)presence.service=service;if(params.get('admin')||params.get('frame')||ADM)return;
  fetch('/portal/api/presence',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:presence.page,service:presence.service,mac:router.mac,nas:params.get('nas')||'',tab:presence.tab}),keepalive:true}).catch(()=>{});
  clearTimeout(presence.timer);presence.timer=setTimeout(()=>{if(!document.hidden)here();},10000);}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)here();});
@@ -414,7 +415,7 @@ function hxBar(){const card=$('#hotspotCard');if(!card||card.querySelector('.hx-
  $('#hx-voucher').onclick=()=>hxSheet(hx('voucherT'),hx('voucherS'),hx('voucherPh'),async v=>{if(!v)throw new Error(hx('voucherPh'));if(!router.login)throw new Error(hx('needWifi'));await routerLogin(v,v.toLowerCase());});
  $('#hx-code').onclick=()=>hxSheet(hx('codeT'),hx('codeS'),hx('codePh'),async v=>{if(!router.login||!router.chapId)throw new Error(hx('needWifi'));await hxJoin('code-login',{code:v});});}
 let hxTimer=null;
-async function hxActive(){if(!router.mac||!router.login||!router.chapId||CFG.show?.autoConnect===false)return;
+async function hxActive(){if(!router.mac||(!ADM&&(!router.login||!router.chapId))||CFG.show?.autoConnect===false)return;
  let a;try{a=await call('active?mac='+encodeURIComponent(router.mac));}catch{return;}if(!a.found)return;
  const mark=()=>{for(const b of document.querySelectorAll('.pkg[data-pkg]'))if(b.dataset.pkg===a.planId&&!b.querySelector('.hx-chip')){b.classList.add('hx-cur');const c=document.createElement('span');c.className='hx-chip';c.textContent=a.left!=null?hx('expIn',{t:leftText(a.left)}):hx('active2');b.append(c);}};
  mark();new MutationObserver(mark).observe($('#hotspotPkgs'),{childList:true});
@@ -423,8 +424,9 @@ async function hxActive(){if(!router.mac||!router.login||!router.chapId||CFG.sho
  card.innerHTML=`<h2>✓ ${esc(hx('active'))}</h2><p class="hx-pkg">${esc(hx('pkg'))}: <b>${esc(a.plan)}</b></p>${a.left!=null?`<p class="muted small">${esc(hx('exp',{t:leftText(a.left)}))}</p>`:''}<p class="muted small" id="hx-auto">${esc(hx('auto',{n}))}</p><button type="button" class="btn" id="hx-now"><span>${esc(hx('now'))} (<b id="hx-n">${n}</b>)</span></button><div class="hx-row"><button type="button" class="hx-link" id="hx-stay">${esc(hx('stay'))}</button><a class="hx-link" href="#hotspotCard" id="hx-all">${esc(hx('all'))}</a></div><div class="msg" id="hx-msg"></div>`;
  ($('#hx-loy')||$('#portal-alert')||col).after(card);{const hc=$('#hotspotCard');if(hc&&!hc.querySelector('.hx-back-active')){const bk=document.createElement('a');bk.className='hx-link hx-back-active';bk.href='#hx-active';bk.textContent='← '+hx('backActive');bk.onclick=e=>{e.preventDefault();document.getElementById('hx-active').scrollIntoView({behavior:'smooth'});};hc.append(bk);}}
  const go=async()=>{clearInterval(hxTimer);const b=$('#hx-now');b.disabled=true;try{await hxJoin('connect-now',{});}catch(e){b.disabled=false;$('#hx-msg').textContent=e.message;}};
- $('#hx-now').onclick=go;$('#hx-stay').onclick=()=>{clearInterval(hxTimer);$('#hx-auto').remove();$('#hx-n').parentElement.textContent=hx('now');};$('#hx-all').onclick=e=>{e.preventDefault();clearInterval(hxTimer);$('#hotspotCard').scrollIntoView({behavior:'smooth'});};
- hxTimer=setInterval(()=>{n--;const el=$('#hx-n');if(el)el.textContent=n;const au=$('#hx-auto');if(au)au.textContent=hx('auto',{n:Math.max(n,0)});if(n<=0)go();},1000);}
+ if(ADM){clearInterval(hxTimer);const bn=document.createElement('div');bn.className='hx-adm';bn.innerHTML='👁 Admin preview as <b>'+esc(params.get('viewas'))+'</b>. You are not on the hotspot WiFi, so Connect now is disabled.';card.before(bn);const au=$('#hx-auto');if(au)au.remove();const st=$('#hx-stay');if(st)st.remove();const nb=$('#hx-now');nb.disabled=true;nb.innerHTML='<span>Connect now (hotspot WiFi only)</span>';}
+ $('#hx-now').onclick=go;if($('#hx-stay'))$('#hx-stay').onclick=()=>{clearInterval(hxTimer);$('#hx-auto').remove();$('#hx-n').parentElement.textContent=hx('now');};$('#hx-all').onclick=e=>{e.preventDefault();clearInterval(hxTimer);$('#hotspotCard').scrollIntoView({behavior:'smooth'});};
+ if(!ADM)hxTimer=setInterval(()=>{n--;const el=$('#hx-n');if(el)el.textContent=n;const au=$('#hx-auto');if(au)au.textContent=hx('auto',{n:Math.max(n,0)});if(n<=0)go();},1000);}
 async function hxUsageCard(){if(!router.mac||CFG.show?.myUsage===false||document.getElementById('hx-usage-card'))return;
  let u;try{u=await call('usage?mac='+encodeURIComponent(router.mac));}catch{return;}if(!u.found)return;
  if(u.loyalty?.enabled&&!document.getElementById('hx-loy')){const lb=document.createElement('div');lb.id='hx-loy';lb.className='hx-loy';lb.innerHTML=`<span class="hx-ic">★</span><span><small>${esc(hx('loyalty'))}</small><b>${u.points} ${esc(hx('pts'))}</b></span><button type="button" class="hx-redeem" ${u.points>0?'':'disabled'}>${esc(hx('redeem'))}</button>`;($('#portal-alert')||$('#packagesCol')).after(lb);
