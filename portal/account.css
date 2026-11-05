@@ -82,3 +82,4 @@ body.pp #help .hi{margin-right:3px}
 
 body.pp #user,body.pp .ah-user{display:block!important}
 .pp .body input,.pp-grid input{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);margin:6px 0 10px}
+.pp-guide{display:block;margin-top:12px;color:var(--brand);font-weight:600;text-decoration:none}
