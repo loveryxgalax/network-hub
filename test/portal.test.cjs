@@ -29,7 +29,7 @@ test('hotspot purchase: STK push, confirmed callback, one login, no double credi
   // A forged "paid" callback is ignored when Safaricom does not confirm it.
   await portal.callback(store,secret,callbackBody(push.id,0),d.fetchImpl);assert.equal((await portal.status(store,started.id,started.token,d.fetchImpl)).status,'pending');assert.equal(store.list('subscriberPayments').length,0);
   d.answers.set(push.id,'0');await portal.callback(store,secret,callbackBody(push.id,0),d.fetchImpl);
-  const s=await portal.status(store,started.id,started.token,d.fetchImpl);assert.equal(s.status,'paid');assert.match(s.username,/^w[a-z0-9]{6}$/);assert.match(s.password,/^\d{6}$/);assert.ok(s.expiresAt>Date.now()+23*3600000);
+  const s=await portal.status(store,started.id,started.token,d.fetchImpl);assert.equal(s.status,'paid');assert.match(s.username,/^kne-[a-z0-9]{6}$/);assert.match(s.password,/^\d{6}$/);assert.ok(s.expiresAt>Date.now()+23*3600000);
   await portal.callback(store,secret,callbackBody(push.id,0),d.fetchImpl);assert.equal(store.list('subscriberPayments').length,1,'duplicate callbacks credit once');
   await assert.rejects(portal.status(store,started.id,'not-the-token',d.fetchImpl),/not found/);
   // Same phone buys again later: same login, extended.

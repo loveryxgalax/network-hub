@@ -42,7 +42,7 @@ test('HTTP: static IP settings and conversion, family accounts, PINs, bulk, tria
   const ua={'User-Agent':'Mozilla/5.0 (Linux; Android 13; SM-A145F Build/TP1A) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36'};
   assert.equal((await pub('config?mac=AA:BB:CC:00:00:09','GET',undefined,ua)).status,200);
   const cfgPlan=(await pub('config')).body.plans.find(p=>p.id===daily.id);assert.deepEqual(cfgPlan.trial,{minutes:10});assert.equal(cfgPlan.custom.maxQty,7);
-  const tr=await pub('trial','POST',{planId:daily.id,mac:'AA:BB:CC:00:00:09'});assert.equal(tr.status,200);assert.match(tr.body.username,/^t/);
+  const tr=await pub('trial','POST',{planId:daily.id,mac:'AA:BB:CC:00:00:09'});assert.equal(tr.status,200);assert.match(tr.body.username,/^kne-/);
   assert.equal((await pub('trial','POST',{planId:daily.id,mac:'AA:BB:CC:00:00:09'})).status,429,'one trial per device');
   const rep=(await api('reports?period=today')).body;assert.ok(rep.portalVisits.total>=1);assert.equal(rep.portalVisits.os[0].name,'Android');
   assert.equal((await api('roaming')).status,200);

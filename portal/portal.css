@@ -734,3 +734,4 @@ body[data-theme=essential] .howto,body[data-theme=studio] .howto,body[data-theme
 .lang button{min-width:34px;padding:5px 8px;font-size:12px;letter-spacing:.04em;font-weight:700;line-height:1.2}
 .split-lang{display:flex;justify-content:flex-start}
 @media(max-width:899px){.lang button{min-height:34px;min-width:40px;padding:6px 8px;font-size:12.5px}}
+.hi{width:15px;height:15px;vertical-align:-2px;margin-right:4px;flex:none}.hi.wa{color:#16a34a}a[data-whatsapp] .or{color:var(--muted);font-weight:400;margin-right:6px}a[data-phone],a[data-whatsapp]{display:inline-flex;align-items:center}

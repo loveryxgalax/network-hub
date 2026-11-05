@@ -53,7 +53,7 @@ test('bulk actions: preview version and count must match; delete needs typed con
 test('free trial once per device; quantity pricing with bulk discount renews several periods',async()=>{
  const {store,done}=fx();try{mpesa._reset();
   const p=store.put('plans',radius.plan({name:'Daily',service:'hotspot',downloadMbps:5,uploadMbps:2,price:50,durationValue:1,durationUnit:'days',trial:{enabled:true,minutes:15,everyDays:7},custom:{enabled:true,maxQty:7,discounts:[{minQty:3,percent:10}]}}));
-  const t=portal.trial(store,{planId:p.id,mac:'AA:BB:CC:00:11:22'});assert.match(t.username,/^t/);assert.ok(t.expiresAt<=Date.now()+15*60000);
+  const t=portal.trial(store,{planId:p.id,mac:'AA:BB:CC:00:11:22'});assert.match(t.username,/^kne-/);assert.ok(t.expiresAt<=Date.now()+15*60000);
   assert.throws(()=>portal.trial(store,{planId:p.id,mac:'aa:bb:cc:00:11:22'}),/already had a free trial/);
   assert.deepEqual(packages.quantityPrice(p,3),{qty:3,amount:135,percent:10});assert.throws(()=>packages.quantityPrice(p,8),/1 to 7/);
   mpesa.setConfig(store,{env:'production',type:'paybill',shortcode:'174379',consumerKey:'ck',consumerSecret:'cs',passkey:'pk'});
