@@ -789,3 +789,10 @@ td.radius-actions{min-width:210px}
  .table-wrap{overflow-x:clip!important;max-width:100%}
 }
 @media (hover:none){.data-table tbody tr:hover td{background:transparent!important}}
+
+/* Phone cards: equal, small side spacing inside panels */
+@media (max-width:720px){
+ .card .table-wrap,.card .table-wrap.ct-wrap{margin-left:0!important;margin-right:0!important}
+ .card .data-table tbody{padding:0!important}
+ main .card{padding-left:14px;padding-right:14px}
+}
