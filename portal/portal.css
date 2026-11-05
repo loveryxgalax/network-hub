@@ -732,6 +732,40 @@ body[data-theme=essential] .howto,body[data-theme=studio] .howto,body[data-theme
 .lang{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;background:var(--line);border-radius:999px;width:auto;max-width:max-content;flex:none}
 .lang::before{content:"";width:15px;height:15px;margin-right:4px;flex:none;opacity:.65;background:currentColor;color:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/%3E%3C/svg%3E") center/contain no-repeat}
 .lang button{min-width:34px;padding:5px 8px;font-size:12px;letter-spacing:.04em;font-weight:700;line-height:1.2}
-.split-lang{display:flex;justify-content:flex-start}
 @media(max-width:899px){.lang button{min-height:34px;min-width:40px;padding:6px 8px;font-size:12.5px}}
 .hi{width:15px;height:15px;vertical-align:-2px;margin-right:4px;flex:none}.hi.wa{color:#16a34a}a[data-whatsapp] .or{color:var(--muted);font-weight:400;margin-right:6px}a[data-phone],a[data-whatsapp]{display:inline-flex;align-items:center}
+
+/* Language: one compact globe + code button with a small menu (replaces the three-pill strip) */
+body .lang,body[data-theme] .lang{display:block;position:relative;background:none!important;border:0!important;padding:0!important;border-radius:0;max-width:none;width:auto;flex:none}
+body .lang::before{display:none}
+.lang .lg-btn{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 10px 6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font-size:13px;font-weight:700;letter-spacing:.03em;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.lang .lg-btn svg{width:16px;height:16px;flex:none;opacity:.75}.lang .lg-btn .lg-car{width:13px;height:13px;opacity:.55;transition:transform .15s}
+.lang .lg-btn[aria-expanded=true] .lg-car{transform:rotate(180deg)}
+.lang .lg-btn:hover{border-color:var(--brand)}.lang .lg-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.lang .lg-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:190px;padding:6px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(15,23,42,.18);z-index:60}
+.lang .lg-menu[hidden]{display:none}
+.lang .lg-i{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:var(--ink);font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.lang .lg-i:hover{background:color-mix(in srgb,var(--brand) 9%,transparent)}
+.lang .lg-i.on{background:color-mix(in srgb,var(--brand) 12%,transparent);color:var(--ink);font-weight:700}
+.lang .lg-code{display:inline-grid;place-items:center;min-width:30px;height:22px;border-radius:6px;background:color-mix(in srgb,var(--ink) 8%,transparent);font-size:11px;font-weight:800;letter-spacing:.05em}
+.lang .lg-i.on .lg-code{background:var(--brand);color:var(--brand-ink,#fff)}
+.lang .lg-ck{width:16px;height:16px;margin-left:auto;color:var(--brand);opacity:0}.lang .lg-i.on .lg-ck{opacity:1}
+body[data-theme=spotlight] .topbar .lg-btn,body[data-theme=christmas] .topbar .lg-btn{background:rgba(255,255,255,.16);color:inherit;border-color:rgba(255,255,255,.3)}
+.topbar .wrap>.lang{margin-left:auto}
+/* Help line in the header: one tidy row, icons centred on the text */
+.topbar .help{flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:12.500px}
+.topbar .help>span{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.topbar .help a{display:inline-flex;align-items:center;gap:0;line-height:1}
+/* Chat button + contact popover */
+.chat-fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;border:0;background:var(--brand);color:var(--brand-ink,#fff);display:grid;place-items:center;box-shadow:0 8px 22px color-mix(in srgb,var(--brand) 40%,transparent);z-index:40;cursor:pointer;padding:0}
+.chat-fab[hidden],.chat-pop[hidden]{display:none}
+.chat-fab svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chat-pop{position:fixed;right:16px;bottom:calc(86px + env(safe-area-inset-bottom));width:min(300px,calc(100vw - 32px));padding:8px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.22);z-index:41;display:grid;gap:4px}
+.chat-pop a{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;color:var(--ink);text-decoration:none}
+.chat-pop a:hover{background:color-mix(in srgb,var(--brand) 9%,transparent)}
+.chat-pop small{display:block;color:var(--muted)}
+
+.topbar .wrap{flex-wrap:nowrap;align-items:center}
+.topbar .wrap>div[style*="min-width"]{flex:1 1 auto;min-width:0!important}
+.topbar .logo{flex:none}
+@media(max-width:420px){.topbar .help{font-size:12px}.lang .lg-btn{padding:6px 8px}}
