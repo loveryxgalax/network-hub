@@ -1320,11 +1320,11 @@ document.addEventListener('click',e=>{for(const m of document.querySelectorAll('
 // Row actions as icons (with a tooltip) so tables stay narrow: Edit, Delete, View, Download, Renew, Payment and the like.
 // Only short, exact labels are converted; buttons with any other text are left alone.
 (function(){
- const MAP={edit:['pen',''],password:['key',''],credentials:['key',''],block:['ban','danger'],unblock:['ban',''],delete:['trash','danger'],remove:['trash','danger'],forget:['trash','danger'],revoke:['trash','danger'],view:['eye',''],open:['eye',''],download:['download',''],copy:['file',''],renew:['refresh',''],payment:['receipt',''],pay:['receipt',''],resolve:['check',''],acknowledge:['check',''],approve:['check',''],reopen:['refresh',''],send:['chat',''],disconnect:['bolt',''],reset:['refresh',''],print:['file',''],details:['info',''],logs:['info',''],invoice:['file',''],receipt:['receipt','']};
+ const MAP={'▲':['up',''],'▼':['down',''],edit:['pen',''],password:['key',''],credentials:['key',''],block:['ban','danger'],unblock:['ban',''],delete:['trash','danger'],remove:['trash','danger'],forget:['trash','danger'],revoke:['trash','danger'],view:['eye',''],open:['eye',''],download:['download',''],copy:['file',''],renew:['refresh',''],payment:['receipt',''],pay:['receipt',''],resolve:['check',''],acknowledge:['check',''],approve:['check',''],reopen:['refresh',''],send:['chat',''],disconnect:['bolt',''],reset:['refresh',''],print:['file',''],details:['info',''],logs:['info',''],invoice:['file',''],receipt:['receipt','']};
  const SEL='td.radius-actions .button,td .ra-btn,.row-actions .ra-btn,td .button,td button.button,td a.button,.row-actions .button,.sl-acts .button,.sl-acts button.button,.list-row .button';
  const run=()=>{for(const b of document.querySelectorAll(SEL)){if(b.dataset.ic||b.classList.contains('pf-tile')||b.closest('.pf-actions,.rtp-bar,.kd2,.page-tabs'))continue;
    const label=(b.textContent||'').trim(),m=MAP[label.toLowerCase()];b.dataset.ic='1';if(!m||b.children.length>1)continue;
-   b.title=label;b.setAttribute('aria-label',label);b.classList.add('ic-btn');if(m[1])b.classList.add('ic-'+m[1]);b.innerHTML=icon(m[0],16);}
+   b.title=b.title||label;b.setAttribute('aria-label',b.title);b.classList.add('ic-btn');if(m[1])b.classList.add('ic-'+m[1]);b.innerHTML=icon(m[0],16);}
   for(const h of document.querySelectorAll('dialog .modal-heading')){const t=(h.querySelector('h2')?.textContent||'').trim(),i=t?t[0].toUpperCase():'';if(i&&h.dataset.ini!==i)h.dataset.ini=i;}};
  let tm;new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(run,40);}).observe(document.documentElement,{childList:true,subtree:true});run();
 })();

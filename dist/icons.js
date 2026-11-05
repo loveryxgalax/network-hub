@@ -25,7 +25,7 @@ const paths = {
   activity:'M2 12h5l3-8 4 16 3-8h5',
   info:'M12 8h.01 M12 11v6 M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20',
   clock:'M12 6v6l4 2 M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20',
-  chevron:'M9 5l7 7-7 7',
+  chevron:'M9 5l7 7-7 7',up:'M5 15l7-7 7 7',down:'M5 9l7 7 7-7',
   wifi:'M2 9a15 15 0 0 1 20 0 M5 12.5a10 10 0 0 1 14 0 M8.5 16a5 5 0 0 1 7 0 M12 19.5h.01',
   network:'M10 3h4v4h-4z M3 17h4v4H3z M10 17h4v4h-4z M17 17h4v4h-4z M12 7v5 M5 17v-5h14v5 M12 12v5',
   house:'M3 11l9-7 9 7 M5 10v10h14V10 M10 20v-5h4v5',
