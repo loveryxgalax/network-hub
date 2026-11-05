@@ -12,8 +12,19 @@ test('minute plans and the signed self-service account page',async()=>{
   const link=await fetch(o+'/api/radius/subscribers/'+sub.id+'/self-service',{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},body:'{}'}).then(r=>r.json());
   assert.match(link.link,/\/portal\/account\.html\?t=/);const t=new URL(link.link).searchParams.get('t');
   const me=await fetch(o+'/portal/api/me?t='+encodeURIComponent(t)).then(r=>r.json());
-  assert.equal(me.account,'kne-test01');assert.equal(me.status,'active');assert.ok(me.plans.some(p=>p.current&&p.duration==='90 minutes'));
+assert.equal(me.account,'kne-test01');assert.equal(me.status,'active');assert.ok(me.plans.some(p=>p.current&&p.duration==='90 minutes'));
   assert.equal((await fetch(o+'/portal/api/me?t='+encodeURIComponent(t.slice(0,-2)+'xx'))).status,404);
   assert.equal((await fetch(o+'/portal/account.html')).status,200);
  }finally{app.server.close();}
+});
+test('PPPoE dashboard data, PIN/phone hand-over to the dashboard, and customer-pressed reset',async()=>{
+ const ss=require('../lib/selfservice.cjs');
+ const st=new (require('../lib/store.cjs').Store)(fs.mkdtempSync(path.join(os.tmpdir(),'pp-')));
+ const r=st.put('devices',{name:'HAP-NEW',type:'router',driver:'none'});st.secret('jobs:'+r.id,{h:1});
+ const plan=st.put('plans',radius.plan({name:'Home',service:'pppoe',downloadMbps:10,uploadMbps:10,price:2000,durationValue:1,durationUnit:'months'}));
+ const s=st.put('subscribers',{...radius.subscriber(st,{name:'M',username:'kne-pp1',phone:'0721275260',service:'pppoe',planId:plan.id,expiresAt:Date.now()+864e5}),balance:3000});
+ st.db.prepare("INSERT INTO records(kind,id,body,created,updated) VALUES('radiusSessions','s1',?,?,?)").run(JSON.stringify({username:'kne-pp1',nasName:'HAP-NEW',service:'pppoe',downloadBytes:2e9,uploadBytes:1e9,updatedAt:Date.now()}),Date.now(),Date.now());
+ const v=ss.view(st,st.get('subscribers',s.id));assert.equal(v.usage.month.down,2e9);assert.equal(v.usage.all.sessions,1);assert.equal(v.planInfo.price,2000);assert.equal(v.canReset,true);assert.equal(v.usage.online,true);
+ const out=ss.reset(st,st.get('subscribers',s.id));assert.equal(out.queued,true);assert.equal(st.list('routerJobs')[0].type,'disconnect');
+ assert.equal(ss.reset(st,st.get('subscribers',s.id)).queued,false,'a second press while one is queued does not stack');
 });

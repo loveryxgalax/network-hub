@@ -17,6 +17,7 @@ function sheet(html){$('#sheet-body').innerHTML=html;$('#sheet').hidden=false;}
 function closeSheet(){$('#sheet').hidden=true;$('#sheet-body').innerHTML='';clearTimeout(poll.t);}
 $('#sheet-x').onclick=closeSheet;$('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet();};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
 function paint(){
+ if(D.service==='pppoe')return paintPppoe();
  const d=D,st=d.status,label={active:'Connected plan active',expired:'Expired',suspended:'Deactivated'}[st]||st;
  document.title=d.brand.name+' · My account';$('#brand').textContent=d.brand.name||'Your account';
  document.documentElement.style.setProperty('--brand',d.brand.color);
@@ -49,6 +50,43 @@ $('#help').innerHTML=(d.brand.phone||d.brand.whatsapp)?'Need help? '+(d.brand.ph
  const r=$('#redeem');if(r)r.onclick=()=>sheet(`<h3>Redeem points</h3><p>Turn ${pts} point${pts===1?'':'s'} into wallet credit${worth?` of ${esc(kes(worth))}`:''}.</p><div id="rmsg"></div><button class="btn" id="rgo" style="width:100%">Redeem ${pts} points</button>`),r&&setTimeout(()=>{const g=$('#rgo');},0);
  for(const b of document.querySelectorAll('[data-p]'))b.onclick=()=>buy(d.plans.find(p=>p.id===b.dataset.p));
 }
+
+// PPPoE customers get their own dashboard: connection, package, usage this month and all time, wallet, reset, extend, contact.
+function paintPppoe(){
+ const d=D,st=d.status,active=st==='active',pi=d.planInfo||{},u=d.usage,bal=Number(d.balance)||0;
+ document.body.classList.add('pp');document.title=d.brand.name+' · My internet';$('#brand').textContent=d.brand.name||'Your account';
+ document.documentElement.style.setProperty('--brand',d.brand.color);
+ $('#user').innerHTML=`<b>${esc(String(d.account).toUpperCase())}</b><small>${esc(kes(bal))}</small>`;
+ const HI_PH='<svg class="hi" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15 15 0 006.6 6.6l2.2-2.2a1 1 0 011-.25 11.4 11.4 0 003.6.6 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.6 3.6a1 1 0 01-.25 1z"/></svg>',HI_WA='<svg class="hi wa" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 2a8 8 0 11-4.3 14.7l-.4-.2-2.6.7.7-2.5-.3-.4A8 8 0 0112 4zm-3 3.5c-.2 0-.5.1-.7.4-.3.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.8 4.4 3.8 2.2.9 2.6.7 3.1.7.5 0 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.4l-1.7-.8c-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.3-.1-1.1-.4-2.1-1.3-.8-.7-1.3-1.5-1.4-1.8-.1-.2 0-.4.1-.5l.4-.5.3-.4v-.5l-.8-1.9c-.2-.5-.4-.5-.6-.5z"/></svg>';
+ $('#help').innerHTML=(d.brand.phone||d.brand.whatsapp)?'Need help? '+(d.brand.whatsapp?`<a href="https://wa.me/${esc(d.brand.whatsapp.replace(/\D/g,''))}">${HI_WA}</a>`:'')+(d.brand.phone?`<a href="tel:${esc(d.brand.phone)}">${HI_PH}${esc(d.brand.phone)}</a>`:''):'';
+ const covers=pi.price!=null&&bal>0?(bal>=pi.price?`Covers your ${kes(pi.price)} package`:`${kes(pi.price-bal)} short of your ${kes(pi.price)} package`):'Top up by paying below';
+ const state=active?{t:'Connection active',c:'ok',s:left(d.expiresAt)}:st==='suspended'?{t:'Account deactivated',c:'bad',s:'Please contact support'}:{t:'Connection expired',c:'warn',s:d.expiresAt?'Expired '+when(d.expiresAt):'Pay below to get connected'};
+ $('#app').innerHTML=`<div class="pp-grid">
+ <section class="card pp-conn ${state.c}"><div><b>${active?'✔ ':''}${esc(state.t)}</b><small>${esc(state.s)}</small></div><div class="pp-r">${d.expiresAt?`${active?'Valid until':'Ended'}<b>${esc(when(d.expiresAt))}</b>`:''}</div></section>
+ <section class="card"><header><h2>Package</h2></header><div class="body pp-kv">
+  <div><span>Package</span><b>${esc(pi.name||d.plan||'—')}</b></div>
+  ${d.canChange?'<button class="btn ghost sm" id="chg">⇄ Change package</button>':''}
+  ${pi.price!=null?`<div><span>Price</span>${esc(kes(pi.price))} / ${esc(pi.duration)}</div>`:''}
+  ${pi.downMbps?`<div><span>Speed</span>${esc(String(pi.downMbps))} ↓ / ${esc(String(pi.upMbps))} ↑ Mbps</div>`:''}
+  <div><span>Name</span>${esc(d.name||'—')}</div></div></section>
+ <section class="card"><header><h2>Data usage</h2>${u.online?'<span class="badge active">Online now</span>':''}</header><div class="body">
+  <div class="pp-lab">This month</div><div class="usage"><div class="stat"><i>↓</i><div><small>Download</small><b id="u-down">${esc(bytes(u.month.down))}</b></div></div><div class="stat"><i>↑</i><div><small>Upload</small><b id="u-up">${esc(bytes(u.month.up))}</b></div></div></div>
+  <div class="pp-all"><div><b id="u-adown">${esc(bytes(u.all.down))}</b><span>Downloaded</span></div><div><b id="u-aup">${esc(bytes(u.all.up))}</b><span>Uploaded</span></div><div><b id="u-asess">${esc(String(u.all.sessions))}</b><span>Sessions</span></div></div></div><p class="u-note" id="u-note">${usageNote(u)}</p></section>
+ <section class="card"><header><h2>Wallet &amp; payments</h2></header><div class="body"><div class="pp-bal"><span>Account balance</span><b>${esc(kes(bal))}</b><small>${esc(covers)}</small></div>
+  ${d.canReset?`<button class="btn ghost" id="resetln" style="width:100%;margin-top:12px">↻ Reset connection</button><p class="pp-help">Internet not working? Your router reconnects in a few seconds.</p>`:'<p class="pp-help">Internet not working? Switch your router off and on, or chat with us.</p>'}</div></section>
+ <section class="card"><header><h2>Extend your subscription</h2></header><div class="body"><p class="pp-help" style="margin-top:0">Pay with M-Pesa${pi.price!=null?` · ${esc(kes(pi.price))} for ${esc(pi.duration)}`:''}</p><input id="pphone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" value="${esc(d.phone||'')}"><button class="btn" id="ppay" style="width:100%">Pay and Extend</button><div id="ppmsg"></div></div></section>
+ <section class="card"><header><h2>Contact details</h2></header><div class="body pp-kv"><div><span>Phone</span>${esc(d.phone||'—')}</div><div><span>Email</span>${esc(d.email||'—')}</div></div></section>
+ </div><button class="btn logout" id="logout">Log Out</button>`;
+ $('#chat-fab').hidden=false;
+ $('#logout').onclick=()=>{try{history.replaceState(null,'',location.pathname);}catch{}document.title='Signed out';$('#chat-fab').remove();$('#app').innerHTML='<div class="card"><div class="body empty"><b>You have signed out</b><p>To open your account again, use the link your provider sent you.</p></div></div>';window.scrollTo(0,0);};
+ const cf=$('#chat-fab');cf.onclick=()=>sheet(`<h3>Chat with us</h3><p>Send a message to ${esc(d.brand.name||'support')}. We will reply on your phone number.</p><div id="cmsg"></div><textarea id="ctext" rows="4" maxlength="600" placeholder="How can we help?"></textarea><button class="btn" id="cgo" style="width:100%">Send message</button>`);
+ const rl=$('#resetln');if(rl)rl.onclick=async()=>{rl.disabled=true;try{const r=await post('me/reset',{});D=r;paint();toast(r.reset&&r.reset.queued?'Reconnecting. Your router redials in a few seconds.':'We could not reach your router from here. Switch it off and on, or contact support.');}catch(x){toast(x.message);rl.disabled=false;}};
+ const ch=$('#chg');if(ch)ch.onclick=()=>sheet(`<h3>Change package</h3><p>Choose the package you want. You pay for it with M-Pesa, and it starts when the payment is confirmed.</p><div class="pk pk-sheet">${d.plans.map(p=>{const cur=p.current,can=st==='suspended'?false:cur||p.available;return `<div class="p ${cur?'cur':''}"><h3><span>${esc(p.name)}</span>${cur?'<span class="tag">✓ Current</span>':''}</h3><b>${esc(kes(p.price))}</b><small>${esc(p.duration)}</small><button class="btn ${cur?'ok':''}" data-p="${esc(p.id)}" ${can?'':'disabled'}>${cur?'Renew':can?'Choose':'Unavailable'}</button></div>`;}).join('')||'<p>No packages are on sale right now.</p>'}</div>`);
+ $('#ppay').onclick=()=>{const cur=d.plans.find(p=>p.current)||d.plans[0];if(!cur)return toast('No package to pay for right now.');const ph=$('#pphone').value;sheet('');buyWith(cur,ph);};
+ document.addEventListener('click',ppChoose);
+}
+function ppChoose(e){const b=e.target.closest('.pk-sheet [data-p]');if(!b||!D)return;const p=D.plans.find(x=>x.id===b.dataset.p);if(p)buy(p);}
+function buyWith(p,phone){buy(p);const i=$('#phone');if(i&&phone)i.value=phone;}
 document.addEventListener('click',async e=>{if(e.target.id==='cgo'){const b=e.target,t=$('#ctext').value;b.disabled=true;try{await post('me/message',{message:t});sheet('<div class="center"><h3>Message sent ✔</h3><p>Thank you. We will get back to you shortly.</p><button class="btn" onclick="document.getElementById(\'sheet-x\').click()">Close</button></div>');}catch(x){$('#cmsg').innerHTML=`<div class="msg bad">${esc(x.message)}</div>`;b.disabled=false;}return;}if(e.target.id==='tvgo'){const b=e.target;b.disabled=true;try{D=await post('me/tv',{mac:$('#tvmac').value,name:$('#tvname').value});closeSheet();paint();}catch(x){$('#tmsg').innerHTML=`<div class="msg bad">${esc(x.message)}</div>`;b.disabled=false;}return;}if(e.target.id!=='rgo')return;const b=e.target;b.disabled=true;try{D=await post('me/redeem',{});closeSheet();paint();}catch(x){$('#rmsg').innerHTML=`<div class="msg bad">${esc(x.message)}</div>`;b.disabled=false;}});
 function buy(p){sheet(`<h3>${esc(p.name)}</h3><p>${esc(kes(p.price))} · ${esc(p.duration)}. Enter your M-Pesa number and we'll send a payment prompt.</p><div id="pmsg"></div><input id="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" value="${esc(D.phone||'')}"><button class="btn" id="pgo" style="width:100%">Pay ${esc(kes(p.price))}</button>`);
  $('#pgo').onclick=async()=>{const b=$('#pgo');b.disabled=true;$('#pmsg').innerHTML='';try{const s=await post('me/pay',{phone:$('#phone').value,planId:p.id});sheet(`<div class="center"><div class="spin"></div><h3>Check your phone</h3><p>Enter your M-Pesa PIN to pay ${esc(kes(s.amount))}.</p></div>`);poll(s.id,s.token,Date.now());}catch(x){$('#pmsg').innerHTML=`<div class="msg bad">${esc(x.message)}</div>`;b.disabled=false;}};}
@@ -56,7 +94,7 @@ function poll(id,tok,t0){clearTimeout(poll.t);poll.t=setTimeout(async()=>{try{co
  if(s.status==='pending'){if(Date.now()-t0>120000)return sheet('<h3>Still waiting</h3><p>We have not received the payment yet. If you paid, refresh this page in a minute.</p>');return poll(id,tok,t0);}
  if(s.status==='paid'||s.status==='completed'||s.status==='success'){D=await api('me?t='+encodeURIComponent(T));paint();return sheet('<div class="center"><h3>Payment received ✔</h3><p>Your package has been extended. Thank you!</p><button class="btn" onclick="document.getElementById(\'sheet-x\').click()">Done</button></div>');}
  sheet(`<h3>Payment not completed</h3><p>${esc(s.message||s.reason||'The payment was cancelled or failed.')}</p>`);}catch(x){sheet(`<h3>Something went wrong</h3><p>${esc(x.message)}</p>`);}},2500);}
-setInterval(async()=>{if(document.hidden||!D||!T)return;try{const n=await api('me?t='+encodeURIComponent(T));D.usage=n.usage;const dn=$('#u-down'),up=$('#u-up'),nt=$('#u-note');if(dn)dn.textContent=bytes(n.usage.down);if(up)up.textContent=bytes(n.usage.up);if(nt)nt.textContent=usageNote(n.usage);}catch{}},60000);
+setInterval(async()=>{if(document.hidden||!D||!T)return;try{const n=await api('me?t='+encodeURIComponent(T));D.usage=n.usage;const pp=D.service==='pppoe',dn=$('#u-down'),up=$('#u-up'),nt=$('#u-note');if(dn)dn.textContent=bytes(pp?n.usage.month.down:n.usage.down);if(up)up.textContent=bytes(pp?n.usage.month.up:n.usage.up);if(pp){const a=$('#u-adown'),b=$('#u-aup'),c=$('#u-asess');if(a)a.textContent=bytes(n.usage.all.down);if(b)b.textContent=bytes(n.usage.all.up);if(c)c.textContent=String(n.usage.all.sessions);}if(nt)nt.textContent=usageNote(n.usage);}catch{}},60000);
 (async()=>{if(!T)return $('#app').innerHTML='<div class="card skeleton">Open the link your provider sent you.</div>';
  try{D=await api('me?t='+encodeURIComponent(T));paint();}catch(e){$('#app').innerHTML=`<div class="card skeleton">${esc(e.message)}</div>`;}})();
 })();
