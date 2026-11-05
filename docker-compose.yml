@@ -23,8 +23,12 @@ services:
       NETWORK_LIVE_HOST: 0.0.0.0
       # Optional: only these roles may open /live (comma list, e.g. admin,manager). Empty = everyone but installers.
       NETWORK_LIVE_ROLES: ${NETWORK_LIVE_ROLES:-}
+      # Lets the hub allow a customer router's serial on the ACS automatically (shared with the acs container).
+      NETWORK_ACS_PRIVATE_DIR: /acs-private
+      NETWORK_ACS_PUBLIC_URL: ${NETWORK_ACS_PUBLIC_URL:-}
     volumes:
       - hub-data:/data
+      - acs-private:/acs-private
     networks: [internal]
 
   # Phoenix live NOC view: docker compose --profile live up -d --build live

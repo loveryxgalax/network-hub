@@ -33,3 +33,13 @@ test('login after registration fills a missing MAC; ACS check-in marks it manage
  assert.deepEqual(cpe.verify(st,[{serial:'SN12345',manufacturer:'Huawei',model:'HG8145V'}]),['SN12345']);
  const d=st.list('devices')[0];assert.equal(d.onboardingStatus,'Managed / check-in observed');assert.equal(d.remoteEnrollmentVerified,true);assert.equal(d.vendor,'Huawei');
 });
+test('register allows the serial on the shared ACS allow-list, reuses credentials, never re-enables a disabled serial',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'acs-'));fs.writeFileSync(path.join(dir,'cpes.json'),JSON.stringify({devices:{}}));process.env.NETWORK_ACS_PRIVATE_DIR=dir;
+ try{const {st,s}=mk();const r=cpe.register(st,{subscriberId:s.id,serial:'SN777'},{id:'u'});
+  assert.equal(r.acs.allowed,true);assert.ok(r.acs.password.length>=32);
+  const f=JSON.parse(fs.readFileSync(path.join(dir,'cpes.json'),'utf8')).devices.SN777;assert.equal(f.enabled,true);assert.equal(f.password,r.acs.password);
+  assert.equal(cpe.register(st,{subscriberId:s.id,serial:'SN777'},{id:'u'}).acs.password,r.acs.password,'same credentials on repeat');
+  const d=JSON.parse(fs.readFileSync(path.join(dir,'cpes.json'),'utf8'));d.devices.SN777.enabled=false;fs.writeFileSync(path.join(dir,'cpes.json'),JSON.stringify(d));
+  assert.equal(cpe.register(st,{subscriberId:s.id,serial:'SN777'},{id:'u'}).acs.allowed,false);
+ }finally{delete process.env.NETWORK_ACS_PRIVATE_DIR;}
+});
