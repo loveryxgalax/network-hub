@@ -842,3 +842,14 @@ body[data-theme=spotlight] .topbar .help .help-num,body[data-theme=christmas] .t
 
 .hx-adm{margin:0 0 10px;padding:10px 14px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:10px;font-size:13px;font-weight:600}
 .hx-active .btn:disabled{opacity:.55;cursor:not-allowed}
+
+/* Customer situations: what each person sees depends on where they are and what we know about their device */
+body[data-sit=offwifi] .hx-bar,body[data-sit=offwifi] #hx-active,body[data-sit=offwifi] .engage,body[data-sit=offwifi] #free-banner,body[data-sit=offwifi] #hx-usage-card,body[data-sit=offwifi] #sheet-trial{display:none!important}
+body[data-sit=wifi-expired] #accountCol,body[data-sit=wifi-active] #accountCol{display:none!important}
+.sit-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:760px;margin:0 auto 14px;padding:0 var(--gutter,16px)}
+@media(min-width:900px){.sit-tiles{grid-template-columns:repeat(4,1fr)}}
+.sit-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border:0;border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:14px;box-shadow:0 1px 6px rgba(15,23,42,.08);cursor:pointer}
+.sit-tile span{font-size:20px}.sit-tile:hover{box-shadow:0 2px 10px rgba(15,23,42,.14)}
+.sit-offnote{margin:-4px 0 10px}
+.sit-note{padding:14px 16px;border-left:4px solid var(--brand);font-size:15px;line-height:1.45}
+body[data-sit=wifi-active] #hotspotCard.sit-collapsed{display:none}
