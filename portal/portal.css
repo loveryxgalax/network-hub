@@ -834,3 +834,8 @@ body[data-theme=spotlight] .topbar .help .help-num,body[data-theme=christmas] .t
 .topbar .help .help-wa{min-width:24px;height:24px;padding:0 4px}
 .topbar .help .help-wa .hi{width:15px;height:15px}
 .topbar .wrap{flex-wrap:nowrap}
+/* Tighter name/help spacing and a smaller WhatsApp bubble */
+.topbar .wrap>div[style*="min-width"]{justify-content:center;gap:1px}
+.topbar .help .help-num{min-height:20px}
+.topbar .help .help-wa{min-width:20px;height:20px;padding:0 3px}
+.topbar .help .help-wa .hi{width:13px;height:13px}
