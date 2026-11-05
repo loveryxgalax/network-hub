@@ -155,7 +155,7 @@ function render(){
  const otg=`<span class="ico">${ICON.wifi}</span><span><b>${esc(t('otgTitle'))}</b><small>${esc(t('otgSub'))}</small></span><span class="arrow">${ICON.arrow}</span>`;
  $$('[data-otg]').forEach(e=>{e.href='#packages';e.innerHTML=otg;e.classList.toggle('hide',!CFG.show.onTheGo);});
  $$('[data-otg-tile]').forEach(e=>{e.href='#packages';e.innerHTML=`<span class="ico">${ICON.wifi}</span><b>${esc(t('otgTitle'))}</b><small>${esc(t('otgSub'))}</small>`;e.style.display=CFG.show.onTheGo?'':'none';});
- $$('[data-lang]').forEach(e=>e.innerHTML=['sw','en','fr'].map(l=>`<button type="button" data-l="${l}" class="${l===LANG?'on':''}">${{sw:'Kiswahili',en:'English',fr:'Français'}[l]}</button>`).join(''));
+ $$('[data-lang]').forEach(e=>e.innerHTML=['sw','en','fr'].map(l=>`<button type="button" data-l="${l}" class="${l===LANG?'on':''}" title="${{sw:'Kiswahili',en:'English',fr:'Français'}[l]}" aria-label="${{sw:'Kiswahili',en:'English',fr:'Français'}[l]}" aria-pressed="${l===LANG}">${l.toUpperCase()}</button>`).join(''));
  $('#hotspotPkgs').innerHTML=state==='loading'?'<div class="pkg skeleton"></div><div class="pkg skeleton"></div><div class="pkg skeleton"></div><div class="pkg skeleton"></div>':packageList(plans,false,true);
  $('#pppoePkgs').innerHTML=packageList(pppoePlans,true,false);
  const contactItems=[];if(CFG.phone)contactItems.push(`<a href="tel:${esc(CFG.phone.replace(/\s/g,''))}"><span class="ico">${ICON.phone}</span><span><b>${t('call')}</b><small>${esc(CFG.phone)}</small></span></a>`);

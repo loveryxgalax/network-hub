@@ -727,3 +727,10 @@ body[data-theme=essential] .howto,body[data-theme=studio] .howto,body[data-theme
 .hx-loy{display:flex;align-items:center;gap:12px;margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--brand-soft)}.hx-loy small{display:block;color:var(--brand);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em}.hx-loy b{font-size:18px}.hx-loy .hx-ic{font-size:18px}
 .hx-redeem{margin-left:auto;border:0;border-radius:8px;background:var(--brand);color:var(--brand-ink);font:inherit;font-weight:700;padding:9px 16px;cursor:pointer}.hx-redeem:disabled{opacity:.5;cursor:default}
 .hx-back-active{display:block;text-align:center;margin-top:12px}
+
+/* Compact language switch: globe + SW / EN / FR (full names on hover and for screen readers) */
+.lang{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;background:var(--line);border-radius:999px;width:auto;max-width:max-content;flex:none}
+.lang::before{content:"";width:15px;height:15px;margin-right:4px;flex:none;opacity:.65;background:currentColor;color:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/%3E%3C/svg%3E") center/contain no-repeat}
+.lang button{min-width:34px;padding:5px 8px;font-size:12px;letter-spacing:.04em;font-weight:700;line-height:1.2}
+.split-lang{display:flex;justify-content:flex-start}
+@media(max-width:899px){.lang button{min-height:34px;min-width:40px;padding:6px 8px;font-size:12.5px}}
