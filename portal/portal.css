@@ -799,3 +799,13 @@ body[data-theme=spotlight] .help-btn,body[data-theme=christmas] .help-btn{backgr
 .help-pop a,.chat-pop .contact a{border:0!important;background:transparent!important;box-shadow:none!important}
 .help-pop .ico{flex:none;width:40px;height:40px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--brand) 12%,transparent);margin:0}
 .help-pop .ico svg{width:20px;height:20px}
+
+/* Header help: number calls, green icon opens WhatsApp */
+.topbar .help .help-num{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 4px;color:var(--brand);font-weight:700;text-decoration:none}
+.topbar .help .help-num .hi{margin:0;width:16px;height:16px;vertical-align:0}
+.topbar .help .help-sep{width:1px;height:18px;background:var(--line)}
+.topbar .help .help-wa{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:34px;height:34px;border-radius:999px;background:#dcfce7;color:#16a34a;text-decoration:none;padding:0 8px}
+.topbar .help .help-wa .hi{margin:0;width:18px;height:18px;vertical-align:0;color:#16a34a}
+.topbar .help .help-wa b{color:#166534}
+body[data-theme=midnight] .topbar .help .help-wa,body[data-theme=futuristic] .topbar .help .help-wa{background:rgba(34,197,94,.16)}
+body[data-theme=spotlight] .topbar .help .help-num,body[data-theme=christmas] .topbar .help .help-num{color:inherit}
