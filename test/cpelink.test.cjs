@@ -48,3 +48,28 @@ test('ACS address is a validated setting shown to installers',()=>{
  radius.updateSettings(st,{acsPublicUrl:'https://acs.example.com:7547/'});
  assert.equal(cpe.register(st,{subscriberId:s.id,serial:'SN900'},{id:'u'}).acs.url,'https://acs.example.com:7547');
 });
+function withAcs(fn){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'acs-'));fs.writeFileSync(path.join(dir,'cpes.json'),JSON.stringify({devices:{}}));process.env.NETWORK_ACS_PRIVATE_DIR=dir;
+ return Promise.resolve().then(()=>fn(dir,()=>JSON.parse(fs.readFileSync(path.join(dir,'cpes.json'),'utf8')))).finally(()=>{delete process.env.NETWORK_ACS_PRIVATE_DIR;});}
+test('bootstrap login: off by default, admin can turn it on; automatic registration needs both switches',()=>withAcs(async(dir,read)=>{
+ const {st,s}=mk();const rows=[{id:'x1',serial:'AUTO1',ppp:[{username:'jane'}],manufacturer:'Huawei',model:'HG8145V'}];
+ assert.deepEqual((await cpe.autoRegister(st,rows,null)).registered,[],'off by default');
+ cpe.bootstrap(st,true,{id:'a'});assert.ok(read().bootstrap.password.length>=32);assert.deepEqual((await cpe.autoRegister(st,rows,null)).registered,[],'auto-register setting still off');
+ radius.updateSettings(st,{acsAutoRegister:true});
+ let pushed=null;const acs={task:async(_s,id,action,input)=>{pushed={id,action,input};return {status:'Executed by ACS'};}};
+ const r=await cpe.autoRegister(st,rows,acs);assert.deepEqual(r.registered,['AUTO1']);
+ const d=st.list('devices').find(x=>x.serial==='AUTO1');assert.equal(d.subscriberId,s.id);assert.equal(d.vendor,'Huawei');
+ assert.equal(pushed.action,'credentials');assert.equal(pushed.input.username,'AUTO1');
+ const e=read().devices.AUTO1;assert.equal(e.password,pushed.input.password,'own login becomes the active one after the push');assert.equal(e.next,undefined);
+ assert.deepEqual((await cpe.autoRegister(st,rows,acs)).registered,[],'already registered');
+ cpe.bootstrap(st,false,{id:'a'});assert.equal(read().bootstrap.enabled,false);
+}));
+test('automatic registration: unambiguous matches only; stays on shared login if the push is only queued',()=>withAcs(async(dir,read)=>{
+ const {st,s,t}=mk();cpe.bootstrap(st,true,{id:'a'});radius.updateSettings(st,{acsAutoRegister:true});
+ for(const [u,ip,id] of [['jane','10.1.1.5','s1'],['tom','10.1.1.5','s2']])st.db.prepare("INSERT INTO records(kind,id,body,created,updated) VALUES('radiusSessions',?,?,?,?)").run(id,JSON.stringify({username:u,service:'pppoe',ip,updatedAt:Date.now()}),Date.now(),Date.now());
+ assert.deepEqual((await cpe.autoRegister(st,[{id:'a',serial:'AMBIG',wanIp:'10.1.1.5'},{id:'b',serial:'NOMATCH',wanIp:'9.9.9.9'}],null)).registered,[],'two customers on one IP, and no session, are never guessed');
+ st.db.prepare("DELETE FROM records WHERE id='s2'").run();
+ const out=await cpe.autoRegister(st,[{id:'c',serial:'BYIP',wanIp:'10.1.1.5'}],{task:async()=>({status:'Queued'})});assert.deepEqual(out.registered,['BYIP']);
+ const e=read().devices.BYIP;assert.ok(e.next,'new login waits');assert.equal(e.password,read().bootstrap.password,'still reachable on the shared login');
+ assert.equal(st.list('devices').find(x=>x.serial==='BYIP').subscriberId,s.id);
+ assert.deepEqual((await cpe.autoRegister(st,[{id:'d',serial:'OTHER2',ppp:[{username:'jane'}]}],null)).registered,[],'a customer who already has a different registered router is not taken over');
+}));

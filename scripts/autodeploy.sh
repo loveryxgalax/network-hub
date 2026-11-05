@@ -9,7 +9,7 @@ git fetch -q origin || { echo "$(date -Is) fetch failed"; exit 0; }
 [ "$(git rev-parse HEAD)" = "$(git rev-parse '@{u}')" ] && exit 0
 echo "$(date -Is) new commit $(git rev-parse --short '@{u}'), deploying"
 git merge -q --ff-only '@{u}' || { echo "$(date -Is) cannot fast-forward (local changes?)"; exit 1; }
-if docker compose --profile live --profile radius up -d --build hub live 2>&1 | tail -3; then
-  sleep 10; docker compose ps hub live --format '{{.Name}} {{.Status}}'
+if docker compose --profile live --profile radius up -d --build hub live acs 2>&1 | tail -3; then
+  sleep 10; docker compose ps hub live acs --format '{{.Name}} {{.Status}}'
   echo "$(date -Is) deployed $(git rev-parse --short HEAD)"
 fi
