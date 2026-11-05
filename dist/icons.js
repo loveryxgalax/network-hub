@@ -48,7 +48,9 @@ const paths = {
   chat:'M4 4h16v12H8l-4 4z',
   bolt:'M13 2L4 14h7l-1 8 9-12h-7z',
   pen:'M4 20l4-1 11-11-3-3L5 16z M14 6l3 3',
-  trash:'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6 M10 11v6 M14 11v6'
+  trash:'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6 M10 11v6 M14 11v6',
+  key:'M21 2l-2 2 M15.5 7.5l3 3L22 7l-3-3 M11.4 11.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8z M15.5 7.5l-4.1 4.1',
+  ban:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M5.6 5.6l12.8 12.8'
 };
 const icon = (name,size=17) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name] || paths.router}"/></svg>`;
 
