@@ -762,7 +762,7 @@ function createApp(options={}){
    const plan=store.get('plans',String(input.planId||''));if(!plan||plan.service==='hotspot'||plan.id===sub.planId)throw error(400,'Choose another home internet package');
    store.put('subscribers',{...sub,interestPlanId:plan.id,interestAt:Date.now()},sub);return json(res,200,{ok:true});}
   // "Leave a message" on the hotspot page (when switched on): becomes an Open support ticket, linked to the account with that phone.
-  if(route==='/portal/api/message'&&method==='POST'){limit(req,'message',5,3600000);if(!landing.get(store).show.message)throw error(404,'Not found');const input=await body(req,2048);
+  if(route==='/portal/api/message'&&method==='POST'){limit(req,'message',5,3600000);const input=await body(req,2048),sh=landing.get(store).show;if(!(sh.message||(input.chat===true&&sh.chat!==false)))throw error(404,'Not found');
    const name=String(input.name||'').trim().slice(0,60),text=String(input.message||'').trim().slice(0,600),phone=billing.phone(input.phone);
    if(!name||/[<>\u0000-\u001f]/.test(name))throw error(400,'Enter your name');if(!phone)throw error(400,'Enter a valid phone number');if(text.length<3)throw error(400,'Write a message');
    const sub=store.list('subscribers').find(x=>billing.phone(x.phone)===phone);

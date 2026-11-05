@@ -769,3 +769,33 @@ body[data-theme=spotlight] .topbar .lg-btn,body[data-theme=christmas] .topbar .l
 .topbar .wrap>div[style*="min-width"]{flex:1 1 auto;min-width:0!important}
 .topbar .logo{flex:none}
 @media(max-width:420px){.topbar .help{font-size:12px}.lang .lg-btn{padding:6px 8px}}
+
+/* Header help: one number, both icons, tap for Call / WhatsApp */
+.topbar .help{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 8px;position:relative}
+.topbar .help .help-t{color:var(--muted)}
+.help-wrap{position:relative;display:inline-flex}
+.help-btn{display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:3px 9px 3px 7px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--brand);font:inherit;font-weight:700;cursor:pointer;line-height:1}
+.help-btn:hover{border-color:var(--brand)}.help-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.help-ic{display:inline-flex;gap:3px}.help-ic .hi{margin:0;width:15px;height:15px;vertical-align:0}
+.help-car{width:12px;height:12px;opacity:.6}.help-btn[aria-expanded=true] .help-car{transform:rotate(180deg)}
+.help-pop{position:absolute;left:0;top:calc(100% + 8px);width:min(280px,calc(100vw - 32px));padding:6px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(15,23,42,.18);z-index:60;display:grid;gap:2px}
+.help-pop[hidden]{display:none}
+.help-pop a{display:flex;align-items:center;gap:12px;padding:9px;border-radius:10px;color:var(--ink);text-decoration:none;font-weight:400}
+.help-pop a:hover{background:color-mix(in srgb,var(--brand) 9%,transparent)}.help-pop small{display:block;color:var(--muted)}.help-pop b{display:block;color:var(--ink)}
+body[data-theme=spotlight] .help-btn,body[data-theme=christmas] .help-btn{background:rgba(255,255,255,.16);color:inherit;border-color:rgba(255,255,255,.3)}
+/* Chat card with a message box */
+.chat-pop{width:min(340px,calc(100vw - 32px));display:block;padding:12px}
+.chat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.chat-head b{font-size:16px}
+.chat-x{border:0;background:transparent;color:var(--muted);font-size:24px;line-height:1;width:32px;height:32px;border-radius:50%;cursor:pointer}
+.chat-pop textarea,.chat-pop input{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);margin-bottom:8px;resize:vertical}
+.chat-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chat-send{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px}
+.chat-err{color:#dc2626;font-size:13px;margin-top:6px;min-height:0}.chat-err:empty{display:none}
+.chat-done{text-align:center;padding:18px 6px}.chat-done b{display:grid;place-items:center;width:44px;height:44px;margin:0 auto 8px;border-radius:50%;background:#dcfce7;color:#166534;font-size:22px}
+.chat-links{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.chat-links a{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none;font-weight:600;font-size:14px}
+.chat-links a svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:380px){.chat-two{grid-template-columns:1fr}}
+.help-pop a,.chat-pop .contact a{border:0!important;background:transparent!important;box-shadow:none!important}
+.help-pop .ico{flex:none;width:40px;height:40px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--brand) 12%,transparent);margin:0}
+.help-pop .ico svg{width:20px;height:20px}
