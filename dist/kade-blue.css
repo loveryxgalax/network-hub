@@ -778,3 +778,14 @@ td.radius-actions{min-width:210px}
  .data-table td.pk-order .ic-btn.ic-btn.ic-btn{width:42px!important;height:42px!important;min-width:42px!important}
  .card,section.card{min-width:0;max-width:100%;overflow-x:clip}
 }
+/* Phone cards: nothing flows out, no hover squares, no technical detail lines */
+@media (max-width:720px){
+ .data-table td.radius-message,.data-table td.muted,.data-table td.wrap,.data-table td [class*=detail],.data-table td.sms-detail,.data-table td:has(>.muted:only-child){min-width:0!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important}
+ .data-table td.radius-message{display:block;text-align:left}
+ .data-table td.radius-message::before{display:block;margin-bottom:4px}
+ .data-table td .sms-detail{display:none!important}
+ .data-table tbody tr:hover td,.data-table tbody tr:hover{background:transparent!important;box-shadow:none}
+ .data-table tbody tr{max-width:100%;overflow:hidden}
+ .table-wrap{overflow-x:clip!important;max-width:100%}
+}
+@media (hover:none){.data-table tbody tr:hover td{background:transparent!important}}
