@@ -127,7 +127,13 @@ const ICON={
  chat:'<svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.6A8.4 8.4 0 1 1 21 11.5z"/></svg>',
  mail:'<svg class="i" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>'
 };
-async function call(path,options={}){const r=await fetch('/portal/api/'+path,{...options,headers:{'Content-Type':'application/json'}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Something went wrong. Try again.');return data;}
+// The device secret (issued by the server the first time it recognises this device) proves a MAC in the link really is this browser's.
+const DTK='portal-dt',getDT=()=>{if(ADM)return params.get('pv')||'';try{return localStorage.getItem(DTK)||'';}catch{return '';}};
+async function call(path,options={}){
+ const mac=/^(session|active|usage)\?mac=/.test(path)?'&dt='+encodeURIComponent(getDT()):'';
+ let opt=options;if(opt.body&&/^(connect-now|redeem-points|code-login|account)$/.test(path)){try{const b=JSON.parse(opt.body);b.dt=getDT();opt={...opt,body:JSON.stringify(b)};}catch{}}
+ const r=await fetch('/portal/api/'+path+mac,{...opt,headers:{'Content-Type':'application/json'}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Something went wrong. Try again.');
+ if(data&&data.dt){try{localStorage.setItem(DTK,data.dt);}catch{}}return data;}
 function inkFor(hex){const n=parseInt(hex.replace('#',''),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;return (0.299*r+0.587*g+0.114*b)>170?'#0f172a':'#ffffff';}
 const digits=s=>String(s||'').replace(/\D/g,''),intl=s=>{const d=digits(s);return d.startsWith('0')?'254'+d.slice(1):d;};
 
@@ -421,7 +427,7 @@ function hxBar(){const card=$('#hotspotCard');if(!card||card.querySelector('.hx-
  $('#hx-code').onclick=()=>hxSheet(hx('codeT'),hx('codeS'),hx('codePh'),async v=>{if(!router.login||!router.chapId)throw new Error(hx('needWifi'));await hxJoin('code-login',{code:v});});}
 let hxTimer=null;
 async function hxActive(){if(!router.mac||(!ADM&&(!router.login||!router.chapId))||CFG.show?.autoConnect===false)return;
- let a;try{a=await call('active?mac='+encodeURIComponent(router.mac));}catch{return;}if(!a.found)return;
+ let a;try{a=await call('active?mac='+encodeURIComponent(router.mac));}catch{return;}if(!a.found||!a.trusted)return;
  const mark=()=>{for(const b of document.querySelectorAll('.pkg[data-pkg]'))if(b.dataset.pkg===a.planId&&!b.querySelector('.hx-chip')){b.classList.add('hx-cur');const c=document.createElement('span');c.className='hx-chip';c.textContent=a.left!=null?hx('expIn',{t:leftText(a.left)}):hx('active2');b.append(c);}};
  mark();new MutationObserver(mark).observe($('#hotspotPkgs'),{childList:true});
  const col=$('#packagesCol');if(!col||document.getElementById('hx-active'))return;let n=4;

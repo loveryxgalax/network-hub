@@ -166,7 +166,9 @@ test('landing page settings are validated, admin-only to change, and public to r
   // Connection detection by the device the router reports.
   assert.deepEqual(await (await fetch(origin+'/portal/api/session?mac=AA:BB:CC:DD:EE:FF')).json(),{found:false});
   store.put('subscribers',{...store.get('subscribers',wallet.id),lastMac:'AA:BB:CC:DD:EE:FF'},store.get('subscribers',wallet.id));
-  const found=await (await fetch(origin+'/portal/api/session?mac=aa-bb-cc-dd-ee-ff')).json();assert.equal(found.found,true);assert.equal(found.account,'kne-a52mde');assert.equal((await (await fetch(origin+'/portal/api/session?mac=bad')).json()).found,false);
+  assert.equal((await (await fetch(origin+'/portal/api/session?mac=aa-bb-cc-dd-ee-ff')).json()).found,false,'a MAC without the device secret is not recognised');
+  const dtk=require('../lib/hotspotme.cjs').trust(store,'kne-a52mde','AA:BB:CC:DD:EE:FF');
+  const found=await (await fetch(origin+'/portal/api/session?mac=aa-bb-cc-dd-ee-ff&dt='+dtk)).json();assert.equal(found.found,true);assert.equal(found.account,'kne-a52mde');assert.equal((await (await fetch(origin+'/portal/api/session?mac=bad')).json()).found,false);
   // Only an admin may change the design.
   assert.equal((await fetch(origin+'/api/portal/landing',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(landing.DEFAULTS)})).status,401);
   const owner=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'Kade',email:'o@example.test',password:'fixture-owner-password-123'})}),cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
