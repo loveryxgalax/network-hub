@@ -43,3 +43,8 @@ test('register allows the serial on the shared ACS allow-list, reuses credential
   assert.equal(cpe.register(st,{subscriberId:s.id,serial:'SN777'},{id:'u'}).acs.allowed,false);
  }finally{delete process.env.NETWORK_ACS_PRIVATE_DIR;}
 });
+test('ACS address is a validated setting shown to installers',()=>{
+ const {st,s}=mk();assert.throws(()=>radius.updateSettings(st,{acsPublicUrl:'http://x'}),/https/);
+ radius.updateSettings(st,{acsPublicUrl:'https://acs.example.com:7547/'});
+ assert.equal(cpe.register(st,{subscriberId:s.id,serial:'SN900'},{id:'u'}).acs.url,'https://acs.example.com:7547');
+});
