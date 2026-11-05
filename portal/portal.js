@@ -463,8 +463,8 @@ function hxUsagePage(u,tab){document.getElementById('hx-usage')?.remove();
 //   wifi-active  on the hotspot with a live package: connect card, short "extend" row
 //   wifi-expired on the hotspot, package ended: welcome back + packages, voucher and M-Pesa code
 //   wifi-new     on the hotspot, unknown device: the normal page
-const SX={en:{offNote:'Buy from anywhere with M-Pesa, then join the WiFi to connect.',offTitle:'Manage your connection',offSub:'Find your account to check your package, pay or renew.',tStatus:'Check status',tPay:'Pay / renew',tUsage:'View usage',tAcct:'My account',back:'Welcome back, {a}.',ended:'Your {p} package ended on {d}. Pick a package below, or use a voucher or an M-Pesa code.',endedNoPlan:'Your package has ended. Pick a package below, or use a voucher or an M-Pesa code.'},
- sw:{offNote:'Nunua popote kwa M-Pesa, kisha unganisha WiFi ili uunganishwe.',offTitle:'Simamia muunganisho wako',offSub:'Tafuta akaunti yako kuangalia kifurushi, kulipa au kuongeza.',tStatus:'Angalia hali',tPay:'Lipa / ongeza',tUsage:'Matumizi',tAcct:'Akaunti yangu',back:'Karibu tena, {a}.',ended:'Kifurushi chako cha {p} kiliisha tarehe {d}. Chagua kifurushi hapa chini, au tumia vocha au msimbo wa M-Pesa.',endedNoPlan:'Kifurushi chako kimeisha. Chagua kifurushi hapa chini, au tumia vocha au msimbo wa M-Pesa.'}};
+const SX={en:{custPortal:'Customer Portal',types:'Works with all connection types',tHot:'Hotspot WiFi',tPpp:'PPPoE Fiber',offNote:'Buy from anywhere with M-Pesa, then join the WiFi to connect.',offTitle:'Manage your connection',offSub:'Find your account to check your package, pay or renew.',tStatus:'Check status',tPay:'Pay / renew',tUsage:'View usage',tAcct:'My account',back:'Welcome back, {a}.',ended:'Your {p} package ended on {d}. Pick a package below, or use a voucher or an M-Pesa code.',endedNoPlan:'Your package has ended. Pick a package below, or use a voucher or an M-Pesa code.'},
+ sw:{custPortal:'Portal ya Mteja',types:'Inafanya kazi na aina zote za muunganisho',tHot:'Hotspot WiFi',tPpp:'PPPoE Fiber',offNote:'Nunua popote kwa M-Pesa, kisha unganisha WiFi ili uunganishwe.',offTitle:'Simamia muunganisho wako',offSub:'Tafuta akaunti yako kuangalia kifurushi, kulipa au kuongeza.',tStatus:'Angalia hali',tPay:'Lipa / ongeza',tUsage:'Matumizi',tAcct:'Akaunti yangu',back:'Karibu tena, {a}.',ended:'Kifurushi chako cha {p} kiliisha tarehe {d}. Chagua kifurushi hapa chini, au tumia vocha au msimbo wa M-Pesa.',endedNoPlan:'Kifurushi chako kimeisha. Chagua kifurushi hapa chini, au tumia vocha au msimbo wa M-Pesa.'}};
 const sx=(k,v={})=>String((SX[(LANG||'en').slice(0,2)]||SX.en)[k]??SX.en[k]??k).replace(/\{(\w)\}/g,(m,x)=>v[x]??'');
 let sitDone=false;
 async function sitInit(){if(sitDone)return;sitDone=true;
@@ -474,9 +474,12 @@ async function sitInit(){if(sitDone)return;sitDone=true;
  if(sit==='offwifi'){
   const grid=$('.main-grid');if(grid&&!$('#sit-tiles')){const t=document.createElement('div');t.id='sit-tiles';t.className='sit-tiles';
    t.innerHTML=[['status','✔',sx('tStatus')],['pay','💳',sx('tPay')],['usage','📊',sx('tUsage')],['acct','👤',sx('tAcct')]].map(([k,i,l])=>`<button type="button" class="sit-tile" data-sit="${k}"><span>${i}</span>${esc(l)}</button>`).join('');grid.before(t);
-   const go=k=>{const target=k==='pay'?$('#hotspotCard'):$('#accountCard');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});if(k!=='pay')setTimeout(()=>$('#acc')?.focus({preventScroll:true}),400);};
+   const go=k=>{const target=$('#accountCard');if(target)target.scrollIntoView({behavior:'smooth',block:'start'});if(k!=='pay')setTimeout(()=>$('#acc')?.focus({preventScroll:true}),400);};
    for(const b of t.querySelectorAll('[data-sit]'))b.onclick=()=>go(b.dataset.sit);}
-  const sh=$('#hotspotCard .section-head');if(sh&&!$('#sit-offnote')){const n=document.createElement('p');n.id='sit-offnote';n.className='muted small sit-offnote';n.textContent=sx('offNote');sh.after(n);}
+  // Not on the hotspot: this is the customer portal for everyone (PPPoE, static, or a hotspot customer away from the WiFi). Hotspot
+  // packages are only sold to people on the hotspot WiFi, so they are not shown here.
+  const h1=$('.hero h1');if(h1)h1.textContent=sx('custPortal');const sub=$('.hero .sub');if(sub)sub.textContent=sx('offSub');
+  const ac=$('#accountCard');if(ac&&!$('#sit-types'))ac.after(Object.assign(document.createElement('p'),{id:'sit-types',className:'sit-types',innerHTML:esc(sx('types'))+'<br><span><i></i>'+esc(sx('tHot'))+'</span><span><i></i>'+esc(sx('tPpp'))+'</span>'}));
  }
  if(sit==='wifi-expired'){
   const col=$('#packagesCol');if(col&&!$('#sit-note')){const n=document.createElement('div');n.id='sit-note';n.className='card sit-note';

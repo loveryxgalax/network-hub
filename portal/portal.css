@@ -844,7 +844,7 @@ body[data-theme=spotlight] .topbar .help .help-num,body[data-theme=christmas] .t
 .hx-active .btn:disabled{opacity:.55;cursor:not-allowed}
 
 /* Customer situations: what each person sees depends on where they are and what we know about their device */
-body[data-sit=offwifi] .hx-bar,body[data-sit=offwifi] #hx-active,body[data-sit=offwifi] .engage,body[data-sit=offwifi] #free-banner,body[data-sit=offwifi] #hx-usage-card,body[data-sit=offwifi] #sheet-trial{display:none!important}
+body[data-sit=offwifi] #hotspotCard,body[data-sit=offwifi] #packagesCol,body[data-sit=offwifi] .hx-bar,body[data-sit=offwifi] #hx-active,body[data-sit=offwifi] .engage,body[data-sit=offwifi] #free-banner,body[data-sit=offwifi] #hx-usage-card,body[data-sit=offwifi] #sheet-trial{display:none!important}
 body[data-sit=wifi-expired] #accountCol,body[data-sit=wifi-active] #accountCol{display:none!important}
 .sit-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:760px;margin:0 auto 14px;padding:0 var(--gutter,16px)}
 @media(min-width:900px){.sit-tiles{grid-template-columns:repeat(4,1fr)}}
@@ -858,3 +858,4 @@ body[data-sit=wifi-active] #hotspotCard.sit-collapsed{display:none}
 .lock-card h3{margin:0 0 6px;font-size:17px}.lock-card p{margin:0 0 10px;color:var(--muted);font-size:14px}
 .lock-card input{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);margin-bottom:10px}
 .lock-pin{letter-spacing:.5em;text-align:center;font-size:22px!important;font-weight:700}.lock-alt{display:block;margin:10px auto 0;border:0;background:none;color:var(--brand);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline}
+.sit-types{margin:14px auto 0;max-width:760px;padding:12px 16px;border-radius:14px;background:var(--surface);color:var(--mut,#64748b);font-size:13px;text-align:center;line-height:1.9}.sit-types span{display:inline-flex;align-items:center;gap:6px;margin:0 10px;color:var(--ink);font-weight:600;font-size:14px}.sit-types i{width:9px;height:9px;border-radius:50%;background:var(--brand)}
