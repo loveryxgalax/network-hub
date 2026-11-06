@@ -55,3 +55,17 @@ test('self-healing: a full DNS cache on a router with the job runner is flushed 
  ap.selfHeal(st,now);ap.selfHeal(st,now+MIN);const q=st.list('routerJobs').filter(j=>j.type==='dns-flush');assert.equal(q.length,1);assert.match(jobs.TYPES['dns-flush'].script({}),/\/ip dns cache flush/);
  st.put('c2bPayments',{transId:'UKX',amount:300,account:'nobody',status:'unallocated'});
  const txt=require('../lib/summary.cjs').build(st,now);assert.match(txt,/Down: Core/);assert.match(txt,/1 unmatched paybill payment/);});
+test('pool forecast warns when an address pool will fill within two weeks',()=>{const st=mk(),r=st.put('devices',{name:'Core',type:'router'}),now=Date.now();
+ for(let d=10;d>=0;d--){st.setting('routerHealth:'+r.id,{time:now-d*DAY,pools:[{name:'ppp',ranges:'10.0.0.2-10.0.0.201',used:100+(10-d)*6}]});ap.poolForecast(st,now-d*DAY);}
+ const a=st.list('alerts').find(x=>x.logKey==='pool-forecast:ppp'&&x.status==='Open');assert.ok(a,'alert');assert.match(a.title,/full in about \d+ days/);assert.match(a.details,/Add about \d+ more addresses/);});
+test('installed customer who pays moves to Completed; domain expiry from RDAP; low stock opens one reorder ticket, closed on restock',async()=>{
+ const st=mk(),now=Date.now(),p=plan(st),s=st.put('subscribers',radius.subscriber(st,{name:'Neo',username:'neo',service:'pppoe',planId:p.id,expiresAt:now+DAY}));
+ const o=st.put('onboarding',{name:'Neo',stage:'installed',subscriberId:s.id,history:[]});st.put('subscriberPayments',{subscriberId:s.id,amount:2000});
+ ap.activate(st,now);assert.equal(st.get('onboarding',o.id).stage,'completed');
+ const f=async()=>new Response(JSON.stringify({events:[{eventAction:'expiration',eventDate:new Date(now+10*DAY).toISOString()}]}),{status:200});
+ const d=await ap.domainCheck(st,'https://netops.kadenetworks.com',f,now);assert.equal(d.days,10);assert.equal(st.setting('domainCheck').domain,'kadenetworks.com');assert.ok(st.list('alerts').some(a=>a.logKey==='domain'&&a.status==='Open'));
+ const sr=require('../lib/stockreq.cjs'),it=st.put('stock',{name:'ONT',unit:'pcs',minimum:5,unitCost:2500});sr.receive(st,{stockId:it.id,quantity:2,unitCost:2500,reason:'start'},{name:'x'});
+ ap.reorder(st,now);ap.reorder(st,now);const t=st.list('tickets').filter(x=>x.stockId===it.id);assert.equal(t.length,1);assert.match(t[0].title,/Reorder: ONT \(buy 8 pcs\)/);
+ sr.receive(st,{stockId:it.id,quantity:10,unitCost:2500,reason:'bought'},{name:'x'});ap.reorder(st,now);assert.equal(st.get('tickets',t[0].id).status,'Resolved');});
+test('morning summary reports yesterday',()=>{const st=mk(),now=Date.now();st.put('subscriberPayments',{subscriberId:'x',amount:700,time:now-DAY});
+ const txt=require('../lib/summary.cjs').build(st,now,{yesterday:true});assert.match(txt,/yesterday/);assert.match(txt,/Revenue KSh 700/);});
