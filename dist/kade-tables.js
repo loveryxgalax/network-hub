@@ -4,7 +4,7 @@
 // that re-renders its table keeps the chosen filters and page.
 (()=>{
 // List pages that always show the Filters panel, as the reference does, even before any rows exist.
-const ALWAYS=new Set(['inventory','ops-stock','st-expiring','st-customers','promo-campaigns','loyalty','tickets','pay-received','pay-wallets','pay-payouts','pay-ledger','hs-vouchers','audit','deleted','comms-sms','comms-mailout']);
+const ALWAYS=new Set(['inventory','ops-stock','st-expiring','st-customers','promo-campaigns','loyalty','tickets','pay-received','pay-wallets','pay-payouts','pay-ledger','hs-vouchers','audit','deleted','comms-sms','comms-mailout','me']);
 const MIN_ROWS=6,SKIP=/^(actions?|)$/i,NOFILTER=/started|update|ended|time|date|downloaded|uploaded|expires|expiry|registered|seen|^when|duration|session time|down \/ up|^usage/i,memo=new Map();
 const ACR={ip:'IP',mac:'MAC',id:'ID',sms:'SMS',pppoe:'PPPoE',olt:'OLT',onu:'ONU',ipv4:'IPv4',ipv6:'IPv6',nas:'NAS',sn:'SN',cpe:'CPE',mpesa:'M-Pesa'};
 const RNUM=/amount|price|balance|wallet|paid|cost|points|^qty$|on hand|minimum|^used$|^available$|^codes$|^sent$|^failed$/i,RDATE=/^(time|date|when)$|transacted|deleted|detected|registered|started|expires|expiry|last seen|created|recorded/i;
