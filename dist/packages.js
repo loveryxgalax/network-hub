@@ -91,7 +91,7 @@ async function pppoeEditor(id){
  }
  let rule=null;try{rule=((await api('speed-rules')).items||[]).find(r=>r.scope==='plan'&&r.targetId===id)||null;}catch{}
  const b=p.burst||{},f=p.fup||{},n=p.notices||{before:[],usage:[]},c=p.custom||{},ruleRaise=!rule||rule.mode!=='cut',ruleCut=!!rule&&rule.mode!=='raise';
- const html=`<div class="pk-pphead"><a href="#cust-pppoe" data-pk-go="cust-pppoe">Customers</a><a href="#pay-received" data-pk-go="pay-received">Payments</a><button type="button" class="ra-btn ra-danger" id="pk-del"><span>Delete</span></button></div>
+ const html=`<div class="pk-pphead"><a href="#plan-customers?id=${h(id)}" data-pk-go="plan-customers?id=${h(id)}">Customers</a><a href="#plan-customers?id=${h(id)}&amp;tab=payments" data-pk-go="plan-customers?id=${h(id)}&tab=payments">Payments</a><button type="button" class="ra-btn ra-danger" id="pk-del"><span>Delete</span></button></div>
  <input type="hidden" name="service" value="pppoe">
  <h3 class="pk-h">Package Info</h3>
  ${radiusField('Package Name',`<input name="name" required maxlength="120" value="${h(p.name||'')}">`)}

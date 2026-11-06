@@ -124,3 +124,4 @@ input.hs-cb{width:18px!important;height:18px!important;min-width:0;padding:0!imp
 .lk-pre{white-space:pre-wrap;word-break:break-all;font-size:11.5px;max-height:360px;overflow:auto;background:var(--input,#f4f6f8);padding:12px;border-radius:10px}.lk-sum li{margin:4px 0}.lk-status{padding:16px;border-radius:12px;border:1px solid var(--border);margin:10px 0}.lk-status.succeeded{border-color:#16a34a;background:#ecfdf3}.lk-status.failed{border-color:#b42318;background:#fef3f2}
 @media(max-width:720px){.lk-steps{flex-wrap:wrap}.lk-steps li{flex:1 1 45%}}
 .card.lk-p{padding:18px 22px}
+.pk-two .pk-switch{margin:2px 0!important;padding:4px 0}.pk-two{gap:2px 24px!important}
