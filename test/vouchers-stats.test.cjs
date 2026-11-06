@@ -14,3 +14,11 @@ test('the voucher option on the WiFi page can be switched off and stays off',()=
  const st=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'vs-')));assert.equal(landing.get(st).show.vouchers,true);
  const cur=landing.get(st);landing.save(st,{...cur,show:{...cur.show,vouchers:false}});assert.equal(landing.get(st).show.vouchers,false);
 });
+test('an SMS can go to chosen customers or to all static IP customers',()=>{
+ const campaigns=require('../lib/campaigns.cjs');const st=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'cs-')));
+ const p=st.put('plans',radius.plan({name:'H',service:'pppoe',downloadMbps:5,uploadMbps:5,price:10,durationValue:1,durationUnit:'days'}));
+ const a=st.put('subscribers',radius.subscriber(st,{name:'A',username:'a1',service:'pppoe',planId:p.id,phone:'0711000001'}));
+ st.put('subscribers',radius.subscriber(st,{name:'B',username:'b1',service:'pppoe',planId:p.id,phone:'0711000002'}));
+ assert.equal(campaigns.preview(st,{segment:'ids',ids:[a.id]}).count,1);assert.equal(campaigns.preview(st,{segment:'pppoe'}).count,2);assert.equal(campaigns.preview(st,{segment:'static'}).count,0);
+ assert.throws(()=>campaigns.preview(st,{segment:'ids',ids:[]}),/at least one/);
+});
