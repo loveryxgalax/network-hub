@@ -425,7 +425,7 @@ function hxSheet(title,sub,ph,onGo,inputmode){document.getElementById('hx-sheet'
 function hxBar(){const card=$('#hotspotCard');if(!card||card.querySelector('.hx-bar')||CFG.show?.hotspot===false)return;
  const bar=document.createElement('div');bar.className='hx-bar';bar.innerHTML=`<p class="hx-hint">${esc(hx('paidHint'))}</p><div class="hx-btns"><button type="button" class="hx-btn" id="hx-voucher">${esc(hx('voucher'))}</button><button type="button" class="hx-btn" id="hx-code">${esc(hx('code'))}</button></div>`;
  card.querySelector('.section-head').after(bar);
- $('#hx-voucher').onclick=()=>hxSheet(hx('voucherT'),hx('voucherS'),hx('voucherPh'),async v=>{if(!v)throw new Error(hx('voucherPh'));if(!router.login)throw new Error(hx('needWifi'));await routerLogin(v,v.toLowerCase());});
+ if(CFG.show?.vouchers===false)$('#hx-voucher').remove();else $('#hx-voucher').onclick=()=>hxSheet(hx('voucherT'),hx('voucherS'),hx('voucherPh'),async v=>{if(!v)throw new Error(hx('voucherPh'));if(!router.login)throw new Error(hx('needWifi'));await routerLogin(v,v.toLowerCase());});
  $('#hx-code').onclick=()=>hxSheet(hx('codeT'),hx('codeS'),hx('codePh'),async v=>{if(!router.login||!router.chapId)throw new Error(hx('needWifi'));await hxJoin('code-login',{code:v});});}
 let hxTimer=null;
 async function hxActive(){if(!router.mac||(!ADM&&(!router.login||!router.chapId))||CFG.show?.autoConnect===false)return;

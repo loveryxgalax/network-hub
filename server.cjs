@@ -504,6 +504,7 @@ function createApp(options={}){
     let sms=null;if(input.sms===true&&billing.phone(input.phone))sms=await billing.sendSms(store,input.phone,'Your Kade Networks '+plan.name+' code: '+code+'. Enter it on the WiFi page.','manual');
     return json(res,201,{code,plan:plan.name,expiresAt:sub.expiresAt,sms});}
    if(route==='/api/radius/vouchers'&&method==='GET'){return json(res,200,{batches:vouchers.batches(store)});}
+   if(route==='/api/radius/vouchers/stats'&&method==='GET'){return json(res,200,vouchers.stats(store,url.searchParams.get('days')));}
    if(route==='/api/radius/vouchers'&&method==='POST'){role(user,['admin','manager']);const input=await body(req),out=vouchers.generate(store,input,user);store.audit(user,'Generated '+out.codes.length+' vouchers',out.batch.id);
     if(input.sms===true&&billing.phone(input.assignedPhone)){const plan=store.get('plans',out.batch.planId);out.sms=await billing.sendSms(store,input.assignedPhone,`Hi ${String(input.assignedName||'').split(' ')[0]||'there'}, your Kade Networks ${plan?.name||''} WiFi code is ${out.codes[0]}. Enter it on the WiFi page.`,'voucher');}return json(res,201,out);}
    if(route==='/api/radius/vouchers/import'&&method==='POST'){role(user,['admin','manager']);const input=await body(req,524288),r=vouchers.importCodes(store,input,user,input.commit===true);if(input.commit===true)store.audit(user,'Imported '+r.imported+' vouchers',r.batch.id);return json(res,200,r);}
