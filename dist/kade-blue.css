@@ -168,7 +168,7 @@ body.nav-collapsed .sidebar-pins .nav-label{display:none}
 .kt-pages{display:flex;gap:4px}.kt-pages button{min-width:32px;height:32px;border:1px solid var(--border);background:var(--card);color:var(--primary);border-radius:4px;cursor:pointer;font:inherit}
 .kt-pages button.on{background:var(--primary);color:#fff;border-color:var(--primary)}.kt-pages span{align-self:center;color:var(--muted)}
 @media (max-width:640px){.kt-size{margin-left:0}}
-.card .kt-filters{margin:0 18px 14px;border-color:var(--border)!important;box-shadow:none}
+.card .kt-filters{margin:16px 18px 14px;border-color:var(--border)!important;box-shadow:none}
 #main[data-tab=plans] #radius-metrics{display:none!important}
 /* Static customers: quick filter chips and the duplicate-address warning */
 .st-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.st-chips button{border:1px solid var(--border);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
@@ -838,3 +838,4 @@ input.hs-cb.hs-cb{width:22px!important;height:22px!important;min-width:0!importa
 .sms-pick-list{max-height:320px;overflow:auto;border:1px solid var(--border,rgba(120,130,160,.25));border-radius:12px;padding:4px 10px}.sms-pick-row{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border,rgba(120,130,160,.15))}.sms-pick-row small{display:block;color:var(--muted)}
 .ct-brks{padding:0;margin:0 0 14px}.ct-brks>summary{cursor:pointer;padding:14px 18px;font-weight:700}.ct-brk{padding:0 18px 14px}.ct-brk h3{display:flex;gap:6px;align-items:center;font-size:14px;margin:6px 0 8px}.ct-brk-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.ct-brk-i{border:1px solid var(--border,rgba(120,130,160,.25));border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:2px 8px;min-width:0}.ct-brk-i small{grid-column:1/-1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ct-brk-i b{font-size:20px}.ct-brk-i em{font-style:normal;color:var(--muted);align-self:end;font-size:12px}
 .ad-up{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:4px 0 10px}.ad-up-b{cursor:pointer}.ad-up select{flex:1 1 180px;min-width:0}.ad-up img{max-height:70px;max-width:160px;border-radius:8px;border:1px solid var(--border,rgba(120,130,160,.25))}
+.card :has(> .kt-filters),.card:has(> .kt-filters){display:flow-root}
