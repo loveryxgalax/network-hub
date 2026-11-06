@@ -820,7 +820,7 @@ input.hs-cb.hs-cb{width:22px!important;height:22px!important;min-width:0!importa
 .kd-table code{white-space:nowrap}
 @media(max-width:720px){.kd-paystack thead{display:none}.kd-paystack,.kd-paystack tbody{display:block}
 .kd-paystack tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) auto auto;gap:8px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line,rgba(120,130,160,.25))}
-.kd2 .kd-table.kd-paystack td{display:block;padding:0!important;border:0;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kd2 .kd-table.kd-paystack td{display:block;padding:0!important;border:0;min-width:0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kd2 .kd-table.kd-paystack td[data-l=Package],.kd2 .kd-table.kd-paystack td[data-l=Router]{display:none}
 .kd2 .kd-table.kd-paystack td[data-l=Customer] .link-button{max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}.kd-paystack .kd-svc-pill{display:none}
-.kd2 .kd-table.kd-paystack td[data-l=Ref]{color:var(--muted)}.kd2 .kd-table.kd-paystack td[data-l=Amount]{font-weight:700}.kd2 .kd-table.kd-paystack td[data-l=Time]{color:var(--muted);font-size:12px}}
+.kd2 .kd-table.kd-paystack td[data-l=Ref]{color:var(--muted)}.kd2 .kd-table.kd-paystack td[data-l=Amount]{font-weight:700}.kd2 .kd-table.kd-paystack td[data-l=Time]{color:var(--muted);font-size:10.5px}.kd2 .kd-table.kd-paystack td[data-l=Customer] .link-button{font-size:11px}.kd-paystack tr{gap:6px;padding:9px 2px}}
