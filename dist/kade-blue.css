@@ -816,6 +816,11 @@ input.hs-cb.hs-cb{width:22px!important;height:22px!important;min-width:0!importa
 .cl-row>span{display:block;flex:1;min-width:0}.cl-row b{display:block;line-height:1.3;overflow-wrap:anywhere}.cl-row small{display:block;margin-top:2px;line-height:1.3}
 @media (max-width:720px){.cl-list{max-height:min(34vh,300px)}}
 
-/* Wide tables become stacked cards on phones so nothing is cut off or wrapped mid-word */
+/* Received payments on phones: one line per payment (customer · reference · amount · time) */
 .kd-table code{white-space:nowrap}
-@media(max-width:720px){.kd-paystack thead{display:none}.kd-paystack,.kd-paystack tbody{display:block}.kd-paystack tr{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 4px;border-bottom:1px solid var(--line,rgba(120,130,160,.25))}.kd-paystack td{display:block;padding:0;border:0;min-width:0}.kd-paystack td[data-l=Package]{grid-column:1;font-weight:600}.kd-paystack td[data-l=Amount]{grid-column:2;grid-row:1;text-align:right;font-weight:700;white-space:nowrap}.kd-paystack td[data-l=Customer]{grid-column:1/-1}.kd-paystack td[data-l=Router],.kd-paystack td[data-l=Ref],.kd-paystack td[data-l=Time]{grid-column:1/-1;font-size:12px;color:var(--muted)}.kd-paystack td[data-l=Router]::before,.kd-paystack td[data-l=Ref]::before,.kd-paystack td[data-l=Time]::before{content:attr(data-l)': ';opacity:.7}.kd2 .kd-table.kd-paystack td:nth-child(n){display:block;padding:0!important;font-size:inherit}.kd2 .kd-table.kd-paystack td[data-l=Router],.kd2 .kd-table.kd-paystack td[data-l=Ref],.kd2 .kd-table.kd-paystack td[data-l=Time]{font-size:12px}}
+@media(max-width:720px){.kd-paystack thead{display:none}.kd-paystack,.kd-paystack tbody{display:block}
+.kd-paystack tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) auto auto;gap:8px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line,rgba(120,130,160,.25))}
+.kd2 .kd-table.kd-paystack td{display:block;padding:0!important;border:0;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kd2 .kd-table.kd-paystack td[data-l=Package],.kd2 .kd-table.kd-paystack td[data-l=Router]{display:none}
+.kd2 .kd-table.kd-paystack td[data-l=Customer] .link-button{max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}.kd-paystack .kd-svc-pill{display:none}
+.kd2 .kd-table.kd-paystack td[data-l=Ref]{color:var(--muted)}.kd2 .kd-table.kd-paystack td[data-l=Amount]{font-weight:700}.kd2 .kd-table.kd-paystack td[data-l=Time]{color:var(--muted);font-size:12px}}

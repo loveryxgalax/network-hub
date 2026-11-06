@@ -12,9 +12,12 @@ const kdIcon=(name,size=20)=>typeof icon==='function'?icon(name,size):'';
 function kdKpi({key,label,value,sub,tone='blue',icon:ic,spark,prefix='',suffix='',decimals=0,hidden}){
  if(hidden)return '';return `<article class="kd-kpi kd-${tone}" data-kpi="${key}"><div class="kd-kpi-top"><span class="kd-chip">${kdIcon(ic,18)}</span><span class="kd-kpi-label">${E(label)}</span></div><div class="kd-kpi-num"><span data-count="${key}" data-prefix="${E(prefix)}" data-suffix="${E(suffix)}" data-decimals="${decimals}" data-value="${value==null?'':value}">${value==null?'—':''}</span></div><div class="kd-kpi-sub">${sub||''}</div><div class="kd-kpi-spark">${spark||''}</div></article>`;}
 function kdOnlineSeries(routers){
- const size=300000,hot=new Map(),ppp=new Map();
- for(const r of routers)for(const [t,p,h] of r.onlineSeries){const k=Math.floor(t/size)*size;ppp.set(k,(ppp.get(k)||new Map()).set(r.id,p));hot.set(k,(hot.get(k)||new Map()).set(r.id,h));}
- const sum=m=>[...m].sort((a,b)=>a[0]-b[0]).map(([t,v])=>[t,[...v.values()].reduce((n,x)=>n+x,0)]);return {hotspot:sum(hot),pppoe:sum(ppp)};
+ // Each router reports at its own moment, so a bucket may hold only some routers. Carry a router's last count forward (up to 15 min)
+ // so the total does not jump up and down between "all routers" and "one router".
+ const size=300000,hold=size*3,keys=new Set(),per=routers.map(r=>{const m=new Map();for(const [t,p,h] of r.onlineSeries){const k=Math.floor(t/size)*size;m.set(k,[p,h]);keys.add(k);}return m;});
+ const last=per.map(()=>null),ppp=[],hot=[];
+ for(const k of [...keys].sort((a,b)=>a-b)){let p=0,h=0;per.forEach((m,i)=>{const v=m.get(k);if(v)last[i]={k,v};const l=last[i];if(l&&k-l.k<=hold){p+=l.v[0];h+=l.v[1];}});ppp.push([k,p]);hot.push([k,h]);}
+ return {hotspot:hot,pppoe:ppp};
 }
 function kdSkeleton(){
  const user=state.session.user,admin=user.role==='admin';
