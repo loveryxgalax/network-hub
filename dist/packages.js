@@ -3,6 +3,18 @@
 // Replaces the simple plan form in radius.js; the server validates everything again.
 const PK_NOTICES=[[2,'2 minutes'],[5,'5 minutes'],[10,'10 minutes'],[15,'15 minutes'],[30,'30 minutes'],[60,'1 hour'],[1440,'1 day'],[10080,'1 week']];
 const PK_DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+// Package speed override (shared by PPPoE and hotspot editors): stored as a package-level speed rule.
+function pkOverrideHtml(rule){const ruleRaise=!rule||rule.mode!=='cut',ruleCut=!!rule&&rule.mode!=='raise';return `<h3 class="pk-h">Speed override</h3><p class="muted">Shape this package's sessions at a different speed from the one it is sold at. Leave both blank to use the package speed. Everyone-rules on the Speed rules page can still take priority.</p>
+ <div class="form-grid"><label>Upload (Mbps)<input id="pk-ov-up" type="number" min="0.064" step="0.001" value="${h(rule?.upMbps??'')}"></label><label>Download (Mbps)<input id="pk-ov-down" type="number" min="0.064" step="0.001" value="${h(rule?.downMbps??'')}"></label></div>
+ <p class="muted small">Which customers this moves, compared against the speed they would have had without it.</p>
+ <label class="pk-switch"><input type="checkbox" id="pk-ov-raise" ${ruleRaise?'checked':''}><span></span><b>Raise customers who are slower</b></label><label class="pk-switch"><input type="checkbox" id="pk-ov-cut" ${ruleCut?'checked':''}><span></span><b>Cut customers who are faster</b></label>
+ <p><button type="button" class="button secondary" id="pk-ov-save">Save speed override</button></p>`;}
+function pkOverride(id,kind,rule){$('#pk-ov-save').onclick=async()=>{const up=$('#pk-ov-up').value,down=$('#pk-ov-down').value,raise=$('#pk-ov-raise').checked,cut=$('#pk-ov-cut').checked;
+  try{if(!up&&!down){if(rule)await api('speed-rules/'+rule.id,'DELETE');toast('Speed override cleared');return;}
+   if(!up||!down)throw new Error('Enter both the upload and the download speed');if(!raise&&!cut)throw new Error('Choose who it applies to: slower customers, faster customers, or both');
+   const body={scope:'plan',targetId:id,service:kind,mode:raise&&cut?'exact':raise?'raise':'cut',downMbps:down,upMbps:up,note:'Package speed override'};
+   const r=rule?await api('speed-rules/'+rule.id,'PATCH',body):await api('speed-rules','POST',body);rule=r?.id?r:rule;toast('Speed override saved');}catch(e){toast(e.message);}};}
+async function pkRule(id){try{return ((await api('speed-rules')).items||[]).find(r=>r.scope==='plan'&&r.targetId===id)||null;}catch{return null;}}
 function pkCollect(fd){
   const out={burst:{},fup:{},window:{},notices:{},trial:{},custom:{}};
   for(const [k,v] of fd.entries()){if(['notices.before','notices.usage','window.weekdays','routerIds'].includes(k)||/^fup\.t\d/.test(k)||/^custom\.d\d/.test(k))continue;const [a,c]=k.split('.');if(c)out[a][c]=v;else out[k]=v;}
@@ -21,7 +33,7 @@ function planEditor(id,kind){
  if(!kind){radiusForm('New package','Which kind of package?',radiusField('Kind',`<select name="kind"><option value="pppoe">PPPoE package (home and business fibre)</option><option value="hotspot">Hotspot package (WiFi)</option></select>`),'Continue',async inp=>{setTimeout(()=>planEditor(null,inp.kind),60);});return;}
  return kind==='pppoe'?pppoeEditor(id):hotspotEditor(id);
 }
-function hotspotEditor(id){
+async function hotspotEditor(id){const rule=id?await pkRule(id):null;
  const p=radiusView.data.plans.find(x=>x.id===id)||{service:'hotspot',durationValue:1,durationUnit:'days',devices:1,active:true,burst:{},fup:{},window:{},notices:{before:[]},features:[]};
  const b=p.burst||{},f=p.fup||{},w=p.window||{},n=p.notices||{before:[]},chk=(name,on,label,hint='')=>`<label class="pk-switch"><input type="checkbox" name="${name}" ${on?'checked':''}><span></span><b>${label}</b>${hint?`<small>${hint}</small>`:''}</label>`,num=(name,label,val,attrs='')=>radiusField(label,`<input name="${name}" type="number" ${attrs} value="${h(val??'')}">`);
  const tabs=[['details','Details'],['burst','Burst'],['fup','Fair usage'],['notices','Notifications'],['window','Time & day of purchase'],['other','Other']];
@@ -66,12 +78,14 @@ function hotspotEditor(id){
   <div class="form-grid"><label>Trial length (minutes)<input name="trial.minutes" type="number" min="1" max="1440" value="${p.trial?.minutes||10}"></label><label>Days before the same device can try again<input name="trial.everyDays" type="number" min="1" max="365" value="${p.trial?.everyDays||30}"></label></div>
   <h3>Customize (buy several)</h3>${chk('custom.enabled',p.custom?.enabled,'Let customers buy several units at once','For example 3 × daily = 3 days. The validity and price are multiplied.')}
   <div class="form-grid"><label>Most units per purchase<input name="custom.maxQty" type="number" min="2" max="100" value="${p.custom?.maxQty||7}"></label></div><div class="form-grid">${[0,1,2].map(i=>`<label>Discount ${i+1}: from units<input name="custom.d${i}qty" type="number" min="2" max="100" value="${p.custom?.discounts?.[i]?.minQty??''}"></label><label>Discount ${i+1}: percent off<input name="custom.d${i}pct" type="number" min="0" max="90" step="0.5" value="${p.custom?.discounts?.[i]?.percent??''}"></label>`).join('')}</div>
+  ${id?`<div class="pk-hs-ov">${pkOverrideHtml(rule)}</div>`:''}
   ${id?`<h3>Version history</h3><p class="muted small">This is version ${p.version||1}. Payments record the version they were made under.</p><div id="pk-versions"><button type="button" class="button secondary" id="pk-load-versions">Show earlier versions</button></div>`:''}</section>`;
  radiusForm(id?'Edit hotspot package':'New hotspot package','Changes apply at each customer\'s next login.',html,id?'Save package':'Create package',()=>{
   const out=pkCollect(new FormData($('#editor-form')));
   out.active=!fd.has('offSale');delete out.offSale;out.features=String(out.features||'').split('\n').map(s=>s.trim()).filter(Boolean);
   return api(id?'radius/plans/'+id:'radius/plans',id?'PATCH':'POST',out);});
  $('#editor').classList.add('pk-editor');$('#editor').addEventListener('close',()=>$('#editor').classList.remove('pk-editor'),{once:true});
+ if(id)pkOverride(id,p.service==='both'?'all':'hotspot',rule);
  for(const t of document.querySelectorAll('[data-pk-tab]'))t.onclick=()=>{for(const x of document.querySelectorAll('[data-pk-tab]'))x.classList.toggle('active',x===t);for(const s of document.querySelectorAll('[data-pk]'))s.hidden=s.dataset.pk!==t.dataset.pkTab;};
  const lv=$('#pk-load-versions');if(lv)lv.onclick=async()=>{try{const r=await api('radius/plans/'+id+'?versions=1');$('#pk-versions').innerHTML=r.versions.length?table(['VERSION','REPLACED','BY','PRICE','SPEED'],r.versions,v=>`<tr><td>${v.version}</td><td>${h(stamp(v.replacedAt))}</td><td>${h(v.by||'')}</td><td>${ksh(v.terms.price)}</td><td>${v.terms.downloadMbps} / ${v.terms.uploadMbps} Mbps</td></tr>`):'<p class="muted">No earlier versions.</p>';}catch(e){toast(e.message);}};
  // A server error names the field; open the tab that holds it.
@@ -115,22 +129,14 @@ async function pppoeEditor(id){
  <h3 class="pk-h">Expiry Notifications</h3><p class="muted">Choose when to send expiry alerts to customers via SMS (needs the SMS provider and a phone number).</p>
  <div class="pk-two">${pkSw('notices.expired',n.expired,'When Expired')}${PK_NOTICES.map(([m,l])=>pkSw('notices.before',n.before?.includes(m),l+' before expiry','',m)).join('')}</div>
  <p class="muted">Fair-usage progress (needs a download cap):</p><div class="pk-two">${[50,80,100].map(x=>pkSw('notices.usage',(n.usage||[]).includes(x),x+'% of the cap used','',x)).join('')}</div>
- <h3 class="pk-h">Speed override</h3><p class="muted">Shape this package's sessions at a different speed from the one it is sold at. Leave both blank to use the package speed. Everyone-rules on the Speed rules page can still take priority.</p>
- <div class="form-grid"><label>Upload (Mbps)<input id="pk-ov-up" type="number" min="0.064" step="0.001" value="${h(rule?.upMbps??'')}"></label><label>Download (Mbps)<input id="pk-ov-down" type="number" min="0.064" step="0.001" value="${h(rule?.downMbps??'')}"></label></div>
- <p class="muted small">Which customers this moves, compared against the speed they would have had without it.</p>
- <label class="pk-switch"><input type="checkbox" id="pk-ov-raise" ${ruleRaise?'checked':''}><span></span><b>Raise customers who are slower</b></label><label class="pk-switch"><input type="checkbox" id="pk-ov-cut" ${ruleCut?'checked':''}><span></span><b>Cut customers who are faster</b></label>
- <p><button type="button" class="button secondary" id="pk-ov-save">Save speed override</button></p>`;
+ ${pkOverrideHtml(rule)}`;
  radiusForm('Edit PPPoE package · '+p.name,'Changes apply at each customer\'s next login.',html,'Save',()=>{
   const out=pkCollect(new FormData($('#editor-form')));for(const k of ['window','trial','routerIds','popular','features','active'])delete out[k];out.service='pppoe';
   return api('radius/plans/'+id,'PATCH',out);});
  $('#editor').classList.add('pk-editor');$('#editor').addEventListener('close',()=>$('#editor').classList.remove('pk-editor'),{once:true});
  for(const a of document.querySelectorAll('[data-pk-go]'))a.onclick=e=>{e.preventDefault();$('#editor').close();location.hash='#'+a.dataset.pkGo;};
  $('#pk-del').onclick=()=>{$('#editor').close();removeRecord('plans',id,p.name);};
- $('#pk-ov-save').onclick=async()=>{const up=$('#pk-ov-up').value,down=$('#pk-ov-down').value,raise=$('#pk-ov-raise').checked,cut=$('#pk-ov-cut').checked;
-  try{if(!up&&!down){if(rule)await api('speed-rules/'+rule.id,'DELETE');toast('Speed override cleared');return;}
-   if(!up||!down)throw new Error('Enter both the upload and the download speed');if(!raise&&!cut)throw new Error('Choose who it applies to: slower customers, faster customers, or both');
-   const body={scope:'plan',targetId:id,service:'pppoe',mode:raise&&cut?'exact':raise?'raise':'cut',downMbps:down,upMbps:up,note:'Package speed override'};
-   const r=rule?await api('speed-rules/'+rule.id,'PATCH',body):await api('speed-rules','POST',body);rule=r?.id?r:rule;toast('Speed override saved');}catch(e){toast(e.message);}};
+ pkOverride(id,'pppoe',rule);
 }
 // Move a package up or down the portal list.
 async function movePlan(id,dir){const list=radiusView.data.plans.filter(p=>!radiusView.planPred||radiusView.planPred(p)).sort((a,b)=>(a.order||0)-(b.order||0)||a.price-b.price),i=list.findIndex(p=>p.id===id),j=i+dir;if(i<0||j<0||j>=list.length)return;
