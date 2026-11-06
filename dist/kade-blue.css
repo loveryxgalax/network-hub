@@ -824,3 +824,8 @@ input.hs-cb.hs-cb{width:22px!important;height:22px!important;min-width:0!importa
 .kd2 .kd-table.kd-paystack td[data-l=Package],.kd2 .kd-table.kd-paystack td[data-l=Router]{display:none}
 .kd2 .kd-table.kd-paystack td[data-l=Customer] .link-button{max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}.kd-paystack .kd-svc-pill{display:none}
 .kd2 .kd-table.kd-paystack td[data-l=Ref]{color:var(--muted)}.kd2 .kd-table.kd-paystack td[data-l=Amount]{font-weight:700}.kd2 .kd-table.kd-paystack td[data-l=Time]{color:var(--muted);font-size:10.5px}.kd2 .kd-table.kd-paystack td[data-l=Customer] .link-button{font-size:11px}.kd-paystack tr{gap:6px;padding:9px 2px}}
+/* PPPoE package editor: one scrolling page of sections, like the reference */
+.pk-editor .pk-pphead{display:flex;gap:16px;justify-content:flex-end;align-items:center;margin:-4px 0 6px}.pk-pphead a{color:var(--brand,#0032fd);font-weight:600;text-decoration:none;font-size:14px}.pk-pphead .ra-danger{margin-left:4px}
+.pk-h{margin:22px 0 6px;padding-top:14px;border-top:1px solid var(--border,rgba(120,130,160,.25));font-size:18px}.pk-h:first-of-type{border-top:0;margin-top:6px;padding-top:0}
+.pk-info{margin:12px 0;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--brand,#0032fd) 8%,transparent);border:1px solid color-mix(in srgb,var(--brand,#0032fd) 25%,transparent);font-size:13px;line-height:1.5}.pk-info ul{margin:6px 0 6px 18px;padding:0}.pk-info p{margin:6px 0 0}
+.pk-two{display:grid;grid-template-columns:1fr;gap:10px 24px}@media(min-width:700px){.pk-two{grid-template-columns:1fr 1fr}}
