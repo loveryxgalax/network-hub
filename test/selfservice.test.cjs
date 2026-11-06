@@ -10,7 +10,10 @@ test('minute plans and the signed self-service account page',async()=>{
   assert.equal(radius.planMs(plan),90*60000);
   const sub=st.put('subscribers',radius.subscriber(st,{name:'Amina',username:'kne-test01',service:'hotspot',planId:plan.id,phone:'0712345678',expiresAt:Date.now()+3600000}));
   const link=await fetch(o+'/api/radius/subscribers/'+sub.id+'/self-service',{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},body:'{}'}).then(r=>r.json());
-  assert.match(link.link,/\/portal\/account\.html\?t=/);const t=new URL(link.link).searchParams.get('t');
+  assert.match(link.link,/\/s\/[A-Za-z0-9]{10}$/,'the link is short');
+  const hop=await fetch(o+new URL(link.link).pathname,{redirect:'manual'});assert.equal(hop.status,302);assert.match(hop.headers.get('location'),/^\/portal\/account\.html\?t=/);
+  assert.equal((await fetch(o+'/s/AAAAAAAAAA',{redirect:'manual'})).status,404);
+  const t=new URL(hop.headers.get('location'),o).searchParams.get('t');
   const me=await fetch(o+'/portal/api/me?t='+encodeURIComponent(t)).then(r=>r.json());
 assert.equal(me.account,'kne-test01');assert.equal(me.status,'active');assert.ok(me.plans.some(p=>p.current&&p.duration==='90 minutes'));
   assert.equal((await fetch(o+'/portal/api/me?t='+encodeURIComponent(t.slice(0,-2)+'xx'))).status,404);
