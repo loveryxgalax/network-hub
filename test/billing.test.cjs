@@ -61,3 +61,16 @@ test('custom SMS gateways (e.g. BlessedTexts) get JSON with adjustable field nam
   assert.deepEqual(Object.fromEntries(calls.at(-1).o.body),{apikey:'secret-key',sender_id:'KADENET',mobile:'0712345678',message:'Hi'},'the saved key is kept when left empty');
  }finally{done();}
 });
+test('a reminder can be switched off for one kind of customer only',async()=>{
+ const {store,s,done}=fixture();try{
+  const calls=[],send=gateway(calls),noon=Date.parse('2026-10-25T09:00:00Z');
+  billing.setSmsConfig(store,{username:'kade',apiKey:'atsk_test_key',senderId:'KADENET'});
+  store.put('subscribers',{...store.get('subscribers',s.id),expiresAt:noon+DAYS(2.5)},store.get('subscribers',s.id));
+  const svc=store.get('subscribers',s.id).service;
+  billing.updateSettings(store,{enabled:{[svc+'.reminder']:false}});
+  const cfg=billing.settings(store);assert.equal(cfg.enabled[svc+'.reminder'],false);assert.equal(cfg.enabled.reminder,true,'the default stays on');
+  assert.equal((await billing.runReminders(store,noon,send)).sent,0,svc+' customers are not texted when their kind is off');
+  const other=svc==='pppoe'?'hotspot':'pppoe';assert.equal(billing.settings(store).enabled[other+'.reminder'],undefined);
+  billing.updateSettings(store,{enabled:{[svc+'.reminder']:true}});assert.equal((await billing.runReminders(store,noon,send)).sent,1);
+ }finally{done();}
+});

@@ -132,14 +132,13 @@ function paySubscriber(id){const s=radiusView.data.subscribers.find(x=>x.id===id
 const TPL_VARS={welcome:['name','fullname','username','plan','price','account','paybill','company'],payment:['name','fullname','amount','reference','plan','expiry','days_left','username','company'],reminder:['name','fullname','plan','price','expiry','days_left','paybill','account','username','company'],expired:['name','fullname','plan','price','paybill','account','username','company']};
 const TPL_DESC={welcome:'Sent when staff add a customer (if switched on).',payment:'Sent after a payment renews or tops up an account.',reminder:'Sent before the package runs out, on the days set below.',expired:'Sent when the package has expired.'};
 const smsParts=t=>{const n=t.length,uni=/[^\x00-\x7F]/.test(t),one=uni?70:160,many=uni?67:153;return n<=one?1:Math.ceil(n/many);};
-function tplCard(k,label,name,value,{on,canOff,isAdmin,placeholder,def}){const vars=TPL_VARS[k]||[];
- return `<div class="tpl-card" data-tpl-card><div class="tpl-head"><div><b>${h(label)}</b><small>${h(TPL_DESC[k]||'')}</small></div>${canOff?`<label class="tpl-switch" title="Send this message"><input type="checkbox" name="on-${k}" ${on?'checked':''} ${isAdmin?'':'disabled'}><span></span></label>`:''}</div>
+function tplCard(k,label,name,value,{on,canOff,isAdmin,placeholder,def,onName}){const vars=TPL_VARS[k]||[];
+ return `<div class="tpl-card" data-tpl-card><div class="tpl-head"><div><b>${h(label)}</b><small>${h(TPL_DESC[k]||'')}</small></div>${canOff?`<label class="tpl-switch" title="Send this message"><input type="checkbox" name="${onName||'on-'+k}" ${on?'checked':''} ${isAdmin?'':'disabled'}><span></span></label>`:''}</div>
  <div class="tpl-box"><textarea name="${name}" rows="3" maxlength="459" ${isAdmin?'':'disabled'} ${placeholder?`placeholder="${h(placeholder)}"`:''} data-tpl-text>${h(value)}</textarea>${isAdmin&&def!=null?`<button type="button" class="tpl-reset" data-tpl-reset="${h(def)}" title="Reset to the default message" aria-label="Reset to the default message">↺</button>`:''}</div>
  <div class="tpl-foot"><div class="tpl-chips">${vars.map(v=>`<button type="button" class="tpl-chip" data-tpl-var="{${v}}" ${isAdmin?'':'disabled'}>{${v}}</button>`).join('')}</div><small class="tpl-count" data-tpl-count></small></div></div>`;}
 function tplEditor(cfg,defaults,isAdmin,labels,SV){
  return `<section class="card tpl-section"><div class="card-header"><div><h2>Message templates</h2><p>The text of each automatic SMS. Click a variable to insert it where the cursor is.</p></div></div>
- <form id="sms-templates" class="radius-form tpl-form">${Object.keys(labels).map(k=>`${tplCard(k,labels[k],'t-'+k,cfg.templates[k],{on:cfg.enabled[k],canOff:true,isAdmin,def:defaults[k]})}
-  <details class="tpl-more"><summary>Different wording for ${Object.values(SV).join(' / ')}</summary>${Object.entries(SV).map(([sv,sl])=>tplCard(k,sl+' — '+labels[k].toLowerCase(),'t-'+sv+'.'+k,cfg.templates[sv+'.'+k]||'',{canOff:false,isAdmin,placeholder:'Empty = same as the message above'})).join('')}</details>`).join('')}
+ <form id="sms-templates" class="radius-form tpl-form">${Object.entries(SV).map(([sv,sl])=>`<h3 class="tpl-kind">${h(sl)} messages</h3><p class="muted small">These go only to ${h(sl)} customers. Each one can be switched on or off on its own.</p>${Object.keys(labels).map(k=>tplCard(k,sl+' — '+labels[k].toLowerCase(),'t-'+sv+'.'+k,cfg.templates[sv+'.'+k]||cfg.templates[k],{on:cfg.enabled[sv+'.'+k]??cfg.enabled[k],onName:'on-'+sv+'.'+k,canOff:true,isAdmin,def:defaults[k]})).join('')}`).join('')}
  <div class="tpl-card"><div class="form-grid">${radiusField('Remind this many days before expiry',`<input name="reminderDays" value="${h(cfg.reminderDays.join(', '))}" ${isAdmin?'':'disabled'}>`)}</div></div>
  ${isAdmin?'<div class="tpl-save"><button class="button primary">Save messages</button></div>':''}</form></section>`;}
 function wireTplEditor(){const f=$('#sms-templates');if(!f)return;let last=null;
@@ -169,7 +168,7 @@ function paintBilling(){const b=radiusView.billing;if(!b)return;const sms=b.sms,
    for(const b of el.querySelectorAll('[data-sl-edit]'))b.onclick=()=>edit(r.items.find(t=>t.id===b.dataset.slEdit));for(const b of el.querySelectorAll('[data-sl-del]'))b.onclick=async()=>{if(!confirm('Delete this template?'))return;try{await api('sms-templates/'+b.dataset.slDel,'DELETE');toast('Deleted');await loadRadius();}catch(e){toast(e.message);}};}).catch(()=>{});
   const nb=$('#sms-lib-new');if(nb)nb.onclick=()=>edit(null);}
  wireTplEditor();
- submit('#sms-templates',v=>api('billing/settings','PUT',{reminderDays:v.reminderDays,templates:Object.fromEntries([...Object.keys(labels).map(k=>[k,v['t-'+k]]),...Object.keys(SV).flatMap(sv=>Object.keys(labels).map(k=>[sv+'.'+k,v['t-'+sv+'.'+k]||'']))]),enabled:Object.fromEntries(Object.keys(labels).map(k=>[k,v['on-'+k]==='on']))}).then(()=>toast('Messages saved')));
+ submit('#sms-templates',v=>api('billing/settings','PUT',{reminderDays:v.reminderDays,templates:Object.fromEntries(Object.keys(SV).flatMap(sv=>Object.keys(labels).map(k=>[sv+'.'+k,v['t-'+sv+'.'+k]||'']))),enabled:Object.fromEntries(Object.keys(SV).flatMap(sv=>Object.keys(labels).map(k=>[sv+'.'+k,v['on-'+sv+'.'+k]==='on'])))}).then(()=>toast('Messages saved')));
 }
 
 // M-Pesa (Daraja STK Push) and the hotspot captive portal
