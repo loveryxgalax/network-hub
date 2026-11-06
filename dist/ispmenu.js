@@ -421,7 +421,7 @@ const pages={
   for(const b of document.querySelectorAll('[data-chip]'))b.onclick=()=>{f.chip=b.dataset.chip;pages.statics(id);};
   const lg=$('#st-logs');if(lg)lg.onclick=()=>{pages.sl={status:'',level:'',category:'STATICS',q:''};location.hash='system-logs';};
   for(const b of document.querySelectorAll('[data-st-prof]'))b.onclick=()=>window.openProfile(b.dataset.stProf);
-  const nb=$('#st-new');if(nb)nb.onclick=async()=>{radiusView.data=await api('radius');subscriberEditor();const sv=$('#sub-service');if(sv){sv.value='static';sv.onchange();}};
+  const nb=$('#st-new');if(nb)nb.onclick=async()=>{radiusView.data=await api('radius');subscriberEditor(null,'static');};
  },
  async roaming(id){shell('Roaming','Hotspot customers who started a session on a different router than their last one.');
   const d=await api('roaming');if(state.page!==id)return;
@@ -790,7 +790,7 @@ window.renderAssistant=async function(){const admin=state.session.user.role==='a
 async function refreshSysBadge(){try{const o=await api('system-logs?status=open');const n=o.unacknowledged;counts.syslog=n;for(const el of document.querySelectorAll('.kade-sys-n'))el.textContent=n||'',el.hidden=!n;const a=document.querySelector('#navigation a[href="#system-logs"]');if(a){let b=a.querySelector('.nav-number');if(n&&!b){a.insertAdjacentHTML('beforeend','<span class="nav-number">'+n+'</span>');}else if(b){if(n)b.textContent=n;else b.remove();}}}catch{}}
 window.refreshSysBadge=refreshSysBadge;
 document.addEventListener('DOMContentLoaded',()=>{const base=window.renderDashboard;if(base)window.renderDashboard=function(){base.apply(this,arguments);const slot=document.querySelector('#kd-quick-slot');if(!slot||document.querySelector('.kade-quick'))return;
- const add=svc=>async()=>{try{radiusView.data=await api('radius');subscriberEditor();const sv=$('#sub-service');if(sv){sv.value=svc;sv.onchange&&sv.onchange();}}catch(e){toast(e.message);}};
+ const add=svc=>async()=>{try{radiusView.data=await api('radius');subscriberEditor(null,svc);}catch(e){toast(e.message);}};
  // [label, action, icon, kind]: "add" buttons are centred with a plus; the rest show the label left and an icon right, as in ISPman.
  const acts=[['Add Hotspot Customer',add('hotspot'),'plus','add'],['Add PPPoE Customer',add('pppoe'),'plus','add'],['Add Static IP',add('static'),'plus','add'],['Find Customer','cust-table','search','find'],['PPPoE Customers','cust-pppoe','house'],['Hotspot Customers','cust-hotspot','wifi'],['Static Customers','st-customers','network'],['Devices','mikrotiks','network'],['Link MikroTik','router-link','router'],['Hotspot Packages','hs-packages','box'],['PPPoE Packages','pp-packages','box'],['Settings','settings','settings']];
  const sec=document.createElement('section');sec.className='kade-quick';
@@ -1230,7 +1230,7 @@ window.render=function(){
  const id=state.page,preset=PRESETS[id];
  {const m=document.querySelector('#main');if(m)m.dataset.tab=preset?preset.tab:'';}
  if(id==='radius'){radiusView.pred=radiusView.planPred=null;radiusView.tab=radiusView.tab||'subscribers';}
- if(preset){radiusView.pred=preset.pred||null;radiusView.planPred=preset.planPred||null;radiusView.tab=preset.tab;chrome();renderRadius();$('#breadcrumb').textContent=nav.find(n=>n[0]===id)?.[1]||id;const hd=$('#main h1');if(hd){hd.textContent=preset.title;hd.nextElementSibling.textContent=preset.desc;}for(const el of document.querySelectorAll('.sites-tabs'))el.hidden=true;const m=$('#radius-metrics');if(m)m.style.display='none';return;}
+ if(preset){radiusView.pred=preset.pred||null;radiusView.planPred=preset.planPred||null;radiusView.tab=preset.tab;chrome();renderRadius();$('#breadcrumb').textContent=nav.find(n=>n[0]===id)?.[1]||id;const hd=$('#main h1');if(hd){hd.textContent=preset.title;hd.nextElementSibling.textContent=preset.desc;}for(const el of document.querySelectorAll('.sites-tabs'))el.hidden=true;const m=$('#radius-metrics');if(m)m.style.display='none';if(preset.tab==='plans'){const k=typeof planKind==='function'?planKind():null,np=$('#radius-new-plan');if(np&&k)np.textContent=k==='pppoe'?'New PPPoE package':'New hotspot package';for(const x of ['#radius-import','#radius-new-sub']){const e=$(x);if(e)e.hidden=true;}}return;}
  if(ROUTES[id]){chrome();$('#breadcrumb').textContent=nav.find(n=>n[0]===id)?.[1]||id;guard(id,()=>pages[ROUTES[id]](id))();return;}
  if(id==='trends'){chrome();$('#breadcrumb').textContent='Trends';return guard(id,()=>pages.trendsPage(id))();}
  return original();
