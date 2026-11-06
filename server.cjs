@@ -253,6 +253,7 @@ function createApp(options={}){
   if(promoRoute){role(user,['admin','manager']);const ex=store.get('promoCodes',promoRoute[1]);if(!ex)throw error(404,'Promo code not found');
    if(method==='PATCH'){const saved=store.put('promoCodes',promoCodes.validate(await body(req),ex),ex);store.audit(user,'Updated promo code '+ex.code,ex.id);return json(res,200,saved);}
    if(method==='DELETE'){store.remove('promoCodes',ex.id);store.audit(user,'Deleted promo code '+ex.code,ex.id);return json(res,200,{ok:true});}}
+  if(route==='/api/loyalty/award-past'&&method==='POST'){role(user,['admin']);const i=await body(req),r=billing.awardPast(store,i,user);if(!i.dryRun)store.audit(user,`Awarded ${r.points} points for ${r.count} earlier payments`,'billing');return json(res,200,r);}
   if(route==='/api/loyalty'&&method==='GET'){role(user,['admin','manager']);return json(res,200,billing.loyalty(store));}
   if(route==='/api/loyalty'&&method==='PUT'){role(user,['admin']);const saved=billing.setLoyalty(store,await body(req));store.audit(user,'Updated loyalty points','billing');return json(res,200,saved);}
   if(route==='/api/summary'&&method==='GET'){role(user,['admin','manager']);return json(res,200,{settings:summary.settings(store),preview:summary.build(store)});}

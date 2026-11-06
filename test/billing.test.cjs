@@ -74,3 +74,13 @@ test('a reminder can be switched off for one kind of customer only',async()=>{
   billing.updateSettings(store,{enabled:{[svc+'.reminder']:true}});assert.equal((await billing.runReminders(store,noon,send)).sent,1);
  }finally{done();}
 });
+test('loyalty: points for past payments are awarded once only, reversed payments skipped',()=>{
+ const {store,s,done}=fixture();try{
+  billing.pay(store,s.id,{amount:2500,reference:'OLD0000001',method:'cash'});
+  billing.setLoyalty(store,{enabled:true,pointsPer100:1,pointValue:10});
+  const all={from:0,to:Date.now()+1000};assert.deepEqual(billing.awardPast(store,{...all,dryRun:true}),{count:1,points:25});
+  assert.equal(store.get('subscribers',s.id).points||0,0,'a dry run changes nothing');
+  assert.deepEqual(billing.awardPast(store,all),{count:1,points:25});assert.equal(store.get('subscribers',s.id).points,25);
+  assert.deepEqual(billing.awardPast(store,all),{count:0,points:0},'never twice');
+ }finally{done();}
+});
