@@ -131,7 +131,7 @@ const ICON={
 const DTK='portal-dt',getDT=()=>{if(ADM)return params.get('pv')||'';try{return localStorage.getItem(DTK)||'';}catch{return '';}};
 async function call(path,options={}){
  const mac=/^(session|active|usage)\?mac=/.test(path)?'&dt='+encodeURIComponent(getDT()):'';
- let opt=options;if(opt.body&&/^(connect-now|redeem-points|code-login|account)$/.test(path)){try{const b=JSON.parse(opt.body);b.dt=getDT();opt={...opt,body:JSON.stringify(b)};}catch{}}
+ let opt=options;if(opt.body&&/^(connect-now|redeem-points|code-login|account)$/.test(path)){try{const b=JSON.parse(opt.body);b.dt=getDT();if(path==='code-login'&&params.get('nas'))b.nas=params.get('nas');opt={...opt,body:JSON.stringify(b)};}catch{}}
  const r=await fetch('/portal/api/'+path+mac,{...opt,headers:{'Content-Type':'application/json'}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Something went wrong. Try again.');
  if(data&&data.dt){try{localStorage.setItem(DTK,data.dt);}catch{}}return data;}
 function inkFor(hex){const n=parseInt(hex.replace('#',''),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;return (0.299*r+0.587*g+0.114*b)>170?'#0f172a':'#ffffff';}
