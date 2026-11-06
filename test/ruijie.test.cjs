@@ -26,3 +26,8 @@ test('account page usage falls back to the router counters when no RADIUS accoun
  customers.ingest(st,r,customers.normalize(report({ppp:[{...row(3000,905000),uptime:'1:01:00'}]})),now);
  const u=selfservice.view(st,st.get('subscribers',sub.id),now).usage;
  assert.equal(u.source,'router');assert.equal(u.month.down,900000);assert.equal(u.month.up,2000);});
+test('neighbour discovery is queued once, after a delay, for routers with the job runner',()=>{
+ const {st,r}=mk(),jobs=require('../lib/jobs.cjs'),now=Date.now();jobs.enroll(st,r.id);
+ let q=st.list('routerJobs').filter(j=>j.type==='neighbor-discovery');assert.equal(q.length,1);assert.ok(q[0].nextAttemptAt>now+20*60000);
+ assert.equal(jobs.next(st,r.id,now),null,'never ahead of work queued now');assert.match(jobs.next(st,r.id,now+31*60000).script,/protocol=cdp,lldp,mndp/);
+ jobs.autoNeighbor(st);assert.equal(st.list('routerJobs').filter(j=>j.type==='neighbor-discovery').length,1,'only once');});

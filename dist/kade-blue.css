@@ -632,7 +632,7 @@ dialog{overflow-x:hidden}
 td .ic-btn+.ic-btn,.row-actions .ic-btn+.ic-btn{margin-left:4px}
 /* Dialogs: tidy header with an initial badge, soft close icon, sticky footer */
 dialog.modal{padding:0!important;border:0!important;overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.35)}
-dialog.modal::before{content:"";display:block;height:4px;background:linear-gradient(90deg,var(--primary),#7c5cff 55%,#06b6d4)}
+dialog.modal::before{content:none}
 dialog.modal>form,dialog.modal>#detail-content,dialog.modal>.modal-heading{padding-left:22px;padding-right:22px}
 dialog.modal>.modal-heading,dialog.modal>form>.modal-heading{display:flex!important;align-items:center;gap:12px;padding:18px 0 10px!important;margin:0}
 dialog.modal .modal-heading[data-ini]::before{content:attr(data-ini);flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px;background:linear-gradient(135deg,var(--primary),#7c5cff);box-shadow:0 4px 12px rgba(0,50,253,.28)}
@@ -723,7 +723,8 @@ fieldset:has(>label>input[type=checkbox]),fieldset:has(>label>input[type=radio])
 
 /* ===== Cards: soft edge, gentle depth and a colour strip on top instead of a hard blue outline ===== */
 .card,section.card,.cp-card,.kd-isp>div{border:1px solid var(--border)!important;border-radius:12px!important;box-shadow:0 1px 2px rgba(15,23,42,.05),0 12px 28px -16px rgba(15,23,42,.18)!important}
-.card,section.card,.cp-card{background-image:linear-gradient(90deg,var(--primary),#7c5cff 55%,#06b6d4)!important;background-size:100% 3px!important;background-repeat:no-repeat!important;background-position:top left!important}
+/* No colour strip on top of cards (it read as a stray line over the titles on phones). */
+.card,section.card,.cp-card{background-image:none!important}
 .card>h2:first-child::before,.card>.card-header h2::before,.card>.radius-form>h2:first-child::before,.cp-h h3::before,.lk-p>h2:first-child::before{content:"";display:inline-block;width:4px;height:15px;border-radius:3px;margin-right:9px;background:linear-gradient(var(--primary),#7c5cff);vertical-align:-2px}
 .cp-h{padding-top:16px}
 .card .card,.card section.card{background-image:none!important;box-shadow:none!important}

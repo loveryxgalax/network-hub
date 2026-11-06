@@ -47,6 +47,7 @@ function createApp(options={}){
  const publicOrigin=options.publicOrigin??process.env.NETWORK_PUBLIC_ORIGIN;
  const publicUrl=publicOrigin?new URL(publicOrigin):null;
  if(publicUrl)require('./lib/shortlink.cjs').setOrigin(publicUrl.origin);
+ if(!passive){try{require('./lib/jobs.cjs').autoNeighbor(store);}catch{}}
  // The RADIUS shared secret (same as FreeRADIUS's RADIUS_SECRET), only to write it into a router's link script.
  const radiusSecret=options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'';
  if(publicUrl&&(publicUrl.protocol!=='https:'||publicUrl.username||publicUrl.password||publicUrl.pathname!=='/'||publicUrl.search||publicUrl.hash))throw new Error('NETWORK_PUBLIC_ORIGIN must be an HTTPS origin');
