@@ -25,3 +25,10 @@ test('every link in a message to a customer is shortened automatically (this sit
  const r=await billing.sendSms(st,'0712345678',msg,'manual',async()=>({ok:true,status:201,text:async()=>JSON.stringify({SMSMessageData:{Recipients:[{status:'Success'}]}})}));
  assert.ok(!r.message.includes('t=eyJ'),'no long token in what was sent');assert.match(r.message,/\/s\/[A-Za-z0-9]{10}/);
 });
+test('invoice line items set the amount on the server (quantity × price + tax), and bad lines are refused',()=>{
+ const domain=require('../lib/domain.cjs');const st=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'inv-')));
+ const r=domain.validate('invoices',{name:'INV-1',customer:'Jane',amount:'1',items:JSON.stringify([{d:'Installation',q:1,p:1500},{d:'Router',q:2,p:2500}]),taxRate:'16'},null,st);
+ assert.equal(r.amount,7540,'the server recomputes the total, not the browser');
+ assert.throws(()=>domain.validate('invoices',{name:'X',customer:'Jane',amount:'1',items:JSON.stringify([{d:'',q:1,p:5}])},null,st),/description/);
+ assert.throws(()=>domain.validate('invoices',{name:'X',customer:'Jane',amount:'1',items:'not json'},null,st),/Invalid line items/);
+});
