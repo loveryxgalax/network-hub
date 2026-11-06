@@ -855,3 +855,17 @@ input.hs-cb.hs-cb{width:22px!important;height:22px!important;min-width:0!importa
  .cp-btns .cp-btn,.cp-btns>button,.cp-btns>a,.pf-actions .button{width:100%!important;min-width:0!important;min-height:38px!important;padding:5px 4px!important;font-size:11.5px!important;line-height:1.15!important;white-space:normal!important;overflow-wrap:anywhere;border-radius:9px!important}
 }
 @media (max-width:330px){.cp-btns,.pf-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+/* Payment Reference Login dialog (like the reference: inherited box, toggle, Sharing / Migration) */
+.prl-inh{background:color-mix(in srgb,var(--primary) 8%,var(--card));border:1px solid color-mix(in srgb,var(--primary) 25%,transparent);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:13px;color:var(--primary);display:grid;gap:3px}
+.prl-inh>b{font-size:14px;color:var(--ink)}.prl-inh span{font-weight:700}
+.prl-tog.prl-tog{display:flex!important;align-items:center!important;gap:12px!important;font-size:14px;margin:4px 0 14px!important;cursor:pointer;padding:0!important;border:0!important;background:none!important}
+.prl-tog>input{position:absolute;opacity:0;width:1px;height:1px}
+.prl-tog>span{width:40px;height:22px;border-radius:999px;background:#cbd2dd;position:relative;flex:none;transition:background .15s}
+.prl-tog>span::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.prl-tog>input:checked+span{background:var(--primary)}.prl-tog>input:checked+span::after{left:20px}
+.prl-tog>input:focus-visible+span{box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 30%,transparent)}
+.prl-lab{font-size:13px;font-weight:600;margin-bottom:6px}
+.prl-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prl-seg button{border:0;border-radius:8px;padding:9px;background:color-mix(in srgb,var(--ink,#0f172a) 8%,var(--card));color:var(--ink);font-weight:600;cursor:pointer}
+.prl-seg button.on{background:var(--primary);color:#fff}
+#prl-modebox[hidden]{display:none}
