@@ -48,6 +48,7 @@ function createApp(options={}){
  const publicUrl=publicOrigin?new URL(publicOrigin):null;
  if(publicUrl)require('./lib/shortlink.cjs').setOrigin(publicUrl.origin);
  if(!passive){try{require('./lib/jobs.cjs').autoNeighbor(store);}catch{}}
+ {const jb=require('./lib/jobs.cjs');jb.setRadiusSecret(options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'');if(publicUrl)jb.setPages(publicUrl.origin);}
  // The RADIUS shared secret (same as FreeRADIUS's RADIUS_SECRET), only to write it into a router's link script.
  const radiusSecret=options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'';
  if(publicUrl&&(publicUrl.protocol!=='https:'||publicUrl.username||publicUrl.password||publicUrl.pathname!=='/'||publicUrl.search||publicUrl.hash))throw new Error('NETWORK_PUBLIC_ORIGIN must be an HTTPS origin');
@@ -282,7 +283,24 @@ function createApp(options={}){
   if(explainRoute&&method==='GET'){const s=store.get('subscribers',explainRoute[1]);if(!s)throw error(404,'Subscriber not found');const p=store.get('plans',s.planId);if(!p)throw error(404,'No package');const f=require('./lib/packages.cjs').fupState(store,s,p,radius.planMs(p));const sess=store.sessionsOf(s.username).sort((a,b)=>b.updatedAt-a.updatedAt)[0],rid=sess?store.list('devices').find(d=>d.type==='router'&&d.name.toLowerCase()===String(sess.nasName||'').toLowerCase())?.id||'':'';
    const e=speedRules.resolve(store,{subscriber:s,plan:p,routerId:rid,service:s.service,baseDown:f.downMbps,baseUp:f.upMbps});return json(res,200,{...e,fup:f.active?{reasons:f.reasons,percent:f.percent}:null,note:'Configured speed. The router applies it at the customer\'s next login.'});}
   if(route==='/api/router-jobs'&&method==='GET'){role(user,['admin','manager','network-technician','operator']);const o=jobs.overview(store),sc=access.scope(store,user);if(sc){o.routers=o.routers.filter(r=>sc.has(r.id));o.jobs=o.jobs.filter(j=>sc.has(j.routerId));}return json(res,200,o);}
-  if(route==='/api/router-jobs'&&method==='POST'){access.need(store,user,'router.jobs');const input=await body(req);{const sc=access.scope(store,user);if(sc&&!sc.has(input.routerId))throw error(403,'That router is not one of yours');}if(jobs.TYPES[input.type]?.risky)role(user,['admin']);
+  // Move a router onto netops RADIUS (admin, typed router name). Refused while customers online on it have no netops account,
+  // unless the admin says to go ahead anyway: those customers could not log in after the move.
+  const rmRoute=route.match(/^\/api\/routers\/([a-f0-9-]{36})\/radius-move$/);
+  if(rmRoute){role(user,['admin']);const r=store.get('devices',rmRoute[1]);if(!r||r.type!=='router')throw error(404,'Router not found');
+   const rep=store.setting('customerDiscovery:'+r.id),now=Date.now(),seen=new Map();
+   for(const o of rep?.observations||[])for(const k of ['ppp','hotspot']){const e=o.evidence?.[k];if(e?.name&&now-(e.observedAt||0)<36e5){const u=radius.stripRealm(store,String(e.name));seen.set(u,k==='ppp'?'PPPoE':'Hotspot');}}
+   const missing=[...seen].filter(([u])=>!/^free-/.test(u)&&!store.subscriberByUsername(u)).map(([u,k])=>({username:u,service:k}));
+   const wg=store.list('wgPeers').find(x=>x.routerId===r.id&&x.kind==='router');
+   const info={router:r.name,discovery:!!rep,online:seen.size,missing,tunnel:wg?.address||'',runner:!!store.secret('jobs:'+r.id),realm:radius.settings(store).realm||'kade'};
+   if(method==='GET')return json(res,200,info);
+   if(method==='POST'){const input=await body(req),mode=input.mode==='test'?'test':'all';
+    if(!info.runner)throw error(409,`${r.name} does not have the job runner installed yet.`);
+    if(!wg)throw error(409,`${r.name} has no WireGuard tunnel to netops. Install the WireGuard part first (Link a MikroTik).`);
+    if(mode==='all'&&!rep&&input.force!==true)throw error(409,'Customer discovery is not on for this router, so netops cannot check which customers would be affected. Turn discovery on first, or tick "go ahead anyway".');
+    if(mode==='all'&&missing.length&&input.force!==true)throw error(409,`${missing.length} customer(s) online on ${r.name} have no account in netops and could not log in after the move: ${missing.slice(0,15).map(m=>m.username).join(', ')}${missing.length>15?'…':''}. Import them first, or tick "go ahead anyway".`);
+    const j=jobs.create(store,{routerId:r.id,type:'radius-move',params:{src:wg.address.split('/')[0],mode,realm:mode==='test'?info.realm:''},confirm:input.confirm,user});
+    store.audit(user,`Queued move to netops RADIUS (${mode}) on ${r.name}`,j.id);return json(res,201,j);}}
+  if(route==='/api/router-jobs'&&method==='POST'){access.need(store,user,'router.jobs');const input=await body(req);{const sc=access.scope(store,user);if(sc&&!sc.has(input.routerId))throw error(403,'That router is not one of yours');}if(jobs.TYPES[input.type]?.risky)role(user,['admin']);if(input.type==='radius-move')throw error(400,'Use Move to netops RADIUS on the router page, which checks the customers first');if(input.type==='push-design-auto')Object.assign(input,{params:{origin:publicUrl?.origin||'',host:publicUrl?.hostname||''}});
    const params={...(input.params||{})};if(input.type==='push-design')Object.assign(params,{origin:publicUrl?.origin||'',folder:params.folder||'hotspot'});
    const j=jobs.create(store,{routerId:input.routerId,type:input.type,params,confirm:input.confirm,user,runAt:input.runAt??null});store.audit(user,'Queued router job: '+j.label+' on '+j.routerName,j.id);return json(res,201,j);}
   // Link a MikroTik (admins): create the router and its one-line link command, follow its first reports, and on a new
@@ -321,7 +339,7 @@ function createApp(options={}){
     if(has('radius')&&mode!=='none')parts.push({title:'netops RADIUS'+(mode==='test'?' (test logins only)':''),script:pv.radiusScript({secret:radiusSecret,address:'10.99.0.1',srcAddress:wgAddress,realm:mode==='test'?(radius.settings(store).realm||'kade'):''})});
     if(has('monitoring')){const at=crypto.randomBytes(32).toString('base64url');store.db.prepare('DELETE FROM secrets WHERE device_id IN (?,?)').run(device.id,'agent:'+device.id);store.secret('agent:'+device.id,{tokenHash:routerAgent.hash(at),issuedAt:Date.now()});parts.push({title:'Monitoring (read-only)',script:routerAgent.generate(publicUrl.origin,device.id,at)});}
     if(has('discovery')){const dt=crypto.randomBytes(32).toString('base64url');store.secret('discovery:'+device.id,{tokenHash:routerAgent.hash(dt),issuedAt:Date.now()});parts.push({title:'Customer discovery and health (read-only)'+(lite?' every 10 minutes':''),script:customers.generate(publicUrl.origin,device.id,dt,{interval:lite?'10m':'2m'})});}
-    if(has('runner')){const e=jobs.enroll(store,device.id);parts.push({title:'Job runner (only runs jobs you confirm in netops)',script:jobs.runnerScript(publicUrl.origin,device.id,e.token)});}
+    if(has('runner')){const e=jobs.enroll(store,device.id);parts.push({title:'Job runner (only runs jobs you confirm in netops)',script:jobs.runnerScript(publicUrl.origin,device.id,e.token)});if(mode==='all')try{jobs.queuePages(store,device.id,Date.now(),45*60000);}catch{}}
    });
    if(!parts.length)throw error(409,'Nothing to install in this pass: '+(warnings[0]||'the selected part is not needed')+(has('wireguard')?' If the router was reset, tick "give it a new WireGuard key".':''));
    if(has('monitoring'))agentAccepted.delete(device.id);if(has('discovery'))agentAccepted.delete('discovery:'+device.id);

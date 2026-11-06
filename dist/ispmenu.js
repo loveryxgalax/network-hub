@@ -1364,6 +1364,7 @@ pages.routerProfile=async function(){
   ${canEdit?ib('Edit','pen','data-edit-kind="devices" data-id="'+d.id+'"'):''}
   ${admin?ib('Forget router','warning','data-delete-kind="devices" data-id="'+d.id+'"','danger'):''}
  </div>
+${admin?'<section class="card" id="rtp-radius"><div class="rtp-head"><h2>Customer logins (RADIUS)</h2></div><p class="muted small">Checking…</p></section>':''}
  <section class="card rtp-audit"><div class="rtp-head"><h2>${icon('shield',18)} Configuration audit</h2><button class="button secondary" id="rtp-check">${icon('refresh',15)} Run config check</button></div>
   ${checks.length?`<div class="rtp-checks">${checks.map(c=>`<div class="rtp-check ${c.ok?'ok':'bad'}"><span>${icon(c.ok?'check':'warning',16)}</span><div><b>${H(c.label)}</b><small>${H(c.detail||'')}</small>${c.ok||!c.fix?'':`<em>${H(c.fix)}</em>`}</div></div>`).join('')}</div>`:'<p class="muted" style="padding:14px 16px">No checks yet.</p>'}</section>
  <section class="card"><div class="rtp-head"><h2>${icon('file',18)} Configuration backups</h2><span class="muted small">${d.backupCount} saved · kept 30 days</span></div>
@@ -1390,6 +1391,18 @@ pages.routerProfile=async function(){
  <div class="rtp-two"><section class="card"><div class="rtp-head"><h2>Hotspot active users</h2><span class="muted small">${d.hotspotActive.length} online</span></div>${sessTable(d.hotspotActive,'Nobody is connected through the hotspot on this router.')}</section>
   <section class="card"><div class="rtp-head"><h2>PPPoE active</h2><span class="muted small">${d.pppoeActive.length} online</span></div>${sessTable(d.pppoeActive,'No PPPoE customers are connected through this router.')}</section></div>`;
  const reload=()=>pages.routerProfile();
+ {const box=$('#rtp-radius');if(box)api('routers/'+d.id+'/radius-move').then(m=>{
+  const jobsOn=m.runner&&m.tunnel,miss=m.missing.length;
+  box.innerHTML=`<div class="rtp-head"><h2>Customer logins (RADIUS)</h2></div>
+   <p class="muted small">Move this router's PPPoE and hotspot logins to netops RADIUS, so usage, sessions, payment-code login and auto-linking work. The old RADIUS server (e.g. ISPman) is turned off, not deleted, and <b>Undo</b> puts it back.</p>
+   <div class="rtp-info one">${kv('Job runner',m.runner?'Installed':'Not installed')}${kv('Tunnel to netops',m.tunnel||'None')}${kv('Customers online now',m.discovery?String(m.online):'Discovery off')}${kv('Without a netops account',m.discovery?(miss?String(miss):'None'):'Unknown')}</div>
+   ${miss?`<details style="margin:8px 0"><summary>${miss} customer(s) would be locked out</summary><p class="small">${m.missing.slice(0,60).map(x=>H(x.username)+' ('+x.service+')').join(', ')}</p><p class="muted small">Import them (Customers → Import CSV) first.</p></details>`:''}
+   ${jobsOn?`<div class="rtp-btns"><button class="button secondary" id="rm-test">Test first (@${H(m.realm)} logins only)</button><button class="button primary" id="rm-all">Move all logins to netops</button><button class="button secondary" id="rm-undo">Undo</button></div>`:`<p class="muted small">${!m.runner?'Install the job runner first (Connection script / Link a MikroTik).':'Install the WireGuard part first (Link a MikroTik).'}</p>`}`;
+  const go=async(mode,force=false)=>{const c=prompt(`Type the router name (${m.router}) to ${mode==='test'?'turn on test logins':'move all logins to netops RADIUS'}`);if(c===null)return;
+   try{await api('routers/'+d.id+'/radius-move','POST',{mode,confirm:c,force});toast('Queued. The router picks it up within a minute.');}catch(e){if(/go ahead anyway/.test(e.message)&&confirm(e.message+'\n\nGo ahead anyway?'))return go(mode,true);toast(e.message);}};
+  const t=$('#rm-test');if(t)t.onclick=()=>go('test');const a=$('#rm-all');if(a)a.onclick=()=>go('all');
+  const u=$('#rm-undo');if(u)u.onclick=async()=>{const c=prompt(`Type the router name (${m.router}) to switch back to the earlier RADIUS server`);if(c===null)return;try{await api('router-jobs','POST',{routerId:d.id,type:'radius-rollback',confirm:c});toast('Undo queued.');}catch(e){toast(e.message);}};
+ }).catch(e=>{box.innerHTML='<p class="muted small" style="padding:12px">'+H(e.message)+'</p>';});}
  $('#rtp-check').onclick=async()=>{toast('Checking…');reload();};
  const rf=$('#rtp-refresh');if(rf)rf.onclick=reload;
  const sf=$('#rtp-support');if(sf)sf.onsubmit=async e=>{e.preventDefault();try{await api('router-portal/'+d.id,'PUT',{...d.portal,supportPhone:sf.supportPhone.value,supportWhatsapp:sf.supportWhatsapp.value});toast('Support contact saved');}catch(x){toast(x.message);}};

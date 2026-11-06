@@ -31,3 +31,12 @@ test('neighbour discovery is queued once, after a delay, for routers with the jo
  let q=st.list('routerJobs').filter(j=>j.type==='neighbor-discovery');assert.equal(q.length,1);assert.ok(q[0].nextAttemptAt>now+20*60000);
  assert.equal(jobs.next(st,r.id,now),null,'never ahead of work queued now');assert.match(jobs.next(st,r.id,now+31*60000).script,/protocol=cdp,lldp,mndp/);
  jobs.autoNeighbor(st);assert.equal(st.list('routerJobs').filter(j=>j.type==='neighbor-discovery').length,1,'only once');});
+test('move to netops RADIUS: other servers disabled and tagged, undo restores them, pages queued after a full move',()=>{
+ const {st,r}=mk(),jobs=require('../lib/jobs.cjs'),now=Date.now();jobs.enroll(st,r.id);jobs.setRadiusSecret('s3cretValue');jobs.setPages('https://netops.example.test');
+ const j=jobs.create(st,{routerId:r.id,type:'radius-move',params:{src:'10.99.0.5',mode:'all',realm:''},confirm:'Core'},now);
+ const n=jobs.next(st,r.id,now);assert.equal(n.id,j.id);assert.match(n.script,/secret="s3cretValue"/);assert.match(n.script,/netops-moved: /);assert.match(n.script,/accounting=yes interim-update=5m/);
+ assert.ok(!JSON.stringify(st.get('routerJobs',j.id)).includes('s3cretValue'),'secret never stored');
+ jobs.result(st,r.id,j.id,{ok:true,output:'moved'},now+1000);
+ assert.equal(st.list('routerJobs').filter(x=>x.type==='push-design-auto').length,1,'pages queued after the move');
+ const u=jobs.create(st,{routerId:r.id,type:'radius-rollback',confirm:'Core'},now);assert.match(jobs.TYPES['radius-rollback'].script({}),/disabled=no comment=\[:pick \$c 14/);
+ assert.throws(()=>jobs.create(st,{routerId:r.id,type:'radius-move',params:{src:'10.99.0.5',mode:'all',realm:''},confirm:'nope'}),/Type the router name/);});
