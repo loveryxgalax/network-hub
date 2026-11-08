@@ -81,7 +81,7 @@ async function hotspotEditor(id){const rule=id?await pkRule(id):null;
   ${id?`<div class="pk-hs-ov">${pkOverrideHtml(rule)}</div>`:''}
   ${id?`<h3>Version history</h3><p class="muted small">This is version ${p.version||1}. Payments record the version they were made under.</p><div id="pk-versions"><button type="button" class="button secondary" id="pk-load-versions">Show earlier versions</button></div>`:''}</section>`;
  radiusForm(id?'Edit hotspot package':'New hotspot package','Changes apply at each customer\'s next login.',html,id?'Save package':'Create package',()=>{
-  const out=pkCollect(new FormData($('#editor-form')));
+  const fd=new FormData($('#editor-form')),out=pkCollect(fd);
   out.active=!fd.has('offSale');delete out.offSale;out.features=String(out.features||'').split('\n').map(s=>s.trim()).filter(Boolean);
   return api(id?'radius/plans/'+id:'radius/plans',id?'PATCH':'POST',out);});
  $('#editor').classList.add('pk-editor');$('#editor').addEventListener('close',()=>$('#editor').classList.remove('pk-editor'),{once:true});
