@@ -1,0 +1,25 @@
+{
+	# Older CPEs may omit SNI. Always select this endpoint's managed certificate.
+	default_sni {$ACS_TLS_HOST}
+	email {$ACS_TLS_EMAIL}
+}
+
+{$ACS_TLS_HOST} {
+	tls {
+		protocols tls1.2 tls1.3
+		key_type rsa2048
+	}
+
+	# Expose only CWMP, never the GenieACS NBI or the NetOps administration UI.
+	@cwmp path /cwmp/
+	handle @cwmp {
+		reverse_proxy acs:7548 {
+			transport http {
+				keepalive off
+			}
+		}
+	}
+	handle {
+		respond "Not found" 404
+	}
+}
