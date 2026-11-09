@@ -28,6 +28,12 @@ test('hotspot device flow: connect now, M-Pesa code, usage, loaders, new designs
   st.put('radiusSessions',{username:sub.username,mac:'AA:BB:CC:DD:EE:01',startedAt:Date.now(),updatedAt:Date.now()});
   const existing=await post('/portal/api/code-login',{code:'uk3if0tw26',mac:'AA:BB:CC:DD:EE:01',dt});assert.equal(existing.status,200);assert.equal(existing.body.alreadyConnected,true);assert.equal(existing.body.password,undefined);
   assert.equal((await post('/portal/api/code-login',{code:'uk3if0tw26',mac:'AA:BB:CC:DD:EE:01',dt:'wrong'})).status,400);
+  const other=st.put('radiusSessions',{username:sub.username,mac:'AA:BB:CC:DD:EE:02',startedAt:Date.now(),updatedAt:Date.now()});
+  const otherToken=require('../lib/hotspotme.cjs').trust(st,sub.username,'AA:BB:CC:DD:EE:02');
+  st.put('subscribers',{...st.get('subscribers',sub.id),payRefLogin:'migration'},st.get('subscribers',sub.id));
+  const migrated=await post('/portal/api/code-login',{code:'uk3if0tw26',mac:'AA:BB:CC:DD:EE:01',dt});assert.equal(migrated.body.alreadyConnected,true);assert.equal(migrated.body.moved,1);assert.equal(migrated.body.password,undefined);
+  assert.ok(st.get('radiusSessions',other.id).stoppedAt);assert.equal(require('../lib/hotspotme.cjs').tokenOk(st.get('subscribers',sub.id),'AA:BB:CC:DD:EE:02',otherToken),false);
+  st.put('subscribers',{...st.get('subscribers',sub.id),payRefLogin:'sharing'},st.get('subscribers',sub.id));
   const cl=await post('/portal/api/code-login',{code:'uk3if0tw26',chapId:'01',chapChallenge:'0a0b0c'});assert.equal(cl.status,200);assert.equal(cl.body.username,'kne-abc123');
   const u=await get('/portal/api/usage?mac=AA:BB:CC:DD:EE:01&dt='+dt);assert.equal(u.body.found,true);assert.equal(u.body.payments[0].ref.endsWith('TW26'),true);assert.ok(u.body.payments[0].ref.startsWith('•'));assert.equal(u.body.connects[0].status,'active');
   const stp=require('../lib/status.cjs');assert.match(stp.page({...stp.DEFAULTS,showPackage:true},'https://network.example.test',false,''),/id="pk"[\s\S]*\/portal\/api\/active\?mac=/);assert.doesNotMatch(stp.page({...stp.DEFAULTS},'https://network.example.test',false,''),/id="pk"/);
