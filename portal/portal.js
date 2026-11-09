@@ -417,6 +417,7 @@ const gb=n=>{n=Number(n)||0;for(const [u,d] of [['GB',1073741824],['MB',1048576]
 const dur=ms=>{const m=Math.round(ms/60000);return m<1?'<1m':m<60?m+'m':m<1440?Math.floor(m/60)+'h '+(m%60)+'m':Math.floor(m/1440)+'d '+Math.floor(m%1440/60)+'h';};
 const dt=t=>t?new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Nairobi'}):'';
 async function hxJoin(path,body){const r=await call(path,{method:'POST',body:JSON.stringify({...body,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});
+ if(r.alreadyConnected){document.getElementById('hx-sheet')?.remove();alertBox('Payment code verified. You are already connected.',true);return;}
  const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}
 function hxSheet(title,sub,ph,onGo,inputmode){document.getElementById('hx-sheet')?.remove();
  const d=document.createElement('div');d.id='hx-sheet';d.className='hx-bg';d.innerHTML=`<div class="hx-sheet" role="dialog" aria-modal="true"><button class="hx-x" type="button" aria-label="${esc(hx('cancel'))}">×</button><h3>${esc(title)}</h3><p>${esc(sub)}</p><div class="hx-err" hidden></div><input autocomplete="off" autocapitalize="characters" ${inputmode?`inputmode="${inputmode}"`:''} placeholder="${esc(ph)}"><button class="btn" type="button"><span>${esc(hx('go'))}</span> ${ICON.arrow}</button></div>`;
@@ -426,7 +427,7 @@ function hxBar(){const card=$('#hotspotCard');if(!card||card.querySelector('.hx-
  const bar=document.createElement('div');bar.className='hx-bar';bar.innerHTML=`<p class="hx-hint">${esc(hx('paidHint'))}</p><div class="hx-btns"><button type="button" class="hx-btn" id="hx-voucher">${esc(hx('voucher'))}</button><button type="button" class="hx-btn" id="hx-code">${esc(hx('code'))}</button></div>`;
  card.querySelector('.section-head').after(bar);
  if(CFG.show?.vouchers===false)$('#hx-voucher').remove();else $('#hx-voucher').onclick=()=>hxSheet(hx('voucherT'),hx('voucherS'),hx('voucherPh'),async v=>{if(!v)throw new Error(hx('voucherPh'));if(!router.login)throw new Error(hx('needWifi'));await routerLogin(v,v.toLowerCase());});
- $('#hx-code').onclick=()=>hxSheet(hx('codeT'),hx('codeS'),hx('codePh'),async v=>{if(!router.login||!router.chapId)throw new Error(hx('needWifi'));await hxJoin('code-login',{code:v});});}
+ $('#hx-code').onclick=()=>hxSheet(hx('codeT'),hx('codeS'),hx('codePh'),async v=>{if(!router.login)throw new Error(hx('needWifi'));await hxJoin('code-login',{code:v});});}
 let hxTimer=null;
 async function hxActive(){if(params.get('renew')==='1')return;if(!router.mac||(!ADM&&(!router.login||!router.chapId))||CFG.show?.autoConnect===false)return;
  let a;try{a=await call('active?mac='+encodeURIComponent(router.mac));}catch{return;}if(!a.found||!a.trusted)return;

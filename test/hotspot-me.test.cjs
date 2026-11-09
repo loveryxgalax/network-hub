@@ -25,6 +25,9 @@ test('hotspot device flow: connect now, M-Pesa code, usage, loaders, new designs
   assert.equal((await get('/portal/api/active?mac=AA:BB:CC:DD:EE:01&dt='+dt)).body.trusted,true);
   const cn=await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c',dt});assert.equal(cn.status,200);assert.equal(cn.body.username,'kne-abc123');assert.equal(cn.body.chap,true);
   assert.equal((await post('/portal/api/code-login',{code:'WRONGCODE1',chapId:'01',chapChallenge:'0a0b0c'})).status,404);
+  st.put('radiusSessions',{username:sub.username,mac:'AA:BB:CC:DD:EE:01',startedAt:Date.now(),updatedAt:Date.now()});
+  const existing=await post('/portal/api/code-login',{code:'uk3if0tw26',mac:'AA:BB:CC:DD:EE:01',dt});assert.equal(existing.status,200);assert.equal(existing.body.alreadyConnected,true);assert.equal(existing.body.password,undefined);
+  assert.equal((await post('/portal/api/code-login',{code:'uk3if0tw26',mac:'AA:BB:CC:DD:EE:01',dt:'wrong'})).status,400);
   const cl=await post('/portal/api/code-login',{code:'uk3if0tw26',chapId:'01',chapChallenge:'0a0b0c'});assert.equal(cl.status,200);assert.equal(cl.body.username,'kne-abc123');
   const u=await get('/portal/api/usage?mac=AA:BB:CC:DD:EE:01&dt='+dt);assert.equal(u.body.found,true);assert.equal(u.body.payments[0].ref.endsWith('TW26'),true);assert.ok(u.body.payments[0].ref.startsWith('•'));assert.equal(u.body.connects[0].status,'active');
   const stp=require('../lib/status.cjs');assert.match(stp.page({...stp.DEFAULTS,showPackage:true},'https://network.example.test',false,''),/id="pk"[\s\S]*\/portal\/api\/active\?mac=/);assert.doesNotMatch(stp.page({...stp.DEFAULTS},'https://network.example.test',false,''),/id="pk"/);
