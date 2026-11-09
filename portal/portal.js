@@ -269,7 +269,7 @@ function renderFree(){let el=$('#free-banner');if(!freeMode){if(el)el.remove();r
  $('#free-go').onclick=async()=>{alertBox('');try{if(!router.login){alertBox(t('freeNeedWifi'),true);return;}const r=await call('login',{method:'POST',body:JSON.stringify({free:true,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}catch(e){alertBox(e.message);}};}
 async function routerLogin(username,password){
  if(!router.login){await call('login',{method:'POST',body:JSON.stringify({username,password})});return false;}
- const r=await call('login',{method:'POST',body:JSON.stringify({username,password,chapId:router.chapId,chapChallenge:router.chapChallenge})});
+ const r=await call('login',{method:'POST',body:JSON.stringify({username,password,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});
  const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;return true;
 }
 async function pay(input){here('Paying');

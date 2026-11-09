@@ -17,7 +17,10 @@ test('hotspot device flow: connect now, M-Pesa code, usage, loaders, new designs
   // A forged MAC (no device secret) cannot be auto-connected, read or redeemed.
   assert.equal((await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c'})).status,404);
   assert.equal((await get('/portal/api/usage?mac=AA:BB:CC:DD:EE:01')).body.found,false);assert.equal((await get('/portal/api/session?mac=AA:BB:CC:DD:EE:01')).body.found,false);
-  const dt=require('../lib/hotspotme.cjs').trust(st,'kne-abc123','AA:BB:CC:DD:EE:01');assert.ok(dt);
+  assert.equal((await post('/portal/api/login',{username:sub.username,password:'wrong',mac:'AA:BB:CC:DD:EE:01'})).status,401);
+  const signed=await post('/portal/api/login',{username:sub.username,password:'pass-12345',mac:'AA:BB:CC:DD:EE:01'});assert.equal(signed.status,200);
+  const dt=signed.body.dt;assert.ok(dt,'successful credential login remembers this browser');
+  assert.equal((await get('/portal/api/session?mac=AA:BB:CC:DD:EE:01&dt='+dt)).body.found,true);
   assert.equal((await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c',dt:'wrong-secret'})).status,404);
   assert.equal((await get('/portal/api/active?mac=AA:BB:CC:DD:EE:01&dt='+dt)).body.trusted,true);
   const cn=await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c',dt});assert.equal(cn.status,200);assert.equal(cn.body.username,'kne-abc123');assert.equal(cn.body.chap,true);
