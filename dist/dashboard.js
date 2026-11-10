@@ -27,6 +27,7 @@ function kdSkeleton(){
   <div class="kd2-actions"><a class="button primary" href="#cust-hotspot" data-kd-add="hotspot">${kdIcon('plus',15)} Hotspot customer</a><a class="button primary" href="#cust-pppoe" data-kd-add="pppoe">${kdIcon('plus',15)} PPPoE customer</a><a class="button secondary" href="#cust-table">${kdIcon('search',15)} Find customer</a><a class="button secondary" href="#router-link">${kdIcon('router',15)} Link MikroTik</a><a class="button kd2-dark" href="#system-logs">${kdIcon('shield',15)} System logs<span class="kade-sys-n" hidden></span></a>
    <details class="ct-menu"><summary class="button secondary">More</summary><div class="ct-menu-list">${more.map(([l,h])=>`<a href="${h}">${l}</a>`).join('')}</div></details></div></section>
  <section class="kd2-kpis" id="kd-kpis"></section>
+ <section class="kd-pn" id="kd-pn" aria-live="polite"></section>
  <section class="kd2-grid">
   <div class="kd2-col">
    <article class="kd-card kd2-card"><header><div><h2>Network throughput</h2><p id="kd-peak" class="kd2-sub"></p></div><div class="kd-tools"><select id="kd-router" aria-label="Router"></select><div class="segmented" id="kd-range">${[['1h','1 h'],['24h','24 h'],['7d','7 d'],['30d','30 d'],['90d','3 m']].map(([k,l])=>`<button type="button" data-range="${k}" class="${kd.range===k?'active':''}">${l}</button>`).join('')}</div></div></header><div id="kd-throughput" class="kd-chart"></div></article>
@@ -51,7 +52,7 @@ function kdSkeleton(){
  ${admin?`<section class="kd-rb" id="kd-rb"><div class="kd-rb-head"><h2>Revenue breakdown</h2><p>Where the money comes from: each chart has its own period.</p></div><div class="kd-rb-grid">${KD_RB.filter(c=>!c.voucher).map(kdRbCard).join('')}</div>
   <div class="kd-rb-head kd-rb-sub"><h2>Voucher revenue</h2><p>Vouchers redeemed in the period, valued at their package price, by package and by location.</p></div><div class="kd-rb-grid">${KD_RB.filter(c=>c.voucher).map(kdRbCard).join('')}</div></section>`:''}
  <footer class="kd-foot"><span id="kd-updated"></span><span id="kd-complete"></span></footer>${kdDefs()}
- <span hidden id="kd-hero-down"></span><span hidden id="kd-hero-up"></span><span hidden id="kd-date"></span><span hidden id="kd-clock"></span><div hidden id="kd-portalnow"></div></div>`;
+ <span hidden id="kd-hero-down"></span><span hidden id="kd-hero-up"></span><span hidden id="kd-date"></span><span hidden id="kd-clock"></span></div>`;
  for(const b of document.querySelectorAll('#kd-hs-range [data-hs]'))b.onclick=()=>{kd.hs=b.dataset.hs;for(const x of document.querySelectorAll('#kd-hs-range [data-hs]'))x.classList.toggle('active',x===b);kdLoad();};
  for(const a of document.querySelectorAll('[data-kd-add]'))a.onclick=e=>{if(typeof window.subscriberEditor==='function'){e.preventDefault();window.subscriberEditor(null,{service:a.dataset.kdAdd});}};
  kdPortalNow();
@@ -132,9 +133,18 @@ function kdBusinessPaint(){const el=$('#kd-isp'),b=kd.biz;if(!el||!b)return;cons
  <div class="kd-isp-biz"><img src="/img/kade-mark.png" alt="" width="22" height="22"><strong>${E(b.name)}</strong>${b.code?`<span>Account prefix: <b>${E(b.code)}</b></span>`:''}${b.email?`<span>Email: <b>${E(b.email)}</b></span>`:''}${b.phone?`<span>Phone: <b>${E(b.phone)}</b></span>`:''}<span>Site: <b>${E(b.site)}</b></span><a href="#team">Team: <b>${kc.fmtNum(b.members)}</b></a>${m&&m.pendingPayouts?`<a href="#payouts">Payouts waiting: <b>${m.pendingPayouts}</b></a>`:''}</div>`;
  const eye=$('#kd-eye');if(eye)eye.onclick=()=>{kd.showMoney=!kd.showMoney;kdBusinessPaint();};}
 // Live captive-portal visitors, refreshed on the chosen interval while the dashboard is open.
-async function kdPortalNow(){clearTimeout(kd.portalTimer);if(!$('#kd')||state.page!=='dashboard')return;
+async function kdPortalNow(){clearTimeout(kd.portalTimer);if(!$('#kd-pn'))return;
  if(!document.hidden&&!$('dialog[open]'))try{kd.portal=await api('portal-now');const card=document.querySelector('[data-kpi="portal"]');if(card){const b=card.querySelector('[data-count="portal"]');if(b)b.textContent=kc.fmtNum(kd.portal.total);card.querySelector('.kd-kpi-sub').textContent=`${kc.fmtNum(kd.portal.hotspot)} hotspot · ${kc.fmtNum(kd.portal.pppoe)} PPPoE`;}}catch{}
- kd.portalTimer=setTimeout(kdPortalNow,kd.portalEvery*1000);}
+ kdPortalPaint();if(kd.portalEvery>0)kd.portalTimer=setTimeout(kdPortalNow,kd.portalEvery*1000);}
+// "On the captive portal now": who is on the WiFi page right now, by page and by router, refreshed live.
+try{const v=Number(localStorage.getItem('kd.portalEvery'));if([0,5,10,30,60].includes(v)&&localStorage.getItem('kd.portalEvery')!==null)kd.portalEvery=v;}catch{}
+function kdPortalPaint(){const el=$('#kd-pn');if(!el)return;const p=kd.portal||{total:0,hotspot:0,pppoe:0,pages:{},devices:{}};
+ const chips=o=>Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<span class="kd-pn-chip">${E(k)} <b>${kc.fmtNum(n)}</b></span>`).join('')||'<span class="kd-pn-none">nobody right now</span>';
+ const sync=[[5,'5s'],[10,'10s'],[30,'30s'],[60,'1 min'],[0,'Paused']];
+ el.innerHTML=`<div class="kd-pn-top"><h2><i class="kd-pn-dot ${p.total?'on':''}"></i>On the captive portal now</h2><span class="kd-pn-pill"><b>${kc.fmtNum(p.total)}</b> total</span><span class="kd-pn-pill"><b class="hs">${kc.fmtNum(p.hotspot)}</b> hotspot</span><span class="kd-pn-pill"><b>${kc.fmtNum(p.pppoe)}</b> PPPoE</span></div>
+  <div class="kd-pn-row"><span class="kd-pn-k">Pages</span><div class="kd-pn-chips">${chips(p.pages)}</div></div>
+  <div class="kd-pn-row"><span class="kd-pn-k">Devices</span><div class="kd-pn-chips">${chips(p.devices)}</div><div class="kd-pn-sync"><span>${kd.portalEvery?'live · every '+(sync.find(x=>x[0]===kd.portalEvery)?.[1]||kd.portalEvery+'s'):'paused'}</span><select id="kd-pn-every" aria-label="Refresh every">${sync.map(([v,l])=>`<option value="${v}" ${v===kd.portalEvery?'selected':''}>Sync: ${l}</option>`).join('')}</select></div></div>`;
+ $('#kd-pn-every').onchange=e=>{kd.portalEvery=Number(e.target.value);try{localStorage.setItem('kd.portalEvery',String(kd.portalEvery));}catch{}kdPortalNow();};}
 const kdPalette=['#3b5bfd','#06b6d4','#a855f7','#10b981','#f59e0b','#ec4899','#14b8a6','#6366f1'];
 async function kdLoad(){const request=++kd.request;try{const d=await api('overview?range='+kd.range+'&hotspot='+kd.hs);if(request!==kd.request||!['dashboard','trends'].includes(state.page))return;kd.data=d;kdPaint(kd.first);kd.first=false;}catch(error){if(request===kd.request&&$('#kd')&&!kd.data)$('#kd').insertAdjacentHTML('afterbegin',notice('Could not load the overview',E(error.message),true));}}
 // Revenue breakdown donuts (admin): by service, package and location, and voucher revenue by package and location.
