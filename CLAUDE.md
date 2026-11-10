@@ -1,5 +1,7 @@
 # Network Hub — Claude Code handoff
 
+> Any assistant (Claude, ChatGPT/Codex, …): read `docs/AI-HANDOFF.md` first. It has the current rules, code map, state and session log, and must be updated at the end of every session.
+
 ## Purpose
 
 Network Hub is an independent Node.js and SQLite network-operations dashboard. It monitors MikroTik routers, PPPoE and Hotspot customers, fibre inventory, OLT/ONU records, SNMP devices, and TR-069 devices through a private GenieACS deployment. The production site is `https://netops.kadenetworks.com` through a locally managed Cloudflare Tunnel.
