@@ -1,5 +1,7 @@
 {
-	# Older CPEs may omit SNI. Always select this endpoint's managed certificate.
+	# No admin API at all (nothing to reach, published or not).
+	admin off
+	# Older CPEs (Cambium cnPilot R195W) may omit SNI. Always select this endpoint's managed certificate.
 	default_sni {$ACS_TLS_HOST}
 	email {$ACS_TLS_EMAIL}
 }
@@ -11,9 +13,11 @@
 	}
 
 	# Expose only CWMP, never the GenieACS NBI or the NetOps administration UI.
-	@cwmp path /cwmp/
+	# The path is passed through unchanged; headers (Authorization, Cookie) and the SOAP body are not touched.
+	@cwmp path /cwmp /cwmp/*
 	handle @cwmp {
-		reverse_proxy acs:7548 {
+		# acs:7548 is the existing connection-isolation proxy (a fresh GenieACS socket per request).
+		reverse_proxy {$ACS_UPSTREAM:acs:7548} {
 			transport http {
 				keepalive off
 			}
