@@ -896,3 +896,33 @@ input.hs-cb.hs-cb{width:22px!important;height:22px!important;min-width:0!importa
 .provider-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px!important;margin-top:16px!important;align-items:start}
 .provider-grid>.card{margin:0!important}
 @media (max-width:520px){.provider-grid{grid-template-columns:1fr}}
+/* Sidebar: nothing pinned. Logo, search, menu, shortcuts and profile scroll together as one column. */
+.sidebar{overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#ffffff40 transparent}
+.sidebar nav,#navigation{flex:0 0 auto!important;overflow:visible!important;min-height:auto!important}
+#navigation .nav-search{position:static!important;top:auto!important;z-index:auto!important;padding:4px 6px 12px!important;margin:0!important;background:none!important}
+#navigation .nav-search input{width:100%;box-sizing:border-box;font-size:16px;line-height:1.2;padding:9px 12px;border-radius:10px;border:1px solid #ffffff59;background:#ffffff1a;color:#fff;outline:none}
+#navigation .nav-search input:focus{border-color:#fff;background:#ffffff26}
+.sidebar-pins,.sidebar-bottom{position:static!important;flex:0 0 auto}
+.sidebar-pins{margin-top:12px}
+.sidebar-bottom{margin-top:0!important;padding-bottom:16px}
+/* Trends: fewer axis labels when the chart is narrow so they never run together. */
+.tr-ticks span{font-size:11px}
+@media (max-width:760px){.tr-ticks span.tr-odd,.rp-col.tr-odd small{visibility:hidden}.tr-ticks span,.rp-col small{font-size:10.5px}}
+/* Customer discovery router cards */
+.customer-sources article{display:flex;flex-direction:column;gap:6px}
+.customer-sources .cs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.customer-sources .cs-head strong{font-size:14px}
+.customer-sources .cs-head .status{font-size:11.5px;padding:3px 9px;white-space:nowrap}
+.customer-sources p{margin:0}
+.customer-sources .cs-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.customer-sources .cs-actions .button{width:100%;min-height:36px;padding:7px 10px;font-size:12.5px;justify-content:center;text-align:center;white-space:normal;line-height:1.2;margin:0}
+.customer-sources .cs-actions .button:only-child{grid-column:1/-1}
+/* Top bar: one line on phones */
+@media (max-width:760px){
+ .topbar .breadcrumbs{min-width:0;flex:1 1 auto;font-size:0;gap:0;white-space:nowrap;overflow:hidden}
+ .topbar .breadcrumbs>span{display:none}
+ .topbar .breadcrumbs #breadcrumb{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+ .topbar .wallet-button,.topbar .topbar-actions{flex:0 0 auto}
+}
+.customer-sources .cs-actions .button.danger{background:var(--card,#fff)!important;color:#b42318!important;border:1px solid #f0b4ad!important}
+.customer-sources .cs-actions .button.danger:hover{background:#b42318!important;color:#fff!important;border-color:#b42318!important}

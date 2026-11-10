@@ -115,7 +115,7 @@ const pages={
  async trendsPage(id){const f=pages.tr||(pages.tr={days:7});shell('Trends','Customers online over time, a typical day, hotspot visits by hour, and PPPoE activity per day. From RADIUS accounting, in Nairobi time.');
   const d=await api('trends?days='+f.days);if(state.page!==id)return;const W=1000,Hh=220,n=d.series.length,max=Math.max(1,...d.series.map(p=>p.hotspot+p.pppoe));
   const line=k=>d.series.map((p,i)=>`${(i/(Math.max(1,n-1))*W).toFixed(1)},${(Hh-(k==='all'?p.hotspot+p.pppoe:p[k])/max*Hh).toFixed(1)}`).join(' ');
-  const ticks=d.series.filter((p,i)=>i%Math.max(1,Math.round(n/8))===0).map(p=>{const i=d.series.indexOf(p),dt=new Date(p.t+3*36e5);return `<span style="left:${i/(Math.max(1,n-1))*100}%">${f.days===1?dt.toISOString().slice(11,16):dt.toISOString().slice(5,10).replace('-','/')+' '+dt.toISOString().slice(11,13)+'h'}</span>`;}).join('');
+  const ticks=d.series.filter((p,i)=>i%Math.max(1,Math.round(n/8))===0).map((p,k)=>{const i=d.series.indexOf(p),dt=new Date(p.t+3*36e5);return `<span class="${k%2?'tr-odd':''}" style="left:${i/(Math.max(1,n-1))*100}%">${f.days===1?dt.toISOString().slice(11,16):dt.toISOString().slice(5,10).replace('-','/')+' '+dt.toISOString().slice(11,13)+'h'}</span>`;}).join('');
   const tmax=Math.max(1,...d.typical.map(x=>x.hotspot+x.pppoe)),vmax=Math.max(1,...d.visits.flat()),amax=Math.max(1,...d.pppoe.map(x=>x.sessions)),gb=b=>(b/1e9).toFixed(1)+' GB';
   const WD=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   $('#im-body').innerHTML=`<section class="card tr-card"><div class="card-header"><div><h2>Online users</h2><p>Sessions open at each hour. ${d.peak.t?`Peak ${d.peak.total} at ${H(new Date(d.peak.t).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit',timeZone:'Africa/Nairobi'}))}.`:''}</p></div><select id="tr-days">${[[1,'Last 24 hours'],[7,'Last 7 days'],[30,'Last 30 days']].map(([v,l])=>`<option value="${v}" ${f.days===v?'selected':''}>${l}</option>`).join('')}</select></div>
@@ -125,7 +125,7 @@ const pages={
   <section class="card tr-card"><div class="card-header"><div><h2>Hotspot customer visits heatmap</h2><p>Hotspot sessions started, by weekday and hour, over the period. Darker means busier.</p></div></div>
    <div class="tr-heat"><div></div>${Array.from({length:24},(_,h)=>`<b>${h%3?'':String(h).padStart(2,'0')}</b>`).join('')}${d.visits.map((row,w)=>`<b>${WD[w]}</b>${row.map((v,h)=>`<i title="${WD[w]} ${String(h).padStart(2,'0')}:00 · ${v} visits" style="opacity:${v?0.12+0.88*v/vmax:0.04}"></i>`).join('')}`).join('')}</div></section>
   <section class="card tr-card"><div class="card-header"><div><h2>PPPoE session activity</h2><p>Per day over the last 4 weeks: sessions started, customers, and data. A red day had no PPPoE customer online at all, usually an outage or RADIUS not reaching netops; grey days are before netops received any.</p></div></div>
-   <div class="rp-split"><div class="rp-split-bars" style="height:170px">${d.pppoe.map(x=>`<div class="rp-col" title="${x.date}: ${x.noData?'no data yet (before netops received PPPoE accounting) · ':''}${x.sessions} sessions · ${x.customers} customers · ↓${gb(x.download)} ↑${gb(x.upload)}"><div class="rp-pair"><i class="${x.gap?'gap':x.noData?'nodata':'h'}" style="height:${x.gap||x.noData?14:x.sessions/amax*100}%;max-width:22px;width:70%"></i></div><small>${x.date.slice(8)}</small></div>`).join('')}</div></div>
+   <div class="rp-split"><div class="rp-split-bars" style="height:170px">${d.pppoe.map((x,i)=>`<div class="rp-col${(d.pppoe.length-1-i)%2?' tr-odd':''}" title="${x.date}: ${x.noData?'no data yet (before netops received PPPoE accounting) · ':''}${x.sessions} sessions · ${x.customers} customers · ↓${gb(x.download)} ↑${gb(x.upload)}"><div class="rp-pair"><i class="${x.gap?'gap':x.noData?'nodata':'h'}" style="height:${x.gap||x.noData?14:x.sessions/amax*100}%;max-width:22px;width:70%"></i></div><small>${x.date.slice(8)}</small></div>`).join('')}</div></div>
    <div class="tr-sum"><span>Sessions <b>${d.pppoe.reduce((a,x)=>a+x.sessions,0)}</b></span><span>Download <b>${gb(d.pppoe.reduce((a,x)=>a+x.download,0))}</b></span><span>Upload <b>${gb(d.pppoe.reduce((a,x)=>a+x.upload,0))}</b></span><span>Days with no PPPoE online <b>${d.pppoe.filter(x=>x.gap).length}</b></span>${d.pppoe.some(x=>x.noData)?`<span>Before data started <b>${d.pppoe.filter(x=>x.noData).length} days</b></span>`:''}</div></section>`;
   $('#tr-days').onchange=e=>{f.days=Number(e.target.value);pages.trendsPage(id);};
   // Hotspot fair usage: how far active capped bundles are through their data allowance.
@@ -1372,16 +1372,18 @@ let navQuery='';
 function pins(){const side=document.querySelector('#sidebar'),bottom=side?.querySelector('.sidebar-bottom');if(!bottom||state.session?.user?.role==='installer')return;let p=side.querySelector('.sidebar-pins');
  if(!p){p=document.createElement('div');p.className='sidebar-pins';bottom.before(p);}
  p.innerHTML=`<a href="#notifications" class="${state.page==='notifications'?'active':''}" title="Alerts">${icon('bell')}<span class="nav-label">Alerts</span>${counts.alerts?`<span class="pin-badge">${counts.alerts}</span>`:''}</a><a href="#ai" class="${state.page==='ai'?'active':''}" title="Assistant">${icon('chat')}<span class="nav-label">Assistant</span></a><a href="/live" title="Live NOC view (Phoenix)">${icon('activity')}<span class="nav-label">Live view</span></a>`;}
+// Cache each item's label once and only touch the DOM when visibility really changes, so typing stays smooth.
+const navText=a=>a.dataset.q??(a.dataset.q=a.textContent.trim().toLowerCase()),setHidden=(e,v)=>{if(e.hidden!==v)e.hidden=v;};
 function organise(){const nav=document.querySelector('#navigation');if(!nav||document.body.classList.contains('nav-collapsed'))return;
  const kids=[...nav.children].filter(e=>!e.classList.contains('nav-search'));const groups=[];let cur={label:null,items:[]};groups.push(cur);
  for(const e of kids){if(e.classList.contains('nav-group-label')){cur={label:e,items:[]};groups.push(cur);}else cur.items.push(e);}
  const q=navQuery.trim().toLowerCase();
  for(const g of groups){if(!g.label)continue;const name=g.label.dataset.group||g.label.textContent.trim(),hasActive=g.items.some(a=>a.classList.contains('active'));
   const open=q?true:openGroups.has(name)||hasActive;g.label.classList.add('nav-toggle');g.label.dataset.group=name;g.label.classList.toggle('open',open);
-  let shown=0;for(const a of g.items){const match=!q||a.textContent.toLowerCase().includes(q);a.hidden=!(open&&match);if(match)shown++;}
-  g.label.hidden=!!q&&!shown;}
- for(const a of groups[0].items)a.hidden=!!q&&!a.textContent.toLowerCase().includes(q);
- if(!nav.querySelector('.nav-search')){nav.insertAdjacentHTML('afterbegin','<div class="nav-search"><input type="search" placeholder="Search menu…" aria-label="Search menu" autocomplete="off"></div>');const input=nav.querySelector('.nav-search input');input.oninput=e=>{navQuery=e.target.value;organise();};}
+  let shown=0;for(const a of g.items){const match=!q||navText(a).includes(q);setHidden(a,!(open&&match));if(match)shown++;}
+  setHidden(g.label,!!q&&!shown);}
+ for(const a of groups[0].items)setHidden(a,!!q&&!navText(a).includes(q));
+ if(!nav.querySelector('.nav-search')){nav.insertAdjacentHTML('afterbegin','<div class="nav-search"><input type="search" placeholder="Search menu…" aria-label="Search menu" autocomplete="off"></div>');const input=nav.querySelector('.nav-search input');let raf=0;input.oninput=e=>{navQuery=e.target.value;cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>organise());};}
 }
 document.addEventListener('click',e=>{const l=e.target.closest('#navigation .nav-toggle');if(!l)return;const n=l.dataset.group;if(openGroups.has(n))openGroups.delete(n);else openGroups.add(n);try{localStorage.setItem(NAVKEY,JSON.stringify([...openGroups]));}catch{}
  // a group that holds the page you are on cannot be closed, so remember the click but keep it open
