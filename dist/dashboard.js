@@ -39,6 +39,7 @@ function kdSkeleton(){
    <article class="kd-card kd2-card"><header><div><h2>Router health</h2></div><a class="kd-link" href="#mikrotiks">All routers →</a></header><div id="kd-routers" class="kd2-routers"></div></article>
    <article class="kd-card kd2-card"><header><div><h2>Customers online</h2><p class="kd2-sub">Every 5 minutes, from the routers</p></div><footer class="kd-legend"><span><i style="background:#06b6d4"></i>Hotspot</span><span><i style="background:#6366f1"></i>PPPoE</span></footer></header><div id="kd-online" class="kd-chart"></div></article>
   <article class="kd-card kd2-card" id="kd-paycard" hidden><header><div><h2>Received payments</h2></div><a class="kd-link" href="#pay-received">View all →</a></header><div id="kd-pays"></div></article>
+  ${admin?`<div class="kd-rb-side">${KD_RB.filter(c=>c.side).map(kdRbCard).join('')}</div>`:''}
   </div>
   <div class="kd2-col">
    ${admin?`<article class="kd-card kd2-card"><header><div><h2>Revenue</h2><p class="kd2-sub">Last 14 days</p></div><a class="kd-link" href="#pay-received">Payments →</a></header><div class="kd-money kd2-money"><div><small>Today</small><strong id="kd-rev-today">—</strong></div><div><small>7 days</small><strong id="kd-rev-week">—</strong></div><div><small>This month</small><strong id="kd-rev-month">—</strong></div><div><small>Last month</small><strong id="kd-rev-last">—</strong></div><div><small>Last 3 months</small><strong id="kd-rev-3m">—</strong></div><div><small>Year to date</small><strong id="kd-rev-ytd">—</strong></div></div><div id="kd-revenue"></div></article>`:''}
@@ -49,8 +50,7 @@ function kdSkeleton(){
    <article class="kd-card kd2-card"><header><div><h2>Live traffic</h2></div><a class="kd-link" href="#sites">Torch →</a></header><div id="kd-live" class="kd-list"></div></article></div>
   </div>
  </section>
- ${admin?`<section class="kd-rb" id="kd-rb"><div class="kd-rb-head"><h2>Revenue breakdown</h2><p>Where the money comes from: each chart has its own period.</p></div><div class="kd-rb-grid">${KD_RB.filter(c=>!c.voucher).map(kdRbCard).join('')}</div>
-  <div class="kd-rb-head kd-rb-sub"><h2>Voucher revenue</h2><p>Vouchers redeemed in the period, valued at their package price, by package and by location.</p></div><div class="kd-rb-grid">${KD_RB.filter(c=>c.voucher).map(kdRbCard).join('')}</div></section>`:''}
+ ${admin?`<section class="kd-rb" id="kd-rb"><div class="kd-rb-head"><h2>Revenue by location &amp; vouchers</h2><p>Where the money comes from, and vouchers redeemed (valued at their package price). Each chart has its own period.</p></div><div class="kd-rb-grid kd-rb-three">${KD_RB.filter(c=>!c.side).map(kdRbCard).join('')}</div></section>`:''}
  <footer class="kd-foot"><span id="kd-updated"></span><span id="kd-complete"></span></footer>${kdDefs()}
  <span hidden id="kd-hero-down"></span><span hidden id="kd-hero-up"></span><span hidden id="kd-date"></span><span hidden id="kd-clock"></span></div>`;
  for(const b of document.querySelectorAll('#kd-hs-range [data-hs]'))b.onclick=()=>{kd.hs=b.dataset.hs;for(const x of document.querySelectorAll('#kd-hs-range [data-hs]'))x.classList.toggle('active',x===b);kdLoad();};
@@ -148,7 +148,7 @@ function kdPortalPaint(){const el=$('#kd-pn');if(!el)return;const p=kd.portal||{
 const kdPalette=['#3b5bfd','#06b6d4','#a855f7','#10b981','#f59e0b','#ec4899','#14b8a6','#6366f1'];
 async function kdLoad(){const request=++kd.request;try{const d=await api('overview?range='+kd.range+'&hotspot='+kd.hs);if(request!==kd.request||!['dashboard','trends'].includes(state.page))return;kd.data=d;kdPaint(kd.first);kd.first=false;}catch(error){if(request===kd.request&&$('#kd')&&!kd.data)$('#kd').insertAdjacentHTML('afterbegin',notice('Could not load the overview',E(error.message),true));}}
 // Revenue breakdown donuts (admin): by service, package and location, and voucher revenue by package and location.
-const KD_RB=[{id:'svc',title:'Revenue by service',pick:r=>r.byService},{id:'plan',title:'Revenue by package',pick:r=>r.byPlan},{id:'loc',title:'Revenue by location',pick:r=>r.byLocation},
+const KD_RB=[{id:'svc',title:'Revenue by service',side:true,pick:r=>r.byService},{id:'plan',title:'Revenue by package',side:true,pick:r=>r.byPlan},{id:'loc',title:'Revenue by location',pick:r=>r.byLocation},
  {id:'vplan',title:'Voucher revenue by package',voucher:true,pick:r=>r.vouchers.byPlan},{id:'vloc',title:'Voucher revenue by location',voucher:true,pick:r=>r.vouchers.byLocation}];
 const KD_RB_P=[['today','Today'],['yesterday','Yesterday'],['week','This week'],['month','This month'],['lastmonth','Last month'],['3m','Last 3 months'],['ytd','Year to date']];
 kd.rb=kd.rb||{};kd.rbCache=kd.rbCache||new Map();

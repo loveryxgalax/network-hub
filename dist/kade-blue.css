@@ -1009,3 +1009,13 @@ dialog.sx-dialog::backdrop{background:rgba(15,23,42,.45);backdrop-filter:blur(3p
 .kd-pn-sync select{min-height:34px;padding:4px 28px 4px 10px;font-size:13px;border-radius:9px;width:auto}
 @media (max-width:600px){.kd-pn{padding:12px}.kd-pn-k{min-width:0;width:100%}.kd-pn-sync{width:100%;justify-content:space-between;margin-left:0}}
 @media (max-width:600px){.kd-pn-k{width:auto;min-width:56px}}
+/* Revenue by service and by package sit in the left column under Received payments */
+.kd-rb-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.kd-rb-side .kd-rb-card{padding:14px!important}
+.kd-rb-side .kd-rb-card header{flex-wrap:wrap}
+.kd-rb-side .kd-rb-card h3{font-size:14.5px}
+@media (min-width:1000px){.kd-rb-three{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.kd-rb-side .kd-rb-card header{flex-wrap:nowrap}
+.kd-rb-side .kd-rb-tools{gap:2px}
+.kd-rb-side .kd-rb-tools select{max-width:108px;padding-right:22px;font-size:12.5px}
+.kd-rb-side .kd-rb-card h3{flex:1 1 auto;min-width:0}
