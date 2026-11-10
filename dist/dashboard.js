@@ -48,6 +48,8 @@ function kdSkeleton(){
    <article class="kd-card kd2-card"><header><div><h2>Live traffic</h2></div><a class="kd-link" href="#sites">Torch →</a></header><div id="kd-live" class="kd-list"></div></article></div>
   </div>
  </section>
+ ${admin?`<section class="kd-rb" id="kd-rb"><div class="kd-rb-head"><h2>Revenue breakdown</h2><p>Where the money comes from: each chart has its own period.</p></div><div class="kd-rb-grid">${KD_RB.filter(c=>!c.voucher).map(kdRbCard).join('')}</div>
+  <div class="kd-rb-head kd-rb-sub"><h2>Voucher revenue</h2><p>Vouchers redeemed in the period, valued at their package price, by package and by location.</p></div><div class="kd-rb-grid">${KD_RB.filter(c=>c.voucher).map(kdRbCard).join('')}</div></section>`:''}
  <footer class="kd-foot"><span id="kd-updated"></span><span id="kd-complete"></span></footer>${kdDefs()}
  <span hidden id="kd-hero-down"></span><span hidden id="kd-hero-up"></span><span hidden id="kd-date"></span><span hidden id="kd-clock"></span><div hidden id="kd-portalnow"></div></div>`;
  for(const b of document.querySelectorAll('#kd-hs-range [data-hs]'))b.onclick=()=>{kd.hs=b.dataset.hs;for(const x of document.querySelectorAll('#kd-hs-range [data-hs]'))x.classList.toggle('active',x===b);kdLoad();};
@@ -56,6 +58,7 @@ function kdSkeleton(){
  for(const b of document.querySelectorAll('#kd-range [data-range]'))b.onclick=()=>{kd.range=b.dataset.range;for(const x of document.querySelectorAll('#kd-range [data-range]'))x.classList.toggle('active',x===b);kd.first=true;kdLoad();};
  $('#kd-router').onchange=e=>{kd.router=e.target.value;kdPaint(false);};
  kdClock();
+ if(admin)kdRbLoad();
  if(typeof refreshSysBadge==='function')try{refreshSysBadge();}catch{}
 }
 function kdClock(){if(!$('#kd-clock'))return;const n=new Date();$('#kd-greeting').textContent=kdGreeting();$('#kd-date').textContent=n.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',timeZone:'Africa/Nairobi'});$('#kd-clock').textContent=n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Africa/Nairobi'});}
@@ -134,6 +137,23 @@ async function kdPortalNow(){clearTimeout(kd.portalTimer);if(!$('#kd')||state.pa
  kd.portalTimer=setTimeout(kdPortalNow,kd.portalEvery*1000);}
 const kdPalette=['#3b5bfd','#06b6d4','#a855f7','#10b981','#f59e0b','#ec4899','#14b8a6','#6366f1'];
 async function kdLoad(){const request=++kd.request;try{const d=await api('overview?range='+kd.range+'&hotspot='+kd.hs);if(request!==kd.request||!['dashboard','trends'].includes(state.page))return;kd.data=d;kdPaint(kd.first);kd.first=false;}catch(error){if(request===kd.request&&$('#kd')&&!kd.data)$('#kd').insertAdjacentHTML('afterbegin',notice('Could not load the overview',E(error.message),true));}}
+// Revenue breakdown donuts (admin): by service, package and location, and voucher revenue by package and location.
+const KD_RB=[{id:'svc',title:'Revenue by service',pick:r=>r.byService},{id:'plan',title:'Revenue by package',pick:r=>r.byPlan},{id:'loc',title:'Revenue by location',pick:r=>r.byLocation},
+ {id:'vplan',title:'Voucher revenue by package',voucher:true,pick:r=>r.vouchers.byPlan},{id:'vloc',title:'Voucher revenue by location',voucher:true,pick:r=>r.vouchers.byLocation}];
+const KD_RB_P=[['today','Today'],['yesterday','Yesterday'],['week','This week'],['month','This month'],['lastmonth','Last month'],['3m','Last 3 months'],['ytd','Year to date']];
+kd.rb=kd.rb||{};kd.rbCache=kd.rbCache||new Map();
+function kdRbCard(c){const p=kd.rb[c.id]||'today';return `<article class="kd-card kd-rb-card" data-rb="${c.id}"><header><h3>${c.title}</h3><div class="kd-rb-tools"><button type="button" class="kd-rb-refresh" data-rb-refresh="${c.id}" aria-label="Refresh" title="Refresh">↻</button><select data-rb-period="${c.id}" aria-label="Period">${KD_RB_P.map(([v,l])=>`<option value="${v}" ${v===p?'selected':''}>${l}</option>`).join('')}</select></div></header><div class="kd-rb-body"><div class="kd-rb-chart" id="kd-rb-${c.id}"></div><ul class="kd-rb-legend" id="kd-rb-l-${c.id}"></ul></div></article>`;}
+async function kdRbReport(period,fresh){const hit=kd.rbCache.get(period);if(hit&&!fresh&&Date.now()-hit.at<60000)return hit.value;const value=await api('reports?period='+period);kd.rbCache.set(period,{at:Date.now(),value});return value;}
+async function kdRbPaint(c,fresh){const host=$('#kd-rb-'+c.id),leg=$('#kd-rb-l-'+c.id);if(!host)return;const period=kd.rb[c.id]||'today';host.classList.add('loading');
+ try{const r=await kdRbReport(period,fresh);if(!$('#kd-rb-'+c.id))return;const rows=(c.pick(r)||[]).filter(x=>x.amount>0),top=rows.slice(0,7),rest=rows.slice(7).reduce((a,x)=>a+x.amount,0);if(rest>0)top.push({name:'Others',amount:rest});
+  const total=top.reduce((a,x)=>a+x.amount,0),short=n=>n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'M':n>=1e3?(n/1e3).toFixed(1).replace(/\.0$/,'')+'K':String(Math.round(n));
+  kc.donut(host,top.map((x,i)=>({label:x.name,value:x.amount,color:kdPalette[i%kdPalette.length]})),{size:180,stroke:26,center:short(total),sub:'KSh total'});
+  if(!total)host.innerHTML=`<div class="kd-rb-none"><b>No revenue</b><span>${E(KD_RB_P.find(p=>p[0]===period)?.[1]||'')}</span></div>`;
+  leg.innerHTML=top.map((x,i)=>`<li><i style="background:${kdPalette[i%kdPalette.length]}"></i><span>${E(x.name)}</span><b>${kc.fmtKsh(x.amount)}</b><small>${total?Math.round(x.amount/total*100):0}%</small></li>`).join('');}
+ catch(e){host.innerHTML=`<div class="kd-rb-none"><b>Could not load</b><span>${E(e.message)}</span></div>`;leg.innerHTML='';}
+ finally{host.classList.remove('loading');}}
+function kdRbLoad(){for(const c of KD_RB){const sel=document.querySelector(`[data-rb-period="${c.id}"]`),btn=document.querySelector(`[data-rb-refresh="${c.id}"]`);if(!sel)continue;
+ sel.onchange=()=>{kd.rb[c.id]=sel.value;kdRbPaint(c);};btn.onclick=()=>kdRbPaint(c,true);kdRbPaint(c);}}
 function renderDashboard(){kd.first=true;kd.data=null;kdSkeleton();kdLoad();clearInterval(kd.timer);kd.timer=setInterval(()=>{if(['dashboard','trends'].includes(state.page)&&!document.hidden&&!$('dialog[open]'))kdLoad();else if(!['dashboard','trends'].includes(state.page))clearInterval(kd.timer);},30000);}
 // Alerts arrive within seconds: a tiny request every 5 s while the dashboard is open and visible; the page repaints only when something changed.
 setInterval(async()=>{if(!state.session?.user||!['dashboard','trends'].includes(state.page)||document.hidden||!kd.data||$('dialog[open]'))return;

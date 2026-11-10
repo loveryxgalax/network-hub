@@ -1520,6 +1520,31 @@ function layoutCustomer(root){if(!root||root.dataset.cp)return;root.dataset.cp='
  if(head){head.classList.add('cp-head');wrap.append(head);}if(notes.length){const nn=document.createElement('div');nn.className='cp-notes';for(const n of notes)nn.append(n);wrap.append(nn);}
  wrap.append(row1,row2,ac,hc);if(more.children.length)wrap.append(more);
  root.replaceChildren(wrap);}
+// OLT brand set-up: choose the brand (Huawei, ZTE, V-SOL, C-Data, FiberHome, BDCOM), test the read-only SNMP mapping, or let
+// netops find the ONU table itself, then save it on the OLT. netops only reads from the OLT.
+{const ix=nav.findIndex(n=>n[0]==='olts');if(ix>=0&&!nav.some(n=>n[0]==='olt-snmp'))nav.splice(ix+1,0,['olt-snmp','OLT brand set-up','settings']);ROUTES['olt-snmp']='oltSnmp';}
+pages.oltSnmp=async function(id){shell('OLT brand set-up','Pick each OLT’s brand so netops can read its ONUs, their state and optical power over SNMP (read-only). Brands without a built-in mapping are found automatically: netops looks for the column of GPON serials or EPON MACs on the OLT.','<a class="button secondary" href="#olts">← OLTs</a>');
+ const [{items:presets}]=await Promise.all([api('olt-presets'),load()]);if(state.page!==id)return;const olts=rows('devices').filter(d=>d.type==='olt');
+ const guess=d=>{const t=`${d.name} ${d.model} ${d.vendor||''}`.toLowerCase();return presets.find(p=>t.includes(p.brand.toLowerCase().replace('-','')))?.id||presets.find(p=>t.includes(p.brand.toLowerCase()))?.id||'';};
+ const cur=d=>{try{return d.snmpMapping?JSON.parse(d.snmpMapping):null;}catch{return null;}};
+ $('#im-body').innerHTML=(olts.length?olts.map(d=>{const m=cur(d),g=guess(d);return `<section class="card os-card" data-olt="${H(d.id)}"><div class="os-head"><div><h2>${H(d.name)}</h2><p class="muted small">${H([d.model,d.ip||'no IP yet',d.driver==='snmp'?'SNMP':'driver: '+(d.driver||'none')].filter(Boolean).join(' · '))}</p></div><span class="status ${m?.serialOid?'online':'pending'}">${m?.serialOid?'ONU table set':'Not set up'}</span></div>
+  <div class="os-row"><label>Brand<select data-os-brand>${['<option value="">Choose…</option>',...presets.map(p=>`<option value="${p.id}" ${g===p.id?'selected':''}>${H(p.brand)} · ${H(p.family)}</option>`)].join('')}<option value="other">Other brand</option></select></label>
+  <div class="os-actions"><button type="button" class="button secondary" data-os-test>Test on this OLT</button><button type="button" class="button primary" data-os-find>Find the ONU table</button></div></div>
+  <p class="muted small" data-os-note></p>${d.driver!=='snmp'?'<p class="os-warn">Set this OLT’s driver to <b>SNMP</b> and save its SNMP credentials (OLTs → Connection) before testing.</p>':''}<div data-os-out></div></section>`;}).join(''):`<section class="card sites-panel"><p class="muted">No OLTs yet. Add one under OLTs first (OLTs → Add), with its management IP and the SNMP driver.</p></section>`)
+  +`<section class="card sites-panel"><h3>Brands</h3><div class="os-brands">${presets.map(p=>`<div><b>${H(p.brand)}</b><span>${H(p.family)}</span><small>${p.hasMapping?'Built-in mapping':'Found automatically'} · ${H(p.notes)}</small></div>`).join('')}</div></section>`;
+ const note=(card)=>{const p=presets.find(x=>x.id===card.querySelector('[data-os-brand]').value);card.querySelector('[data-os-note]').textContent=p?p.notes:'';};
+ for(const card of document.querySelectorAll('[data-olt]')){const oid=card.dataset.olt,out=card.querySelector('[data-os-out]');note(card);card.querySelector('[data-os-brand]').onchange=()=>note(card);
+  const run=async find=>{const brand=card.querySelector('[data-os-brand]').value;out.innerHTML='<p class="muted">Reading the OLT… this can take up to a minute on a large OLT.</p>';
+   try{const r=await api('devices/'+oid+'/snmp-probe','POST',{preset:find||brand==='other'?'':brand});paint(r);}catch(e){out.innerHTML=`<p class="os-warn">${H(e.message)}</p>`;}};
+  const paint=r=>{if(!r.ok){out.innerHTML=`<p class="os-warn">${H(r.error||'Nothing found')}</p><p class="muted small">${H(r.sysDescr||'')}</p>`;return;}
+   const st=r.states?.[0];out.innerHTML=`<div class="os-result"><p><b>${r.onus}</b> ONU${r.onus===1?'':'s'} found${r.source==='preset'?' with the '+H(r.brand)+' mapping':' automatically'}${r.online!=null?` · <b>${r.online}</b> online now`:''}.</p><p class="muted small">${H(r.sysDescr||'')}</p>
+    <p class="small">Examples: ${r.sample.map(s=>`<code>${H(s)}</code>`).join(' ')}</p>
+    ${st?`<label>Which state means online?<select data-os-online>${Object.entries(st.values).map(([v,n])=>`<option value="${H(v)}" ${r.mapping.onlineValues.map(String).includes(v)?'selected':''}>${H(v)} (${n} ONU${n==1?'':'s'})</option>`).join('')}</select></label>`:''}
+    ${r.confirm?`<p class="muted small">${H(r.confirm)}</p>`:''}<button type="button" class="button primary" data-os-save>Save on this OLT</button></div>`;
+   const sv=out.querySelector('[data-os-save]');sv.onclick=async()=>{const sel=out.querySelector('[data-os-online]'),m={...r.mapping,...(sel?{onlineValues:[isNaN(Number(sel.value))?sel.value:Number(sel.value)]}:{})};sv.disabled=true;
+    try{const d=rows('devices').find(x=>x.id===oid);await api('records/devices/'+oid,'PATCH',{version:d.version,snmpMapping:JSON.stringify(m),...(r.brand&&!d.model?{model:r.brand+' OLT'}:{})});await load();toast('Saved. ONUs appear after the next poll (about a minute).');pages.oltSnmp(id);}catch(e){toast(e.message);sv.disabled=false;}};};
+  card.querySelector('[data-os-test]').onclick=()=>run(false);card.querySelector('[data-os-find]').onclick=()=>run(true);}
+};
 })();
 
 document.addEventListener('click',e=>{for(const m of document.querySelectorAll('details.ct-menu[open]'))if(!m.contains(e.target)||e.target.closest('.ct-menu-list button,.ct-menu-list a'))m.open=false;});
@@ -1555,3 +1580,30 @@ document.addEventListener('click',e=>{for(const m of document.querySelectorAll('
   b.onclick=()=>{const ref=sessionStorage.getItem('kd-prev')||'';if(ref==='settings'&&history.length>1)history.back();else location.hash='settings';};head.prepend(b);};
  let prev=(location.hash.slice(1).split('?')[0]||'dashboard');window.addEventListener('hashchange',()=>{try{sessionStorage.setItem('kd-prev',prev);}catch{}prev=location.hash.slice(1).split('?')[0]||'dashboard';});
  const start=()=>{const m=document.getElementById('main');if(!m)return setTimeout(start,300);new MutationObserver(add).observe(m,{childList:true});add();};start();})();
+// Search everything: one box over the whole database (customers, live sessions, devices, payments, vouchers, packages,
+// tickets, work orders, alerts…) plus the menu pages. Results come from /api/search; typing is debounced and stale replies
+// are dropped. Arrow keys move through results and Enter opens the highlighted one.
+(()=>{let seq=0,tm=0,sel=-1;const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const mark=(t,q)=>{const s=esc(t);if(!q)return s;const i=String(t).toLowerCase().indexOf(q.toLowerCase());return i<0?s:esc(String(t).slice(0,i))+'<mark>'+esc(String(t).slice(i,i+q.length))+'</mark>'+esc(String(t).slice(i+q.length));};
+ const pagesFor=q=>{const l=q.toLowerCase(),seen=new Set(),out=[];let head='';try{for(const n of (typeof nav!=='undefined'?nav:[])){if(!Array.isArray(n)||typeof n[1]!=='string')continue;if(n[3])head=String(n[3]);const g=head?({PPPOE:'PPPoE','STATIC IP':'Static IP','OLTS & ONUS':'OLTs & ONUs',COMMS:'Comms'}[head]||head.charAt(0)+head.slice(1).toLowerCase()):'';
+  if(seen.has(n[0])||!(n[1].toLowerCase().includes(l)||(g&&(g+' '+n[1]).toLowerCase().includes(l))))continue;seen.add(n[0]);out.push({title:g&&!n[1].toLowerCase().includes(g.toLowerCase())?g+' · '+n[1]:n[1],sub:'Page',hash:n[0]});if(out.length>=6)break;}}catch{}return out;};
+ const tips='<div class="sx-empty"><b>Search anything in your workspace</b><span>Customers and usernames · phone numbers in any form (07…, 2547…) · MAC and IP addresses · M-Pesa receipts · voucher codes · router, ONU and CPE serials · tickets and work orders · packages · menu pages</span></div>';
+ const item=(x,q)=>{const body=`<span class="sx-t">${mark(x.title,q)}</span>${x.sub?`<span class="sx-s">${mark(x.sub,q)}</span>`:''}`;
+  return x.open?`<button type="button" class="search-result sx-item" role="option" data-search-kind="${esc(x.open)}" data-id="${esc(x.id)}">${body}</button>`:`<a class="sx-item" role="option" href="#${esc(x.hash)}">${body}</a>`;};
+ const box=()=>document.getElementById('search-results');
+ const paint=(q,d)=>{const pg=pagesFor(q),groups=[...(pg.length?[{label:'Pages',count:pg.length,items:pg}]:[]),...d.groups];sel=-1;
+  box().innerHTML=groups.length?`<p class="sx-count">${d.total+pg.length} result${d.total+pg.length===1?'':'s'} for “${esc(q)}”</p>`+groups.map(g=>`<section class="sx-group"><h3>${esc(g.label)}${g.count>g.items.length?` <small>showing ${g.items.length} of ${g.count}</small>`:''}</h3>${g.items.map(x=>item(x,q)).join('')}</section>`).join(''):`<div class="sx-empty"><b>Nothing found for “${esc(q)}”</b><span>Try part of a name, the last digits of a phone number, or a MAC address.</span></div>`;};
+ window.search=function(){const inp=document.getElementById('search-query'),q=(inp?.value||'').trim();clearTimeout(tm);
+  if(q.length<2){box().innerHTML=tips;return;}
+  if(!box().querySelector('.sx-item'))box().innerHTML='<div class="sx-loading"><i></i><i></i><i></i></div>';
+  tm=setTimeout(async()=>{const my=++seq;try{const r=await fetch('/api/search?q='+encodeURIComponent(q),{credentials:'same-origin'});const d=await r.json();if(my!==seq)return;if(!r.ok)throw new Error(d.error||'Search failed');paint(q,d);}catch(e){if(my===seq)box().innerHTML=`<div class="sx-empty"><b>Search is unavailable</b><span>${esc(e.message)}</span></div>`;}},180);};
+ document.addEventListener('click',e=>{const a=e.target.closest('#search-dialog a.sx-item');if(a)document.getElementById('search-dialog')?.close();
+  const d=document.getElementById('search-dialog');if(d&&e.target===d)d.close();});
+ document.addEventListener('keydown',e=>{const d=document.getElementById('search-dialog');if(!d?.open||!['ArrowDown','ArrowUp','Enter'].includes(e.key))return;const items=[...d.querySelectorAll('.sx-item')];if(!items.length)return;
+  if(e.key==='Enter'){if(e.target.id==='search-query'){e.preventDefault();(items[Math.max(0,sel)]).click();}return;}
+  e.preventDefault();sel=(sel+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;items.forEach((x,i)=>x.setAttribute('aria-selected',i===sel));items[sel].scrollIntoView({block:'nearest'});});
+})();
+// The device, ticket and invoice editors offer a "Customer account" list; make sure the customers are loaded first.
+(()=>{if(typeof window.openEditor!=='function')return;const orig=window.openEditor;window.openEditor=async function(kind,...rest){
+ if(['devices','tickets','invoices'].includes(kind)&&typeof radiusView!=='undefined'&&!radiusView.data){try{radiusView.data=await api('radius');}catch{}}
+ return orig.call(this,kind,...rest);};})();
