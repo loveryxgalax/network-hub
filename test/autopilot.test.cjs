@@ -31,7 +31,7 @@ test('tickets: critical alert → assigned ticket, closed with the alert; custom
  const s=st.put('subscribers',radius.subscriber(st,{name:'Ann',username:'ann',phone:'0712345678',service:'pppoe',planId:p.id}));const ct=st.put('tickets',{title:'No internet',status:'Open',subscriberId:s.id});
  await ap.tickets(st,'https://netops.example.test',now);assert.match(sent.at(-1).message,/received your request/);
  st.put('tickets',{...st.get('tickets',ct.id),status:'Resolved'},st.get('tickets',ct.id));await ap.tickets(st,'https://netops.example.test',now);
- const m=/rate\.html\?t=([^ ]+)/.exec(sent.at(-1).message)||/\/s\/[A-Za-z0-9]{10}/.exec(sent.at(-1).message);assert.ok(m,'rating link in the SMS: '+sent.at(-1).message);
+ const m=/rate\.html\?t=([^ ]+)/.exec(sent.at(-1).message)||/\/s\/[A-Za-z0-9]{7}/.exec(sent.at(-1).message);assert.ok(m,'rating link in the SMS: '+sent.at(-1).message);
  const tok=ct.id+'.'+'bad';assert.throws(()=>ap.rate(st,tok,5),/not valid/);
  const good=ap.rateLink(st,'https://x',st.get('tickets',ct.id)).split('t=')[1];ap.rate(st,decodeURIComponent(good),4);assert.equal(st.get('tickets',ct.id).rating,4);});
 test('overdue tickets are escalated once',async()=>{const st=mk(),now=Date.now();ap.save(st,{ticketSlaHours:2});const since=st.setting('autopilot').since;

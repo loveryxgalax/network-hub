@@ -15,6 +15,16 @@ function pkOverride(id,kind,rule){$('#pk-ov-save').onclick=async()=>{const up=$(
    const body={scope:'plan',targetId:id,service:kind,mode:raise&&cut?'exact':raise?'raise':'cut',downMbps:down,upMbps:up,note:'Package speed override'};
    const r=rule?await api('speed-rules/'+rule.id,'PATCH',body):await api('speed-rules','POST',body);rule=r?.id?r:rule;toast('Speed override saved');}catch(e){toast(e.message);}};}
 async function pkRule(id){try{return ((await api('speed-rules')).items||[]).find(r=>r.scope==='plan'&&r.targetId===id)||null;}catch{return null;}}
+// "When it can be bought": show the hour and day pickers only when ticked, quick day presets, and a plain summary.
+function pkWindowWire(){const f=$('#editor-form');if(!f||!f.querySelector('[name="window.fromHour"]'))return;
+ const H24=i=>String(i).padStart(2,'0')+':00',DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+ const paint=()=>{const hOn=f['window.hours'].checked,dOn=f['window.days'].checked;f.querySelector('.pk-win-hours').hidden=!hOn;f.querySelector('.pk-win-days').hidden=!dOn;
+  const a=Number(f['window.fromHour'].value),b=Number(f['window.toHour'].value),days=[...f.querySelectorAll('[name="window.weekdays"]:checked')].map(x=>Number(x.value)).sort();
+  const when=!hOn?'at any time':a===b%24?'all day':`from ${H24(a)} to ${H24(b)}${b<=a?' (overnight, ends the next morning)':''}`;
+  const on=!dOn||days.length===7?'every day':!days.length?'on no day (choose at least one)':days.join()==='1,2,3,4,5'?'on weekdays':days.join()==='0,6'?'at weekends':'on '+days.map(d=>DAYS[d]).join(', ');
+  $('#pk-win-sum').textContent=!hOn&&!dOn?'On sale at any time, every day.':`On sale ${on}, ${when} (Nairobi time).`;};
+ for(const b of f.querySelectorAll('[data-win-days]'))b.onclick=()=>{const set=b.dataset.winDays.split(',');for(const x of f.querySelectorAll('[name="window.weekdays"]'))x.checked=set.includes(x.value);paint();};
+ f.addEventListener('change',e=>{if(/^window\./.test(e.target.name||''))paint();});paint();}
 function pkCollect(fd){
   const out={burst:{},fup:{},window:{},notices:{},trial:{},custom:{}};
   for(const [k,v] of fd.entries()){if(['notices.before','notices.usage','window.weekdays','routerIds'].includes(k)||/^fup\.t\d/.test(k)||/^custom\.d\d/.test(k))continue;const [a,c]=k.split('.');if(c)out[a][c]=v;else out[k]=v;}
@@ -67,10 +77,12 @@ async function hotspotEditor(id){const rule=id?await pkRule(id):null;
   <p class="muted">Fair-usage progress (needs a download cap):</p><div class="pk-chips">${[50,80,100].map(x=>`<label class="pk-chip"><input type="checkbox" name="notices.usage" value="${x}" ${(n.usage||[]).includes(x)?'checked':''}> ${x}% of the cap used</label>`).join('')}</div>
   <p class="muted">Before expiry:</p><div class="pk-chips">${PK_NOTICES.map(([m,l])=>`<label class="pk-chip"><input type="checkbox" name="notices.before" value="${m}" ${n.before?.includes(m)?'checked':''}> ${l} before expiry</label>`).join('')}</div></section>
  <section data-pk="window" hidden><p class="muted">Limit when this package can be bought (Nairobi time). Customers who already bought it keep using it outside these times.</p>
-  ${chk('window.hours',w.hours,'Only sell between certain hours')}
-  <div class="form-grid">${num('window.fromHour','From (hour 0–23)',w.fromHour??22,'min="0" max="23"')}${num('window.toHour','Until (hour 0–24)',w.toHour??6,'min="0" max="24"')}</div><p class="muted small">From 22 until 6 means overnight.</p>
-  ${chk('window.days',w.days,'Only sell on certain days')}
-  <div class="pk-chips">${PK_DAYS.map((d,i)=>`<label class="pk-chip"><input type="checkbox" name="window.weekdays" value="${i}" ${w.weekdays?.includes(i)?'checked':''}> ${d}</label>`).join('')}</div></section>
+  <p class="pk-win-sum" id="pk-win-sum" aria-live="polite"></p>
+  ${chk('window.hours',w.hours,'Only sell between certain hours','For example a night package sold from 22:00 to 06:00')}
+  <div class="form-grid pk-win-hours"><label>From<select name="window.fromHour">${Array.from({length:24},(_,i)=>`<option value="${i}" ${(w.fromHour??22)===i?'selected':''}>${String(i).padStart(2,'0')}:00 (${i===0?'midnight':i===12?'noon':i<12?i+' AM':(i-12)+' PM'})</option>`).join('')}</select></label><label>Until<select name="window.toHour">${Array.from({length:25},(_,i)=>i).filter(i=>i>0).map(i=>`<option value="${i}" ${(w.toHour??6)===i?'selected':''}>${i===24?'24:00 (midnight)':String(i).padStart(2,'0')+':00 ('+(i===12?'noon':i<12?i+' AM':(i-12)+' PM')+')'}</option>`).join('')}</select></label></div>
+  ${chk('window.days',w.days,'Only sell on certain days','For example a weekend package')}
+  <div class="pk-win-days"><div class="pk-win-quick"><button type="button" class="button secondary" data-win-days="0,1,2,3,4,5,6">Every day</button><button type="button" class="button secondary" data-win-days="1,2,3,4,5">Weekdays</button><button type="button" class="button secondary" data-win-days="0,6">Weekend</button></div>
+  <div class="pk-chips">${[1,2,3,4,5,6,0].map(i=>`<label class="pk-chip"><input type="checkbox" name="window.weekdays" value="${i}" ${w.weekdays?.includes(i)?'checked':''}> ${PK_DAYS[i]}</label>`).join('')}</div></div></section>
  <section data-pk="other" hidden>
   ${chk('offSale',p.active===false,'Package disabled (off sale)','Not sold on the portal; existing customers keep it')}
   ${chk('hidden',p.hidden,'Hide from the landing page','Still usable for vouchers, manual connects and staff renewals')}
@@ -87,6 +99,7 @@ async function hotspotEditor(id){const rule=id?await pkRule(id):null;
  $('#editor').classList.add('pk-editor');$('#editor').addEventListener('close',()=>$('#editor').classList.remove('pk-editor'),{once:true});
  if(id)pkOverride(id,p.service==='both'?'all':'hotspot',rule);
  for(const t of document.querySelectorAll('[data-pk-tab]'))t.onclick=()=>{for(const x of document.querySelectorAll('[data-pk-tab]'))x.classList.toggle('active',x===t);for(const s of document.querySelectorAll('[data-pk]'))s.hidden=s.dataset.pk!==t.dataset.pkTab;};
+ pkWindowWire();
  const lv=$('#pk-load-versions');if(lv)lv.onclick=async()=>{try{const r=await api('radius/plans/'+id+'?versions=1');$('#pk-versions').innerHTML=r.versions.length?table(['VERSION','REPLACED','BY','PRICE','SPEED'],r.versions,v=>`<tr><td>${v.version}</td><td>${h(stamp(v.replacedAt))}</td><td>${h(v.by||'')}</td><td>${ksh(v.terms.price)}</td><td>${v.terms.downloadMbps} / ${v.terms.uploadMbps} Mbps</td></tr>`):'<p class="muted">No earlier versions.</p>';}catch(e){toast(e.message);}};
  // A server error names the field; open the tab that holds it.
  const err=$('#editor-error');new MutationObserver(()=>{const m=err.textContent.toLowerCase(),tab=/burst|threshold|averag/.test(m)?'burst':/cap|fair|after the cap/.test(m)?'fup':/hour|day/.test(m)?'window':/feature/.test(m)?'details':null;if(tab)document.querySelector(`[data-pk-tab="${tab}"]`)?.click();}).observe(err,{childList:true,characterData:true,subtree:true});
