@@ -36,7 +36,7 @@ const find=(kind,id)=>rows(kind).find(r=>r.id===id);
 const deviceName=id=>find('devices',id)?.name||'No device linked';
 const badge=value=>`<span class="status ${['online','Paid','Done','Resolved','Closed','Installed','Managed / check-in observed'].includes(value)?'online':['offline','Urgent','High','critical','Damaged'].includes(value)?'offline':['Acknowledged','In progress','Pending','warning','Ready for enrollment'].includes(value)?'warning':'pending'}">${h(value||'unknown')}</span>`;
 const canEdit=kind=>NetworkPermissions.write(state.session?.user.role,kind,'PATCH');
-function visibleNav(item){const role=state.session?.user.role;if(role==='installer')return ['unconfigured','jobs'].includes(item[0]);return !['wallet','team','settings','audit'].includes(item[0])||role==='admin';}
+function visibleNav(item){const role=state.session?.user.role;if(role==='installer')return ['unconfigured','jobs'].includes(item[0]);return !['wallet','team','settings','audit','ispman-overview'].includes(item[0])||role==='admin';}
 const recordLink=(kind,item)=>`<button class="link-button" data-edit-kind="${kind}" data-id="${item.id}">${h(item.name||item.title||item.reference||item.id)}</button>`;
 // Toasts sit in the browser's top layer (above any open dialog), so a confirmation from inside a dialog is always seen.
 function toast(message){const el=$('#toast');el.textContent=message;el.hidden=false;el.classList.toggle('toast-bad',/^(SMS not sent|Not |Could not|Failed|Error|Invalid|No )/i.test(String(message||'')));
@@ -71,6 +71,7 @@ function addButton(kind,label,defaults={}){return NetworkPermissions.write(state
 function notice(title,text,warning=false){return `<div class="notice ${warning?'warning':''}">${icon(warning?'warning':'info',20)}<div><strong>${title}</strong><br>${text}</div></div>`;}
 function tabs(items){return `<nav class="page-tabs">${items.map(([id,label])=>`<a class="${state.page===id?'active':''}" href="#${id}">${label}</a>`).join('')}</nav>`;}
 function render(){if(!state.session?.user)return;chrome();$('#breadcrumb').textContent=nav.find(n=>n[0]===state.page)?.[1]||state.page;const route=state.page;
+ if(route==='ispman-overview')return renderIspmanOverview();
  if(route==='subscriber-monitoring')return renderSubscriberMonitoring();if(route==='sites')return renderSites();if(route==='radius')return renderRadius();if(route==='customers')return renderCustomers();if(route==='cpe-onboarding')return renderCpeOnboarding();
  if(route==='dashboard')return renderDashboard();if(['mikrotiks','olts','olt-onus'].includes(route))return renderDevices(route==='mikrotiks'?'router':route==='olts'?'olt':'onu');
  if(route==='tr069')return renderAcs();if(route==='network-health'||route==='uptime')return renderHealth();if(route==='power')return renderPower();if(route==='network-map')return renderMap();if(route==='unconfigured')return renderDiscovery();if(route==='load-balancing')return renderRoutes();if(route==='wallet')return renderBilling();if(route==='team')return renderTeam();if(route==='settings')return renderSettings();if(route==='ai')return renderAssistant();if(route==='fibre')return renderFibre();
