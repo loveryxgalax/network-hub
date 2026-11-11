@@ -39,7 +39,7 @@ netops (`https://netops.kadenetworks.com`) is the owner's own replacement for IS
 
 1. **Production routers are off limits.** These are the CCR2004, the hEX S (Ikutha) and the RB951 (KYANDULA).
    - Never run, queue, suggest or generate commands against them unless the owner explicitly asks for that specific step.
-   - Even when asked, only read-only, observer-type steps are allowed (for example `docs/KYANDULA-OBSERVER-SETUP.md`).
+   - Even when asked, only read-only, observer-type steps are allowed (for example `docs/KYANDULA-OBSERVER-SETUP.md`, `docs/HEX-IKUTHA-OBSERVER-SETUP.md`).
    - Test routers are LAB-HEX (hEX E50UG) and the lab Cambium (serial WFWM0BKTD6CV). Nothing else may be touched.
 2. **Never upgrade RouterOS. Never reboot a MikroTik.**
 3. **Never disconnect customers or change their service** without a new, explicit instruction.
@@ -259,7 +259,7 @@ As of **2026-11-11**:
 
 ### Waiting on the owner (not code)
 
-- Run `docs/KYANDULA-OBSERVER-SETUP.md` on the RB951 and report the results.
+- Run `docs/KYANDULA-OBSERVER-SETUP.md` (RB951) and `docs/HEX-IKUTHA-OBSERVER-SETUP.md` (hEX S) and report the results.
 - Live HTTPS ACS steps in `docs/CAMBIUM-TR069-HTTPS.md` (VPS / DNS / Cambium).
 - Set each OLT's brand once real OLTs are added.
 - Decide when to set `NETWORK_PASSIVE=1` on the server while ISPman stays primary.
