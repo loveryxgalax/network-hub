@@ -244,7 +244,7 @@ CI on the PR re-runs the tests. If it goes red, fix it immediately: the branch d
 
 As of **2026-11-11**:
 
-- **Tests:** 254 passing. CI is green on the last push (`ce3e141`).
+- **Tests:** 258 passing. CI is green on the last push (`ce3e141`).
 
 ### Recently finished
 
@@ -274,4 +274,5 @@ As of **2026-11-11**:
 
 ## 10. Session log (newest first; one line per session)
 
+- 2026-11-11 (b): invoice PDFs (`lib/pdf.cjs`, `/api/invoices/:id/pdf`, PDF + Print buttons); Settings → System & connections in pairs, ISP details two-column; short links now `site/<code>` (old `/s/` still work); admin View portal opens directly; PPPoE "Pay and Extend" fixed and PPPoE package change by payment; hotspot account card shows Connect only when not connected; data usage Line/Bar choice; Bans & blocks page (`lib/restrictions.cjs`, ban = permanent, blocks devices); "Use my current location" on every lat/long form; "What needs action"; .sit-note style.
 - 2026-11-11: dashboard chart moves; 100% desktop scale; KYANDULA observer instructions; captive-now card; search, revenue donuts, OLT brands, fibre ONT TR-069; sidebar and trends fixes; this handoff file.

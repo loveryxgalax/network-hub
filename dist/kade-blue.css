@@ -1019,3 +1019,33 @@ dialog.sx-dialog::backdrop{background:rgba(15,23,42,.45);backdrop-filter:blur(3p
 .kd-rb-side .kd-rb-tools{gap:2px}
 .kd-rb-side .kd-rb-tools select{max-width:108px;padding-right:22px;font-size:12.5px}
 .kd-rb-side .kd-rb-card h3{flex:1 1 auto;min-width:0}
+/* Settings → System & connections: ISP details across the top (fields in two columns), then the cards in pairs */
+.settings-grid.ss-isp-wrap{grid-template-columns:1fr!important}
+.ss-isp-fields{display:grid;grid-template-columns:1fr;gap:4px 18px}
+@media (min-width:1000px){
+ .ss-isp-fields{grid-template-columns:1fr 1fr}
+ .ss-isp-fields label:has(textarea){grid-row:span 2}
+ .provider-grid.ss-pairs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+.provider-grid.ss-pairs>.card{height:auto}
+/* Customer profile: data usage line graph */
+.pfu-line{position:relative;padding:6px 0 4px}
+.pfu-line svg{width:100%;height:auto;display:block;background:linear-gradient(to bottom,transparent 24.5%,var(--border) 25%,transparent 25.5%,transparent 49.5%,var(--border) 50%,transparent 50.5%,transparent 74.5%,var(--border) 75%,transparent 75.5%)}
+.pfu-line circle{vector-effect:non-scaling-stroke}
+.pfu-xl{position:relative;height:18px}.pfu-xl span{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--muted);white-space:nowrap}
+.pfu-key{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:4px}.pfu-key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+#pfu-kind{width:auto}
+.geo-row{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:2px 0 6px}
+.geo-row .geo-btn{min-height:36px}
+.geo-note{font-size:12px}
+/* Bans & blocks */
+.rx-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.rx-tile{display:grid;gap:2px;text-align:left;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:var(--card,#fff);cursor:pointer;color:var(--ink)}
+.rx-tile b{font-size:22px}.rx-tile span{font-size:12.5px;color:var(--muted)}
+.rx-tile.on{border-color:var(--primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 25%,transparent)}
+#rx-q{max-width:280px}
+.rx-none{padding:18px}
+.rx-help{margin:8px 0 0;padding-left:18px;display:grid;gap:6px;font-size:13px;line-height:1.5}
+@media (max-width:700px){.rx-tiles{grid-template-columns:1fr 1fr}#rx-q{max-width:none;width:100%}}
+.inv-acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.inv-acts .button{min-height:34px;padding:6px 12px;margin:0;white-space:nowrap}
