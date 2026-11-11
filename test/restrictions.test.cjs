@@ -21,3 +21,17 @@ test('a ban is permanent: login refused, its devices blocked, kept on record wit
  const e=st.put('subscribers',radius.subscriber(st,{name:'Eve',username:'eve',service:'hotspot',planId:p.id,expiresAt:now+864e5}));trash.remove(st,e,admin);
  const l2=rx.list(st);assert.equal(l2.counts.deleted,1);assert.equal(l2.deleted[0].username,'eve');assert.equal(l2.counts.deactivated,1);assert.equal(l2.deactivated[0].reason,'Asked to pause');
 });
+test('ban and lift ban through the API (admin), refused at RADIUS login, and activate is blocked while banned',async()=>{
+ const {createApp}=require('../server.cjs'),app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'rxa-')),collector:false});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const o='http://127.0.0.1:'+app.server.address().port;
+ try{const owner=await fetch(o+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'rx@example.test',password:'fixture-owner-password-123'})});
+  const cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf,st=app.store,H={'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf};
+  const p=st.put('plans',radius.plan({name:'Day',service:'hotspot',downloadMbps:5,uploadMbps:5,price:50,durationValue:1,durationUnit:'days'}));
+  const s=st.put('subscribers',radius.subscriber(st,{name:'Hotspot RADIUS Test',username:'hstest',service:'hotspot',planId:p.id,expiresAt:Date.now()+864e5}));radius.setPassword(st,s.id,'pass1234');
+  const post=(a,b)=>fetch(o+'/api/radius/subscribers/'+s.id+'/'+a,{method:'POST',headers:H,body:JSON.stringify(b)});
+  let r=await post('ban',{reason:'fraud'});assert.equal(r.status,200,await r.clone().text());assert.match((await r.json()).message,/banned permanently/);
+  assert.equal((await fetch(o+'/api/restrictions',{headers:{Cookie:cookie}}).then(x=>x.json())).counts.banned,1);
+  r=await post('activate',{});assert.equal(r.status,409);
+  r=await post('ban',{unban:true});assert.equal(r.status,200);assert.equal(st.get('subscribers',s.id).banned,undefined);
+ }finally{app.server.close();}
+});

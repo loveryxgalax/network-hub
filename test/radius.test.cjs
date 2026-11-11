@@ -27,6 +27,9 @@ test('netops RADIUS decides logins, speeds and expiry, and records accounting',a
   await api('radius/subscribers/'+created.body.id,'PATCH',{status:'suspended',expiresAt:''});
   r=await ask('authorize',rest({'User-Name':'jane.w','Service-Type':'Framed-User'}));assert.equal(r.status,401);assert.equal(r.body['reply:Reply-Message'],'Account suspended');
   await api('radius/subscribers/'+created.body.id,'PATCH',{status:'active'});
+  assert.equal((await api('radius/subscribers/'+created.body.id+'/ban','POST',{reason:'fraud'})).status,200);
+  r=await ask('authorize',rest({'User-Name':'jane.w','Service-Type':'Framed-User'}));assert.equal(r.status,401);assert.equal(r.body['reply:Reply-Message'],'Account banned');
+  assert.equal((await api('radius/subscribers/'+created.body.id+'/ban','POST',{unban:true})).status,200);
   assert.equal((await ask('accounting',rest({'Acct-Status-Type':'Start','Acct-Session-Id':'81a00001','User-Name':'jane.w','NAS-IP-Address':'10.99.0.2','Framed-IP-Address':'10.40.0.9','Calling-Station-Id':'AA:BB:CC:00:11:22','Service-Type':'Framed-User'}))).status,204);
   await ask('accounting',rest({'Acct-Status-Type':'Interim-Update','Acct-Session-Id':'81a00001','User-Name':'jane.w','NAS-IP-Address':'10.99.0.2','Acct-Input-Octets':'1000','Acct-Output-Octets':'5','Acct-Output-Gigawords':'1','Acct-Session-Time':'300'}));
   let o=(await api('radius')).body;assert.equal(o.counts.online,1);assert.equal(o.sessions[0].downloadBytes,4294967301);assert.equal(o.sessions[0].uploadBytes,1000);assert.equal(o.subscribers[0].lastMac,'AA:BB:CC:00:11:22');assert.equal(o.sessions[0].ip,'10.40.0.9');assert.equal(o.sessions[0].service,'pppoe');assert.equal(o.subscribers[0].password,undefined,'overview never includes passwords');
