@@ -100,3 +100,6 @@ body.pp #user,body.pp .ah-user{display:block!important}
 .sheet .x{position:sticky;top:0;float:right;margin:-6px -4px 4px 8px;z-index:2;box-shadow:0 1px 4px rgba(15,23,42,.15)}
 .sheet .pk.pk-sheet{padding:0}
 .conn-btns.one{grid-template-columns:1fr}
+
+/* Capitalize words consistently across the interface. */
+*,*::before,*::after,*::placeholder{text-transform:capitalize!important}

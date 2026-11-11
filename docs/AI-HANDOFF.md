@@ -248,7 +248,7 @@ As of **2026-11-11**:
 
 ### Recently finished
 
-- Dashboard payment customer/router/reference display is uppercase (still five characters); service badges are uppercase too. Full original values remain in hover titles.
+- Site-wide CSS `text-transform: capitalize` across admin and customer portal pages; removed forced uppercase payment formatting. Five-character payment identifiers and full original hover titles remain.
 
 - Dashboard Received payments: customer, router and reference display at most five characters, with full values in hover titles; stored values and customer links preserved. Verified at 390px and 1366px; 269 tests pass.
 
@@ -282,6 +282,8 @@ As of **2026-11-11**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-11: applied CSS word capitalization across admin and portal pages, removed forced uppercase payment formatting, and bumped changed asset versions; 269 tests and responsive browser checks pass.
 
 - 2026-11-11: capitalized shortened dashboard payment identifiers and service badges; asset version bumped; 269 tests pass and 390px/1366px display verified.
 

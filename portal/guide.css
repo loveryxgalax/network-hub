@@ -16,3 +16,6 @@ ol,ul{padding-left:22px;margin:8px 0}li{margin:4px 0}
 code.i{background:#e8edf5;border-radius:5px;padding:1px 6px;font:13px ui-monospace,Menlo,Consolas,monospace}
 .err{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}.err b{color:#b91c1c;display:block}
 .foot{color:var(--mut);margin-top:26px;font-size:14px}.foot a{color:var(--brand)}
+
+/* Capitalize words consistently across the interface. */
+*,*::before,*::after,*::placeholder{text-transform:capitalize!important}
