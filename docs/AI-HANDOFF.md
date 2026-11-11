@@ -248,6 +248,8 @@ As of **2026-11-11**:
 
 ### Recently finished
 
+- Dashboard Received payments: customer, router and reference display at most five characters, with full values in hover titles; stored values and customer links preserved. Verified at 390px and 1366px; 269 tests pass.
+
 - **ISPman export formats:** supports actual November 2026 customer headings, separate currency/available/current balance fields, wallet-only Hotspot identities, blank unpurchased packages, source last-device/last-seen/active-connect/status. Preview validation found 120 PPPoE and 3,652 identifiable Hotspot rows; two Hotspot rows lack identifiers and are retained locally as exceptions. Exports omit expiry. Live import is in progress.
 
 - **ISPman overview:** owner-only, separate customer snapshot and CSV preview/import; duplicate and conflicting identity checks, source balance/expiry text, informational account matches, source timestamps. No operational subscribers, credentials, wallets, payments or routers are changed. See `docs/ISPMAN-OVERVIEW.md`. Validated at 390px and 1366px with synthetic records. No live ISPman data imported during implementation.
@@ -278,6 +280,8 @@ As of **2026-11-11**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-11: shortened dashboard payment customer/router/reference display to five characters; full hover titles, cache version bumped, phone/desktop checked with no browser errors; 269 tests pass.
 
 - 2026-11-11: owner authorized source data imports and follow-through without routine reapproval; inspected actual ISPman export schemas and adapted the isolated overview, preserving two distinct balances and wallet-only identities. 268 tests pass. No service-control changes.
 
