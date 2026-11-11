@@ -169,6 +169,11 @@ function createApp(options={}){
    const valid=checkPassword(typeof input.password==='string'?input.password.slice(0,257):'',user?.password||hashPassword('constant-dummy-password'));if(!user||!valid){attempts.set(key,{n:a&&a.until>Date.now()?a.n+1:1,until:Date.now()+900000});logAccess(input.email,user,'failed',user?'Wrong password':'No active account with this email');throw error(401,'Email or password is incorrect');}attempts.delete(key);logAccess(user.email,user,'success','Signed in');signinAlert(user,ip,ua);return json(res,200,session(res,user,secure));
   }
   const user=auth(req);if(!user)throw error(401,'Sign in to continue');if(mutating.has(method)&&req.headers['x-csrf-token']!==user.csrf)throw error(403,'Session verification failed. Reload the page.');
+  if(route==='/api/ispman'&&method==='GET'){role(user,['admin']);return json(res,200,require('./lib/ispman.cjs').overview(store,Object.fromEntries(url.searchParams)));}
+  if((route==='/api/ispman/preview'||route==='/api/ispman/import')&&method==='POST'){
+   role(user,['admin']);const mirror=require('./lib/ispman.cjs'),input=await body(req,6*1024*1024);
+   return json(res,200,route.endsWith('/preview')?mirror.preview(store,input):mirror.commit(store,input,user));
+  }
   // My account: own details, password, sign-in alerts, recent sign-ins and activity, other sessions.
   if(route==='/api/me'&&method==='GET'){const em=user.email.toLowerCase(),now=Date.now();
    return json(res,200,{user:publicUser(user),signinAlerts:!!store.setting('signinAlerts:'+user.id),emailReady:!!emailLib.config?.(store),

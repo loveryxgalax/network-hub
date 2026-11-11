@@ -244,9 +244,12 @@ CI on the PR re-runs the tests. If it goes red, fix it immediately: the branch d
 
 As of **2026-11-11**:
 
-- **Tests:** 254 passing. CI is green on the last push (`ce3e141`).
+- **Tests:** 262 passing locally, including eight ISPman overview tests. Syntax checks pass. CI for the overview commit is checked after publication.
 
 ### Recently finished
+
+- **ISPman overview:** owner-only, separate customer snapshot and CSV preview/import; duplicate and conflicting identity checks, source balance/expiry text, informational account matches, source timestamps. No operational subscribers, credentials, wallets, payments or routers are changed. See `docs/ISPMAN-OVERVIEW.md`. Validated at 390px and 1366px with synthetic records. No live ISPman data imported during implementation.
+- **Ikutha observer check:** existing `HEX` entry online and discovery Reporting; no scripts installed. 0 PPP / 19 Hotspot agreed between netops and WinBox. Existing `network-hub-event-test` and New York timezone left unchanged with owner approval. Secure fetch finished with HTTP 200. Configuration export was not run; no pre-check RADIUS baseline.
 
 - Sidebar scrolls as one piece, with no sticky parts; the sidebar menu search is fast. Trends axis labels fixed; tidy discovery cards; one-line mobile top bar.
 - **Search everything:** `/api/search` plus a new dialog, covering customers, live sessions, devices/ONUs, payments, vouchers, packages, tickets, jobs, alerts, onboarding, stock, sites and menu pages.
@@ -259,7 +262,7 @@ As of **2026-11-11**:
 
 ### Waiting on the owner (not code)
 
-- Run `docs/KYANDULA-OBSERVER-SETUP.md` (RB951) and `docs/HEX-IKUTHA-OBSERVER-SETUP.md` (hEX S) and report the results.
+- Run `docs/KYANDULA-OBSERVER-SETUP.md` (RB951). Ikutha reporting was checked successfully; see Recently finished for the exceptions.
 - Live HTTPS ACS steps in `docs/CAMBIUM-TR069-HTTPS.md` (VPS / DNS / Cambium).
 - Set each OLT's brand once real OLTs are added.
 - Decide when to set `NETWORK_PASSIVE=1` on the server while ISPman stays primary.
@@ -268,10 +271,12 @@ As of **2026-11-11**:
 
 - Huawei/ZTE OLT mappings and fibre PPPoE hand-over have only been tested with simulated devices.
 - ZTE optical power is not read.
-- ISPman customer and payment data comes in only through CSV import; there is no live feed.
+- ISPman overview accepts customer CSV saved from Excel; XLSX is not parsed directly. Payment history is not imported into the overview, and no supported live ISPman feed has been verified. The older service-account CSV importer remains separate.
 
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-11: verified Ikutha observer reporting without installing scripts; built isolated owner-only ISPman customer overview with preview/confirmed CSV import, duplicate prevention and source timestamps; eight added tests, 262 total passing; desktop/phone sample import verified; no live customer data imported.
 
 - 2026-11-11: dashboard chart moves; 100% desktop scale; KYANDULA observer instructions; captive-now card; search, revenue donuts, OLT brands, fibre ONT TR-069; sidebar and trends fixes; this handoff file.
