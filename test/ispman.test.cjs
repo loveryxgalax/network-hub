@@ -50,3 +50,14 @@ test('HTTP endpoints enforce sign-in, CSRF and owner-only access',async t=>{
  assert.equal((await api('ispman')).body.total,1);
  for(const role of ['manager','support','viewer','network-technician','installer']){app.store.db.prepare('UPDATE users SET role=? WHERE email=?').run(role,'owner@example.test');assert.equal((await api('ispman')).status,403);assert.equal((await api('ispman/preview','POST',input)).status,403);assert.equal((await api('ispman/import','POST',input)).status,403);}
 });
+test('current export balances remain distinct and wallet-only Hotspot rows do not invent usernames',t=>{
+ const s=fixture(t),i={service:'hotspot',csv:'Payment Wallet,Phone Number,Email,Last Device,Package,Currency,Available Balance,Current Balance,Last Seen,Active Connects,Status\nDEMO-1,+254700000001,,AA:BB:CC:00:00:01,,KES,100.50,-25.00,2026-11-11,0,Inactive\nDEMO-2,+254700000002,,AA:BB:CC:00:00:02,Daily,KES,0,0,2026-11-10,1,Active'};
+ const p=mirror.preview(s,i);assert.equal(p.errors.length,0);assert.equal(p.creates,2);assert.equal(p.rows[0].username,'');assert.equal(p.rows[0].availableBalanceMinor,10050);assert.equal(p.rows[0].currentBalanceMinor,-2500);assert.equal(p.rows[0].balanceMinor,null);assert.equal(p.rows[0].package,'');assert.equal(p.rows[0].expiresAt,null);
+ save(s,i);const o=mirror.overview(s);assert.equal(o.items[0].match,null);assert.equal(o.items[0].lastDevice,'AA:BB:CC:00:00:01');assert.equal(o.items[0].activeConnectsText,'0');assert.equal(o.items[0].currency,'KES');assert.equal(mirror.preview(s,i).unchanged,2);assert.equal(s.list('subscribers').length,0);
+ const broken={service:'hotspot',csv:i.csv+'\n,+254700000003,,,Daily,KES,0,0,Unknown,0,Inactive'};const b=mirror.preview(s,broken);assert.equal(b.errors.length,1);assert.throws(()=>mirror.commit(s,{...broken,digest:b.digest,revision:b.revision},{id:'owner'}));assert.equal(mirror.overview(s).total,2);
+});
+test('separate balance columns are optional and cannot map ambiguously',t=>{
+ const s=fixture(t),i={service:'pppoe',csv:'Payment Wallet,Username,Package,Currency,Available Balance,Current Balance,Status\nDEMO-P,source.user,Home,KES,450,100,Active'};
+ assert.equal(mirror.preview(s,i).rows[0].expiresAt,null);save(s,i);save(s,{service:'pppoe',csv:'Username,Package\nsource.user,Home Plus'});const r=mirror.overview(s).items[0];assert.equal(r.availableBalanceText,'450');assert.equal(r.currentBalanceText,'100');assert.equal(r.status,'Active');assert.equal(r.currency,'KES');
+ assert.throws(()=>mirror.preview(s,{service:'pppoe',csv:'Username,Package,Available Balance,Available Balance\nu,p,1,2'}));
+});

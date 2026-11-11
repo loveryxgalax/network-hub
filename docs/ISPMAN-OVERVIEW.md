@@ -10,11 +10,13 @@ The owner can open **Customers → ISPman overview** to view a separate, manuall
 4. Select the CSV and press **Preview import**. Review new, updated and unchanged records, identifier conflicts and parsing notes.
 5. Tick the review checkbox and press **Import into overview**.
 
-Required headings: `Username`, `Package` (also accepts `Plan`). Optional: `Payment Wallet`, `Name`, `Phone Number`, `Email`, `Balance`, `Expires At`, `Status`. CSV may use commas, semicolons or tabs consistently. Limit: 4 MiB and 5,000 customers per file and in the stored overview.
+PPPoE requires `Username` and `Package` (also accepts `Plan`). Hotspot requires `Payment Wallet` or a real source `Username`, plus a `Package` column; blank Hotspot packages are retained. Optional headings include `Name`, `Phone Number`, `Email`, `Balance`, `Available Balance`, `Current Balance`, `Currency`, `Expires At`, `Status`, `Last Device`, `Last Seen` and `Active Connects`. Wallet-only records do not receive invented usernames or netops account matches. Available and current balances remain separate. Last-seen and active-connect values are labelled as export data, never as live session evidence. CSV may use commas, semicolons or tabs consistently. Limit: 4 MiB and 5,000 customers per file and in the stored overview.
 
 Keep payment-wallet IDs in subsequent exports whenever available. A matching wallet ID within the same service updates that record, including a changed username. Otherwise an exact username match after case/whitespace normalization updates the existing mirror entry. Conflicting identifiers or duplicate rows block the complete import. PPPoE and Hotspot identities are separate. Missing customers are retained; the per-record import date indicates which records were refreshed. Omitted columns retain earlier values for an existing record; a supplied blank cell clears that source field.
 
 Balance and expiry **source text is always retained**. Composite balance values such as `KES: 0.00 / 0.00` are not treated as a single financial amount. Ambiguous dates are retained as text, with a note in the preview. Unambiguous ISO dates use Nairobi time when no offset is supplied. No balances are added to revenue or native wallets.
+
+The November 2026 PPPoE and Hotspot exports omit expiry dates. The overview displays “Not supplied” for those records; `Active` source status is not interpreted as an expiry or authorization guarantee.
 
 ## Boundaries
 

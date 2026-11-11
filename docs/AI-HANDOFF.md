@@ -244,9 +244,11 @@ CI on the PR re-runs the tests. If it goes red, fix it immediately: the branch d
 
 As of **2026-11-11**:
 
-- **Tests:** 266 passing (includes the ISPman overview tests).
+- **Tests:** 268 passing locally (includes wallet-only Hotspot identities and distinct available/current balances).
 
 ### Recently finished
+
+- **ISPman export formats:** supports actual November 2026 customer headings, separate currency/available/current balance fields, wallet-only Hotspot identities, blank unpurchased packages, source last-device/last-seen/active-connect/status. Preview validation found 120 PPPoE and 3,652 identifiable Hotspot rows; two Hotspot rows lack identifiers and are retained locally as exceptions. Exports omit expiry. Live import is in progress.
 
 - **ISPman overview:** owner-only, separate customer snapshot and CSV preview/import; duplicate and conflicting identity checks, source balance/expiry text, informational account matches, source timestamps. No operational subscribers, credentials, wallets, payments or routers are changed. See `docs/ISPMAN-OVERVIEW.md`. Validated at 390px and 1366px with synthetic records. No live ISPman data imported during implementation.
 - **Ikutha observer check:** existing `HEX` entry online and discovery Reporting; no scripts installed. 0 PPP / 19 Hotspot agreed between netops and WinBox. Existing `network-hub-event-test` and New York timezone left unchanged with owner approval. Secure fetch finished with HTTP 200. Configuration export was not run; no pre-check RADIUS baseline.
@@ -276,6 +278,8 @@ As of **2026-11-11**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-11: owner authorized source data imports and follow-through without routine reapproval; inspected actual ISPman export schemas and adapted the isolated overview, preserving two distinct balances and wallet-only identities. 268 tests pass. No service-control changes.
 
 - 2026-11-11 (b): invoice PDFs (`lib/pdf.cjs`, `/api/invoices/:id/pdf`, PDF + Print buttons); Settings → System & connections in pairs, ISP details two-column; short links now `site/<code>` (old `/s/` still work); admin View portal opens directly; PPPoE "Pay and Extend" fixed and PPPoE package change by payment; hotspot account card shows Connect only when not connected; data usage Line/Bar choice; Bans & blocks page (`lib/restrictions.cjs`, ban = permanent, blocks devices); "Use my current location" on every lat/long form; "What needs action"; .sit-note style.
 - 2026-11-11: verified Ikutha observer reporting without installing scripts; built isolated owner-only ISPman customer overview with preview/confirmed CSV import, duplicate prevention and source timestamps; eight added tests, 262 total passing; desktop/phone sample import verified; no live customer data imported.
