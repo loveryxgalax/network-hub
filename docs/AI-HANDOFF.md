@@ -248,6 +248,8 @@ As of **2026-11-11**:
 
 ### Recently finished
 
+- Dashboard payment customer/router/reference display is uppercase (still five characters); service badges are uppercase too. Full original values remain in hover titles.
+
 - Dashboard Received payments: customer, router and reference display at most five characters, with full values in hover titles; stored values and customer links preserved. Verified at 390px and 1366px; 269 tests pass.
 
 - **ISPman export formats:** supports actual November 2026 customer headings, separate currency/available/current balance fields, wallet-only Hotspot identities, blank unpurchased packages, source last-device/last-seen/active-connect/status. Preview validation found 120 PPPoE and 3,652 identifiable Hotspot rows; two Hotspot rows lack identifiers and are retained locally as exceptions. Exports omit expiry. Live import is in progress.
@@ -280,6 +282,8 @@ As of **2026-11-11**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-11: capitalized shortened dashboard payment identifiers and service badges; asset version bumped; 269 tests pass and 390px/1366px display verified.
 
 - 2026-11-11: shortened dashboard payment customer/router/reference display to five characters; full hover titles, cache version bumped, phone/desktop checked with no browser errors; 269 tests pass.
 
