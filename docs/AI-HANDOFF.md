@@ -293,6 +293,7 @@ As of **2026-11-12**:
 
 ## 10. Session log (newest first; one line per session)
 
+- 2026-11-12: customer address split: `NETWORK_PORTAL_ORIGIN` (e.g. https://my.kadenetworks.com) serves only the portal (also at /), portal API, short links, img/fonts; admin/API/live 404 there; customer links, router pages, payment returns, upsell/insight messages use it; netops still serves the portal for old links; push-design jobs add the customer host to the walled garden; HSTS. Steps for the owner in `docs/CUSTOMER-DOMAINS.md` (Cloudflare tunnel hostname, .env, LAB-HEX first, router dns-name wifi.kadenetworks.com). Also: one-tap hotspot Connect, router logout page, CSP-safe Close buttons.
 - 2026-11-12: restored original casing with text-transform none, set compact customer tables to 11px, and arranged dashboard rows as three revenue cards then two traffic cards; 284 tests and phone/desktop layout checks pass.
 
 - 2026-11-12: applied lowercase display site-wide, compacted customer tables and prevented card overflow, clarified unreported device details and contact rows, and used session last-seen fallback; 284 tests pass; 390px/1366px checks show no table or page overflow.
