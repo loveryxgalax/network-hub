@@ -244,9 +244,11 @@ CI on the PR re-runs the tests. If it goes red, fix it immediately: the branch d
 
 As of **2026-11-12**:
 
-- **Tests:** 281 passing locally, including verified wallet checkout, reservation recovery, ban enforcement, TV administration and direct portal access.
+- **Tests:** 284 passing locally, including verified wallet checkout, reservation recovery, ban enforcement, TV administration and direct portal access.
 
 ### Recently finished
+
+- **Deployment recovery:** owner logs identified an unrelated ACS dependency-audit build failure and a pipeline that falsely reported success after Git advanced. App auto-deployment now builds hub separately, includes live only when relevant files change, waits for health, records the successful commit in Git private state and retries failures. ACS/MongoDB/RADIUS/tunnel are left running. Three deployment failure/retry tests added.
 
 - **Customer portal and admin controls:** View Portal uses one authenticated same-site redirect for both services, without generating a short link or requiring a known hotspot MAC. Banned accounts show a permanent-ban banner and disabled controls; server checks reject payment, TV, reset, redemption and connection attempts. Deactivated PPPoE customers retain payment/package controls. Admin profiles now include ban/TV/MAC-policy data; the ban button reads Banned after banning. MAC binding prefills the most recent passively reported router MAC.
 - **Wallet checkout:** verified account purchases spend wallet credit first, activate one package period without STK when fully covered, or reserve credit and request only the shortfall. Failed requests, cancellations and ten-minute timeouts release the reservation. Request keys prevent duplicate wallet activation. Wallet spending does not inflate external payment revenue. No live payment or router action was used to test this.
@@ -286,6 +288,8 @@ As of **2026-11-12**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-12: diagnosed auto-deploy from owner-provided logs; excluded unrelated ACS rebuilds from app updates, fixed false success reporting and retry/health tracking; 284 tests pass. Independent ACS dependency audit remains separate from app deployment.
 
 - 2026-11-12: customer portal access, wallet-first package checkout and recovery, permanent-ban visibility/enforcement, admin TV CRUD, passive MAC detection, sign-in cleanup and responsive dashboard/profile/team layouts; 281 tests pass. View Portal has no local HTTP 5xx; production proxy errors require server logs if they recur. No live customer transactions or equipment changes performed.
 
