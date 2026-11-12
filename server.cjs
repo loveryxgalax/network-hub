@@ -834,6 +834,7 @@ function createApp(options={}){
   if(route==='/portal/api/info'&&method==='GET')return json(res,200,portal.info(store));
   // The landing page: design settings plus real packages in one call, and the two visitor lookups (rate limited; no contact details returned).
   // Pages a router fetches into its hotspot folder (the job runner's "push design"). No secrets inside.
+  if(route==='/portal/api/router/logout.html'&&method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(statusPage.logoutPage(statusPage.get(store),publicUrl?.origin||origin));}
   if((route==='/portal/api/router/login.html'||route==='/portal/api/router/status.html')&&method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(route.endsWith('login.html')?portal.hotspotLoginPage(publicUrl?.origin||origin):statusPage.page(statusPage.get(store),publicUrl?.origin||origin,false));}
   const adRoute=route.match(/^\/portal\/api\/ads\/([a-f0-9-]{36})\/(view|click|claim)$/);
   if(adRoute&&adRoute[2]==='view'&&method==='POST'){limit(req,'ad-view',600,600000);{const vb=await body(req).catch(()=>({}));return json(res,200,engage.view(store,adRoute[1],Date.now(),String(vb?.mac||'')));}}
@@ -885,6 +886,7 @@ function createApp(options={}){
   if(route==='/portal/api/active'&&method==='GET'){limit(req,'active',240,600000);res.setHeader('Access-Control-Allow-Origin','*');return json(res,200,require('./lib/hotspotme.cjs').active(store,url.searchParams.get('mac'),Date.now(),url.searchParams.get('dt')));}
   if(route==='/portal/api/usage'&&method==='GET'){limit(req,'usage',120,600000);return json(res,200,require('./lib/hotspotme.cjs').usage(store,url.searchParams.get('mac'),Date.now(),url.searchParams.get('dt')));}
   if(route==='/portal/api/redeem-points'&&method==='POST'){limit(req,'redeem-points',20,600000);return json(res,200,require('./lib/hotspotme.cjs').redeem(store,await body(req,1024)));}
+  if(route==='/portal/api/connect-account'&&method==='POST'){limit(req,'connect-account',60,600000);const input=await body(req,2048);limit(req,'connect-account-a',20,600000,String(input.account||'').toLowerCase().slice(0,64));return json(res,200,require('./lib/hotspotme.cjs').connectAccount(store,input));}
   if(route==='/portal/api/connect-now'&&method==='POST'){limit(req,'connect-now',60,600000);return json(res,200,require('./lib/hotspotme.cjs').connectNow(store,await body(req,2048)));}
   if(route==='/portal/api/code-login'&&method==='POST'){limit(req,'code-login',12,600000);const input=await body(req,2048);limit(req,'code-login-code',5,900000,String(input.code||'').toUpperCase().slice(0,16)||'empty');return json(res,200,require('./lib/hotspotme.cjs').codeLogin(store,input));}
   if(route==='/portal/api/session'&&method==='GET'){limit(req,'session',240,600000);return json(res,200,require('./lib/hotspotme.cjs').session(store,url.searchParams.get('mac'),Date.now(),url.searchParams.get('dt')));}

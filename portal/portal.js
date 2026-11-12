@@ -131,7 +131,7 @@ const ICON={
 const DTK='portal-dt',getDT=()=>{if(ADM)return params.get('pv')||'';try{return localStorage.getItem(DTK)||'';}catch{return '';}};
 async function call(path,options={}){
  const mac=/^(session|active|usage)\?mac=/.test(path)?'&dt='+encodeURIComponent(getDT()):'';
- let opt=options;if(opt.body&&/^(connect-now|redeem-points|code-login|account)$/.test(path)){try{const b=JSON.parse(opt.body);b.dt=getDT();if(path==='code-login'&&params.get('nas'))b.nas=params.get('nas');opt={...opt,body:JSON.stringify(b)};}catch{}}
+ let opt=options;if(opt.body&&/^(connect-now|connect-account|redeem-points|code-login|account)$/.test(path)){try{const b=JSON.parse(opt.body);b.dt=getDT();if(path==='code-login'&&params.get('nas'))b.nas=params.get('nas');opt={...opt,body:JSON.stringify(b)};}catch{}}
  const r=await fetch('/portal/api/'+path+mac,{...opt,headers:{'Content-Type':'application/json'}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Something went wrong. Try again.');
  if(data&&data.dt){try{localStorage.setItem(DTK,data.dt);}catch{}}return data;}
 function inkFor(hex){const n=parseInt(hex.replace('#',''),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;return (0.299*r+0.587*g+0.114*b)>170?'#0f172a':'#ffffff';}
@@ -226,12 +226,17 @@ function renderAccount(a){here('Account');
  if(a.verified&&a.shareCode)html+=`<div class="share-code"><span>${esc((LANG||'en').startsWith('sw')?'Nambari ya kushiriki':'Sharing code')}</span><b>${esc(a.shareCode)}</b><small>${esc((LANG||'en').startsWith('sw')?`Mpe rafiki: aiandike kwenye ukurasa huu kutumia kifaa kimoja kati ya ${a.shareDevices} vya kifurushi chako.`:`Give it to a friend: they type it on this page to use one of your ${a.shareDevices} devices.`)}</small></div>`;
  if(a.status==='suspended')html+=`<p class="muted small">${esc(t('suspendedMsg'))}</p>`;
  else{
-  if(a.service==='hotspot'&&a.status==='active')html+=`<form id="login-form" autocomplete="off"><label class="fl">${esc(t('passLabel'))}<input name="password" type="password" required autocomplete="current-password"></label><button class="btn" type="submit"><span>${esc(t('connect'))}</span> ${ICON.arrow}</button></form>`;
+  // Active hotspot account: connect in one tap from the WiFi page (no password) when this device belongs to the account;
+  // the hotspot password (sent by SMS after payment) is only asked for when the device is not linked yet.
+  if(a.service==='hotspot'&&a.status==='active')html+=router.login?`<div id="acc-connect"><button class="btn" type="button" id="acc-go"><span>${esc(t('connect'))}</span> ${ICON.arrow}</button><div class="msg" id="acc-go-msg"></div></div><form id="login-form" autocomplete="off" hidden><label class="fl">${esc(pw().label)}<input name="password" type="password" required autocomplete="current-password"></label><p class="muted small">${esc(pw().help)}</p><button class="btn" type="submit"><span>${esc(t('connect'))}</span> ${ICON.arrow}</button></form>`:`<p class="muted small acc-wifi-note">${esc(pw().wifi)}</p>`;
   if(a.price&&mpesaOn)html+=`<form id="renew-form"><label class="fl">${esc(t('mpesaLabel'))}<input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required></label><label class="fl">${esc(t('promo'))}<input name="promo" autocomplete="off" maxlength="24" autocapitalize="characters"></label><button class="btn ${a.service==='hotspot'&&a.status==='active'?'ghost':''}" type="submit"><span>${esc(t('renew',{a:kes(a.price)}))}</span> ${ICON.arrow}</button></form>`;
  }
  // PPPoE customers can ask for another package (ISPman's "interested in another package"); staff see it in netops.
  if(a.service==='pppoe'&&a.status!=='suspended'&&pppoePlans.length>1)html+=`<form id="want-form" class="want-form"><label class="fl">${esc(t('wantPlan'))}<select name="planId">${pppoePlans.filter(p=>p.name!==a.plan).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${kes(p.price)}</option>`).join('')}</select></label><button class="btn ghost" type="submit">${esc(t('wantBtn'))}</button></form>`;
  box.innerHTML=html+'</div>';
+ const ag=$('#acc-go');if(ag)ag.onclick=async()=>{ag.disabled=true;$('#acc-go-msg').textContent='';try{const r=await call('connect-account',{method:'POST',body:JSON.stringify({account:a.account,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});
+   const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}
+  catch(err){ag.disabled=false;if(/not linked|password/i.test(err.message)){$('#acc-connect').hidden=true;const f=$('#login-form');f.hidden=false;f.password.focus();}else $('#acc-go-msg').textContent=err.message;}};
  const lf=$('#login-form');if(lf)lf.onsubmit=async e=>{e.preventDefault();const btn=lf.querySelector('button');btn.disabled=true;alertBox('');try{if(!(await routerLogin(a.account,lf.password.value)))alertBox(t('valid',{b:CFG.brandName}),true);}catch(error){alertBox(error.message);}finally{btn.disabled=false;}};
  const rf=$('#renew-form');if(rf)rf.onsubmit=e=>{e.preventDefault();pay({kind:'account',username:a.account,phone:rf.phone.value,promo:rf.promo?rf.promo.value:''});};
 }
@@ -241,11 +246,12 @@ $('#accForm').addEventListener('submit',async e=>{e.preventDefault();const raw=$
 async function detectSession(){
  const box=$('#detect');box.className='detect';box.innerHTML=`<div class="spin"></div><span>${esc(t('detecting'))}</span>`;
  const notFound=()=>{box.innerHTML=`<span>${ICON.wifi}</span><span>${esc(t('notFound'))}</span>`;};
- if(!router.mac)return setTimeout(notFound,1400);
+ if(!router.mac){const off=()=>{box.innerHTML=`<span>${ICON.wifi}</span><span>${esc(pw().off)}</span>`;};if(!getDT())return setTimeout(off,300);
+  try{const d=await call('session?mac=');if(!d.found)throw 0;box.classList.add('found');box.innerHTML=`<span style="color:#16a34a">${ICON.wifi}</span><span><b>${esc(t('found'))}</b> ${esc(d.account.toUpperCase())}</span>`;$('#acc').value=d.account.toUpperCase();renderAccount(d);}catch{off();}return;}
  try{const d=await call('session?mac='+encodeURIComponent(router.mac));if(!d.found)throw 0;box.classList.add('found');box.innerHTML=`<span style="color:#16a34a">${ICON.wifi}</span><span><b>${esc(t('found'))}</b> ${esc(d.account.toUpperCase())}</span>`;$('#acc').value=d.account.toUpperCase();renderAccount(d);}
  catch{setTimeout(notFound,900);}
 }
-$('#findBtn').addEventListener('click',detectSession);
+$('#findBtn').addEventListener('click',()=>{if(!router.mac&&!getDT()){const i=$('#acc');if(i){i.scrollIntoView({behavior:'smooth',block:'center'});i.focus({preventScroll:true});}return;}detectSession();});
 
 /* ===================== BUY SHEET & PAYMENT ===================== */
 function openSheet(id,kind){
@@ -268,6 +274,7 @@ let freeMode=null;
 function renderFree(){let el=$('#free-banner');if(!freeMode){if(el)el.remove();return;}if(!el){el=document.createElement('div');el.id='free-banner';el.className='free-banner';document.body.prepend(el);}
  const until=new Date(freeMode.until).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});el.innerHTML=`<span><b>${esc(t('freeTitle'))}</b> ${esc(t('freeUntil',{t:until}))}${freeMode.reason?' · '+esc(freeMode.reason):''}</span><button type="button" class="btn" id="free-go">${esc(t('freeGo'))}</button>`;
  $('#free-go').onclick=async()=>{alertBox('');try{if(!router.login){alertBox(t('freeNeedWifi'),true);return;}const r=await call('login',{method:'POST',body:JSON.stringify({free:true,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}catch(e){alertBox(e.message);}};}
+function pw(){const L=(LANG||'en').slice(0,2);return ({sw:{off:'Ukurasa huu umefunguliwa nje ya ukurasa wa kuingia wa Wi-Fi, kwa hivyo hatuoni kifaa chako hapa. Weka namba ya akaunti yako hapa chini.',label:'Nenosiri la hotspot',help:'Liko kwenye SMS tuliyokutumia baada ya kulipa. Kifaa hiki kitakumbukwa baadaye.',wifi:'Ili kuunganisha, jiunge na Wi-Fi kisha ufungue ukurasa huu kutoka kwenye ukurasa wa kuingia wa Wi-Fi.'}})[L]||{off:'This page was opened outside the WiFi login, so we cannot see your device here. Enter your account number below, or open the WiFi login page.',label:'Hotspot password',help:'It is in the SMS we sent after you paid. This device is remembered after that.',wifi:'To connect, join the WiFi and open this page from the WiFi login screen.'};}
 async function routerLogin(username,password){
  if(!router.login){await call('login',{method:'POST',body:JSON.stringify({username,password})});return false;}
  const r=await call('login',{method:'POST',body:JSON.stringify({username,password,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});
