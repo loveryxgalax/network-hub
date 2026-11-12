@@ -1053,27 +1053,30 @@ dialog.sx-dialog::backdrop{background:rgba(15,23,42,.45);backdrop-filter:blur(3p
 /* Imported ISPman customer overview. */
 .ispman-page{display:grid;gap:18px;min-width:0}.ispman-page .card{padding:20px;min-width:0}.ispman-page p{overflow-wrap:anywhere}.ispman-inputs{display:flex;gap:14px;align-items:end;flex-wrap:wrap}.ispman-inputs label{flex:1;min-width:180px}.ispman-inputs input,.ispman-inputs select{width:100%;min-width:0;font-size:16px}.ispman-inputs input[type=file]{max-width:100%}.ispman-preview-list,.ispman-customer-list{display:grid;gap:12px;margin:18px 0}.ispman-preview-list article{display:grid;gap:4px;padding:12px;border:1px solid var(--border,#dce4ed);border-radius:10px;overflow-wrap:anywhere}.ispman-customer-list article{padding:18px;border:1px solid var(--border,#dce4ed);border-radius:12px;overflow-wrap:anywhere}.ispman-customer-list dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:0}.ispman-customer-list dt{font-size:12px;opacity:.7}.ispman-customer-list dd{margin:4px 0 0}.ispman-paging{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.ispman-paging span{margin-right:auto}.ispman-issues{max-height:220px;overflow:auto}.ispman-import .check-label{margin:18px 0}.ispman-page .notice p{margin:8px 0 0}@media(max-width:600px){.ispman-page .card{padding:14px}.ispman-inputs{display:grid;grid-template-columns:minmax(0,1fr)}.ispman-inputs label{min-width:0}.ispman-customer-list dl{grid-template-columns:minmax(0,1fr)}.ispman-page .button{white-space:normal}.ispman-paging span{width:100%}}
 
-/* Display interface text in lowercase without changing stored values. */
-*,*::before,*::after,*::placeholder{text-transform:lowercase!important}
+/* Preserve original text casing across the interface. */
+*,*::before,*::after,*::placeholder{text-transform:none!important}
 
 /* Customer account panels and dashboard chart rows. */
 .cp-paired{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}.cp-paired>.cp-card{min-width:0;grid-column:auto}.cp-pagination{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:12px;font-size:12px}.cp-pagination>span{margin-right:auto}.cp-pagination label{display:flex;align-items:center;gap:6px;margin:0}.cp-pagination select{width:auto;min-width:64px;padding:6px}.cp-pagination .button{padding:5px 10px;min-height:32px}.pf-tv-tools{margin-bottom:12px}
-.kd-bottom-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:16px}.kd-bottom-three>.kd-card{min-width:0}.kd-rb-two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kd-bottom-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}.kd-bottom-two>.kd-card{min-width:0}.kd-revenue-three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .sa-header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 28px;align-items:end;margin-bottom:20px;padding:24px;border:1px solid var(--border);border-radius:16px;background:var(--surface,#fff)}.sa-header>.page-heading{margin:0;align-items:center;gap:24px}.sa-header .sa-tabs{margin:0;align-self:end}.sa-header .page-heading h1{margin:6px 0}.sa-header .page-heading p{max-width:620px;margin-bottom:0}
 @media(max-width:1100px){.sa-header{grid-template-columns:minmax(0,1fr)}.sa-header .sa-tabs{justify-self:start}}
-@media(max-width:980px){.cp-paired{grid-template-columns:minmax(0,1fr)}.kd-bottom-three{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:600px){.kd-rb-two{grid-template-columns:minmax(0,1fr)}.sa-header{padding:16px}.sa-header>.page-heading{align-items:start}.cp-pagination select{font-size:16px}}
+@media(max-width:980px){.cp-paired{grid-template-columns:minmax(0,1fr)}.kd-bottom-two{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.kd-revenue-three{grid-template-columns:minmax(0,1fr)}.sa-header{padding:16px}.sa-header>.page-heading{align-items:start}.cp-pagination select{font-size:16px}}
 
 .sa-header{grid-template-columns:minmax(0,1fr);background:var(--card)}.sa-header>.page-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px}.sa-header .page-heading>.set-back{grid-column:1/-1;justify-self:start;margin-bottom:4px}.sa-header .heading-actions{justify-self:end}.sa-header .sa-tabs{justify-self:start}
 @media(max-width:700px){.sa-header>.page-heading{grid-template-columns:minmax(0,1fr)}.sa-header .heading-actions{justify-self:start}}
 
 /* Compact customer tables wrap MACs, addresses, dates and message text inside their cards. */
-.cp-page .cp-card table.data-table{width:100%;min-width:0!important;table-layout:fixed;font-size:10px}
-.cp-page .cp-card table.data-table :is(th,td){min-width:0!important;max-width:none!important;padding:8px 6px;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal;vertical-align:top;font-size:10px;line-height:1.45}
+.cp-page .cp-card table.data-table{width:100%;min-width:0!important;table-layout:fixed;font-size:11px}
+.cp-page .cp-card table.data-table :is(th,td){min-width:0!important;max-width:none!important;padding:8px 6px;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal;vertical-align:top;font-size:11px;line-height:1.45}
 .cp-page .cp-card table.data-table :is(code,small,.status){font-size:inherit;white-space:normal;overflow-wrap:anywhere}
 .cp-page .cp-card table.data-table td>small{display:block;margin-top:3px}
 .cp-page .cp-card[data-section="messages-sent"] :is(th,td):last-child{width:54%}
 .cp-profile .cp-kv2{grid-template-columns:minmax(90px,auto) minmax(0,1fr);gap:8px 14px;line-height:1.5}.cp-profile .cp-kv2 :is(span,b){min-width:0;overflow-wrap:anywhere}.cp-profile .pf-device-note{grid-column:1/-1;line-height:1.5;margin:10px 0 0}
-@media(max-width:600px){.cp-page .cp-card table.data-table :is(th,td){font-size:9px;padding:7px 4px}.cp-profile .cp-kv2{font-size:12px;gap:8px 10px}}
-.cp-page .cp-card table.data-table :is(button,.button,.ra-btn){min-width:0!important;max-width:100%;font-size:10px!important;padding:4px 6px;white-space:normal;overflow-wrap:anywhere;line-height:1.35}.cp-page .cp-card table.data-table .row-actions{min-width:0;flex-wrap:wrap;gap:4px}
-@media(max-width:600px){.cp-page .cp-card table.data-table :is(button,.button,.ra-btn){font-size:9px!important}}
+@media(max-width:600px){.cp-page .cp-card table.data-table :is(th,td){font-size:11px;padding:7px 4px}.cp-profile .cp-kv2{font-size:12px;gap:8px 10px}}
+.cp-page .cp-card table.data-table :is(button,.button,.ra-btn){min-width:0!important;max-width:100%;font-size:11px!important;padding:4px 6px;white-space:normal;overflow-wrap:anywhere;line-height:1.35}.cp-page .cp-card table.data-table .row-actions{min-width:0;flex-wrap:wrap;gap:4px}
+@media(max-width:600px){.cp-page .cp-card table.data-table :is(button,.button,.ra-btn){font-size:11px!important}}
+
+@media(max-width:980px){.kd-revenue-three{grid-template-columns:minmax(0,1fr)}}
+.cp-page .cp-card table.data-table :is(code,kbd){display:block;max-width:100%;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}

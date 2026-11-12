@@ -50,8 +50,8 @@ function kdSkeleton(){
 
   </div>
  </section>
- ${admin?`<section class="kd-rb" id="kd-rb"><div class="kd-rb-head"><h2>Revenue by service &amp; package</h2><p>Where the money comes from, and vouchers redeemed (valued at their package price). Each chart has its own period.</p></div><div class="kd-rb-grid kd-rb-two">${KD_RB.filter(c=>!c.side&&c.id!=='vloc').map(kdRbCard).join('')}</div></section>`:''}
- <section class="kd-bottom-three">${admin?kdRbCard(KD_RB.find(c=>c.id==='vloc')):''}<article class="kd-card kd2-card"><header><div><h2>Top sites today</h2></div><a class="kd-link" href="#sites">All →</a></header><div id="kd-sites" class="kd-list"></div></article>
+ ${admin?`<section class="kd-rb" id="kd-rb"><div class="kd-rb-head"><h2>Revenue by service &amp; package</h2><p>Where the money comes from, and vouchers redeemed (valued at their package price). Each chart has its own period.</p></div><div class="kd-rb-grid kd-revenue-three">${KD_RB.filter(c=>!c.side).map(kdRbCard).join('')}</div></section>`:''}
+ <section class="kd-bottom-two"><article class="kd-card kd2-card"><header><div><h2>Top sites today</h2></div><a class="kd-link" href="#sites">All →</a></header><div id="kd-sites" class="kd-list"></div></article>
    <article class="kd-card kd2-card"><header><div><h2>Live traffic</h2></div><a class="kd-link" href="#sites">Torch →</a></header><div id="kd-live" class="kd-list"></div></article></section>
  <footer class="kd-foot"><span id="kd-updated"></span><span id="kd-complete"></span></footer>${kdDefs()}
  <span hidden id="kd-hero-down"></span><span hidden id="kd-hero-up"></span><span hidden id="kd-date"></span><span hidden id="kd-clock"></span></div>`;

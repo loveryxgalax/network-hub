@@ -248,6 +248,8 @@ As of **2026-11-12**:
 
 ### Recently finished
 
+- **Latest display preference:** site-wide `text-transform: none` preserves original casing (supersedes lowercase/capitalize). Profile table text and controls are 11px on phone and desktop. Desktop dashboard has a three-card row for revenue by service/package and voucher revenue by location, followed by a two-card row for top sites/live traffic.
+
 - **Lowercase and compact profiles:** owner changed the site-wide display rule from capitalize to lowercase (admin, portal, guide and rating page). Profile table cells use 10px on desktop / 9px on phones and wrap MAC/IP/date/message values inside fixed-width tables. Contact labels are separated and email always has a row. Last seen falls back to observed sessions. Unknown PPPoE browser/model fields are explained, not inferred. 284 tests and responsive browser overflow checks pass.
 
 - **Deployment recovery:** owner logs identified an unrelated ACS dependency-audit build failure and a pipeline that falsely reported success after Git advanced. App auto-deployment now builds hub separately, includes live only when relevant files change, waits for health, records the successful commit in Git private state and retries failures. ACS/MongoDB/RADIUS/tunnel are left running. Three deployment failure/retry tests added.
@@ -290,6 +292,8 @@ As of **2026-11-12**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-12: restored original casing with text-transform none, set compact customer tables to 11px, and arranged dashboard rows as three revenue cards then two traffic cards; 284 tests and phone/desktop layout checks pass.
 
 - 2026-11-12: applied lowercase display site-wide, compacted customer tables and prevented card overflow, clarified unreported device details and contact rows, and used session last-seen fallback; 284 tests pass; 390px/1366px checks show no table or page overflow.
 
