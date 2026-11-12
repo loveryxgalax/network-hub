@@ -242,11 +242,15 @@ CI on the PR re-runs the tests. If it goes red, fix it immediately: the branch d
 
 ## 9. Current state (update this every session)
 
-As of **2026-11-11**:
+As of **2026-11-12**:
 
-- **Tests:** 268 passing locally (includes wallet-only Hotspot identities and distinct available/current balances).
+- **Tests:** 281 passing locally, including verified wallet checkout, reservation recovery, ban enforcement, TV administration and direct portal access.
 
 ### Recently finished
+
+- **Customer portal and admin controls:** View Portal uses one authenticated same-site redirect for both services, without generating a short link or requiring a known hotspot MAC. Banned accounts show a permanent-ban banner and disabled controls; server checks reject payment, TV, reset, redemption and connection attempts. Deactivated PPPoE customers retain payment/package controls. Admin profiles now include ban/TV/MAC-policy data; the ban button reads Banned after banning. MAC binding prefills the most recent passively reported router MAC.
+- **Wallet checkout:** verified account purchases spend wallet credit first, activate one package period without STK when fully covered, or reserve credit and request only the shortfall. Failed requests, cancellations and ten-minute timeouts release the reservation. Request keys prevent duplicate wallet activation. Wallet spending does not inflate external payment revenue. No live payment or router action was used to test this.
+- **UI:** removed the requested sign-in/Operations centre wording; added admin hotspot TV create/edit/remove; profile tables start at five rows with 5/10/15/25/50/100 controls; paired session history/jobs and payments/MACs; moved dashboard charts and created a three-card bottom row; arranged the team header. Browser checks at 390px and 1366px pass with synthetic data.
 
 - Site-wide CSS `text-transform: capitalize` across admin and customer portal pages; removed forced uppercase payment formatting. Five-character payment identifiers and full original hover titles remain.
 
@@ -282,6 +286,8 @@ As of **2026-11-11**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-12: customer portal access, wallet-first package checkout and recovery, permanent-ban visibility/enforcement, admin TV CRUD, passive MAC detection, sign-in cleanup and responsive dashboard/profile/team layouts; 281 tests pass. View Portal has no local HTTP 5xx; production proxy errors require server logs if they recur. No live customer transactions or equipment changes performed.
 
 - 2026-11-11: applied CSS word capitalization across admin and portal pages, removed forced uppercase payment formatting, and bumped changed asset versions; 269 tests and responsive browser checks pass.
 

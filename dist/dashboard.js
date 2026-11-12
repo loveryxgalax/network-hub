@@ -47,11 +47,12 @@ function kdSkeleton(){
    <article class="kd-card kd2-card"><header><div><h2>Expiring soon</h2></div><a class="kd-link" href="#cust-table">All →</a></header><div id="kd-expiring" class="kd-list"></div></article>
    <article class="kd-card kd2-card"><header><div><h2>Alerts</h2></div><a class="kd-link" href="#notifications">All alerts →</a></header><div id="kd-alerts" class="kd-alertlist"></div></article>
    <article class="kd-card kd2-card"><header><div><h2>${admin?'Plans &amp; payments':'Open alerts'}</h2></div></header><div id="kd-mix" class="kd-mix"></div></article>
-   <div class="kd-pair"><article class="kd-card kd2-card"><header><div><h2>Top sites today</h2></div><a class="kd-link" href="#sites">All →</a></header><div id="kd-sites" class="kd-list"></div></article>
-   <article class="kd-card kd2-card"><header><div><h2>Live traffic</h2></div><a class="kd-link" href="#sites">Torch →</a></header><div id="kd-live" class="kd-list"></div></article></div>
+
   </div>
  </section>
- ${admin?`<section class="kd-rb" id="kd-rb"><div class="kd-rb-head"><h2>Revenue by location &amp; vouchers</h2><p>Where the money comes from, and vouchers redeemed (valued at their package price). Each chart has its own period.</p></div><div class="kd-rb-grid kd-rb-three">${KD_RB.filter(c=>!c.side).map(kdRbCard).join('')}</div></section>`:''}
+ ${admin?`<section class="kd-rb" id="kd-rb"><div class="kd-rb-head"><h2>Revenue by service &amp; package</h2><p>Where the money comes from, and vouchers redeemed (valued at their package price). Each chart has its own period.</p></div><div class="kd-rb-grid kd-rb-two">${KD_RB.filter(c=>!c.side&&c.id!=='vloc').map(kdRbCard).join('')}</div></section>`:''}
+ <section class="kd-bottom-three">${admin?kdRbCard(KD_RB.find(c=>c.id==='vloc')):''}<article class="kd-card kd2-card"><header><div><h2>Top sites today</h2></div><a class="kd-link" href="#sites">All →</a></header><div id="kd-sites" class="kd-list"></div></article>
+   <article class="kd-card kd2-card"><header><div><h2>Live traffic</h2></div><a class="kd-link" href="#sites">Torch →</a></header><div id="kd-live" class="kd-list"></div></article></section>
  <footer class="kd-foot"><span id="kd-updated"></span><span id="kd-complete"></span></footer>${kdDefs()}
  <span hidden id="kd-hero-down"></span><span hidden id="kd-hero-up"></span><span hidden id="kd-date"></span><span hidden id="kd-clock"></span></div>`;
  for(const b of document.querySelectorAll('#kd-hs-range [data-hs]'))b.onclick=()=>{kd.hs=b.dataset.hs;for(const x of document.querySelectorAll('#kd-hs-range [data-hs]'))x.classList.toggle('active',x===b);kdLoad();};
@@ -149,8 +150,8 @@ function kdPortalPaint(){const el=$('#kd-pn');if(!el)return;const p=kd.portal||{
 const kdPalette=['#3b5bfd','#06b6d4','#a855f7','#10b981','#f59e0b','#ec4899','#14b8a6','#6366f1'];
 async function kdLoad(){const request=++kd.request;try{const d=await api('overview?range='+kd.range+'&hotspot='+kd.hs);if(request!==kd.request||!['dashboard','trends'].includes(state.page))return;kd.data=d;kdPaint(kd.first);kd.first=false;}catch(error){if(request===kd.request&&$('#kd')&&!kd.data)$('#kd').insertAdjacentHTML('afterbegin',notice('Could not load the overview',E(error.message),true));}}
 // Revenue breakdown donuts (admin): by service, package and location, and voucher revenue by package and location.
-const KD_RB=[{id:'svc',title:'Revenue by service',side:true,pick:r=>r.byService},{id:'plan',title:'Revenue by package',side:true,pick:r=>r.byPlan},{id:'loc',title:'Revenue by location',pick:r=>r.byLocation},
- {id:'vplan',title:'Voucher revenue by package',voucher:true,pick:r=>r.vouchers.byPlan},{id:'vloc',title:'Voucher revenue by location',voucher:true,pick:r=>r.vouchers.byLocation}];
+const KD_RB=[{id:'svc',title:'Revenue by service',pick:r=>r.byService},{id:'plan',title:'Revenue by package',pick:r=>r.byPlan},{id:'loc',title:'Revenue by location',side:true,pick:r=>r.byLocation},
+ {id:'vplan',title:'Voucher revenue by package',side:true,voucher:true,pick:r=>r.vouchers.byPlan},{id:'vloc',title:'Voucher revenue by location',voucher:true,pick:r=>r.vouchers.byLocation}];
 const KD_RB_P=[['today','Today'],['yesterday','Yesterday'],['week','This week'],['month','This month'],['lastmonth','Last month'],['3m','Last 3 months'],['ytd','Year to date']];
 kd.rb=kd.rb||{};kd.rbCache=kd.rbCache||new Map();
 function kdRbCard(c){const p=kd.rb[c.id]||'today';return `<article class="kd-card kd-rb-card" data-rb="${c.id}"><header><h3>${c.title}</h3><div class="kd-rb-tools"><button type="button" class="kd-rb-refresh" data-rb-refresh="${c.id}" aria-label="Refresh" title="Refresh">↻</button><select data-rb-period="${c.id}" aria-label="Period">${KD_RB_P.map(([v,l])=>`<option value="${v}" ${v===p?'selected':''}>${l}</option>`).join('')}</select></div></header><div class="kd-rb-body"><div class="kd-rb-chart" id="kd-rb-${c.id}"></div><ul class="kd-rb-legend" id="kd-rb-l-${c.id}"></ul></div></article>`;}

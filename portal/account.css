@@ -103,3 +103,5 @@ body.pp #user,body.pp .ah-user{display:block!important}
 
 /* Capitalize words consistently across the interface. */
 *,*::before,*::after,*::placeholder{text-transform:capitalize!important}
+
+.account-ban{padding:18px 20px;border:1px solid #dc2626;border-radius:14px;background:#fff1f2;color:#881337;margin-bottom:16px}.account-ban h2{margin:0 0 6px}.account-ban p{margin:0;line-height:1.6}.btn[aria-disabled=true]{opacity:.5;pointer-events:none}
