@@ -248,6 +248,8 @@ As of **2026-11-12**:
 
 ### Recently finished
 
+- **Lowercase and compact profiles:** owner changed the site-wide display rule from capitalize to lowercase (admin, portal, guide and rating page). Profile table cells use 10px on desktop / 9px on phones and wrap MAC/IP/date/message values inside fixed-width tables. Contact labels are separated and email always has a row. Last seen falls back to observed sessions. Unknown PPPoE browser/model fields are explained, not inferred. 284 tests and responsive browser overflow checks pass.
+
 - **Deployment recovery:** owner logs identified an unrelated ACS dependency-audit build failure and a pipeline that falsely reported success after Git advanced. App auto-deployment now builds hub separately, includes live only when relevant files change, waits for health, records the successful commit in Git private state and retries failures. ACS/MongoDB/RADIUS/tunnel are left running. Three deployment failure/retry tests added.
 
 - **Customer portal and admin controls:** View Portal uses one authenticated same-site redirect for both services, without generating a short link or requiring a known hotspot MAC. Banned accounts show a permanent-ban banner and disabled controls; server checks reject payment, TV, reset, redemption and connection attempts. Deactivated PPPoE customers retain payment/package controls. Admin profiles now include ban/TV/MAC-policy data; the ban button reads Banned after banning. MAC binding prefills the most recent passively reported router MAC.
@@ -288,6 +290,8 @@ As of **2026-11-12**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-12: applied lowercase display site-wide, compacted customer tables and prevented card overflow, clarified unreported device details and contact rows, and used session last-seen fallback; 284 tests pass; 390px/1366px checks show no table or page overflow.
 
 - 2026-11-12: diagnosed auto-deploy from owner-provided logs; excluded unrelated ACS rebuilds from app updates, fixed false success reporting and retry/health tracking; 284 tests pass. Independent ACS dependency audit remains separate from app deployment.
 
