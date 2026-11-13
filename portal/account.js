@@ -21,29 +21,6 @@ $('#sheet-x').onclick=closeSheet;$('#sheet').onclick=e=>{if(e.target.id==='sheet
 function enforceBan(){if(!D.banned)return;const app=$('#app');app.insertAdjacentHTML('afterbegin','<section class="account-ban" role="alert"><h2>Account Banned</h2><p>This account is permanently banned. Contact support for help. Payments, package changes and connection controls are unavailable.</p></section>');
  for(const el of app.querySelectorAll('input,select,button,textarea'))if(el.id!=='logout')el.disabled=true;
  for(const a of app.querySelectorAll('a.btn')){a.removeAttribute('href');a.setAttribute('aria-disabled','true');a.onclick=e=>e.preventDefault();}}
-// Shared extras on both dashboards: a status header with one big "Top up" button, receipts on the payments list, all
-// payments in a sheet, and an inline Update for the email address.
-function afterPaint(d){const app=$('#app');if(!app||!d)return;const pp=d.service==='pppoe',online=pp?!!d.usage?.online:!!(d.connection?.connected||d.usage?.online);
- const st=d.banned?'Banned':d.status==='active'?'Active':d.status==='expired'?'Expired':d.status==='suspended'?'Deactivated':d.status;
- const exp=d.expiresAt?(d.status==='active'?left(d.expiresAt):'Expired '+new Date(d.expiresAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'Africa/Nairobi'})):'';
- app.querySelector('.hero')?.remove();
- app.insertAdjacentHTML('afterbegin',`<section class="card hero"><div class="hero-top"><span class="badge ${online?'active':'warn'}">${online?'Online':'Offline'}</span><span class="badge type">${pp?'PPPoE':'Hotspot'}</span><span class="badge ${d.status==='active'&&!d.banned?'active':'warn'}">${esc(st)}</span></div>
-  <div class="hero-plan"><b>${esc(d.plan||d.planInfo?.name||'No package yet')}</b>${exp?`<small>${esc(exp)}</small>`:''}${d.balance?`<small>Wallet ${esc(kes(d.balance))}</small>`:''}</div>${d.banned?'':`<button class="btn hero-pay" type="button" data-hero-pay>Top up</button>`}</section>`);
- // Receipts on the recent payments list, and the full list in a sheet.
- const rp=[...app.querySelectorAll('section')].find(x=>(x.querySelector('h2')?.textContent||'').startsWith('Recent payments'));
- if(rp&&d.recentPayments?.length){const body=rp.querySelector('.body');body.innerHTML=d.recentPayments.map(p=>`<div><span>${esc(when(p.time))}</span><b>${esc(kes(p.amount))}${p.ref?' · '+esc(p.ref):''} ${p.id?`<a class="rcpt" href="/portal/api/me/receipt?t=${encodeURIComponent(T)}&id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">Receipt</a>`:''}</b></div>`).join('')+'<button class="btn ghost sm" type="button" data-all-pays style="width:100%;margin-top:10px">All payments</button>';}
- // Contact details: inline Update for the email (phone changes go through support, it is how we verify you).
- let cd=[...app.querySelectorAll('section')].find(x=>(x.querySelector('h2')?.textContent||'').startsWith('Contact details'));
- if(!cd){app.querySelector('.logout')?.insertAdjacentHTML('beforebegin','<section class="card"><header><h2>Contact details</h2></header><div class="body pp-kv"></div></section>');cd=[...app.querySelectorAll('section')].find(x=>(x.querySelector('h2')?.textContent||'').startsWith('Contact details'));}
- if(cd)cd.querySelector('.body').innerHTML=`<div><span>Phone</span><b>${esc(d.phone||'—')} <button type="button" class="lnk" data-chg-phone>Change</button></b></div><div><span>Email</span><b>${esc(d.email||'—')} ${d.banned?'':'<button type="button" class="lnk" data-chg-email>Update</button>'}</b></div>`;}
-document.addEventListener('click',async e=>{
- if(e.target.closest('[data-hero-pay]')){const pp=D?.service==='pppoe';if(pp){const i=$('#pphone');if(i){i.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>i.focus({preventScroll:true}),350);}return;}
-  const sec=[...document.querySelectorAll('#app>section')].find(x=>/^(Choose a|Extend your)/.test(x.querySelector('h2')?.textContent||''));if(sec)sec.scrollIntoView({behavior:'smooth',block:'start'});return;}
- if(e.target.closest('[data-all-pays]')){sheet('<h3>All payments</h3><div class="spin"></div>');try{const r=await api('me/payments?t='+encodeURIComponent(T));sheet(`<h3>All payments</h3>${r.items.length?`<div class="pp-kv pays-all">${r.items.map(p=>`<div><span>${esc(when(p.time))}${p.method?' · '+esc(p.method):''}</span><b>${esc(kes(p.amount))}${p.ref?' · '+esc(p.ref):''} <a class="rcpt" href="/portal/api/me/receipt?t=${encodeURIComponent(T)}&id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">Receipt</a></b></div>`).join('')}</div>`:'<p>No payments yet.</p>'}<button class="btn" data-sheet-close style="width:100%;margin-top:12px">Close</button>`);}catch(x){sheet(`<h3>All payments</h3><p>${esc(x.message)}</p><button class="btn" data-sheet-close>Close</button>`);}return;}
- if(e.target.closest('[data-chg-email]')){sheet(`<h3>Update email</h3><p>Receipts and notices go to this address.</p><div id="emsg"></div><input id="emv" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="${esc(D.email||'')}"><button class="btn" id="emgo" style="width:100%">Save</button>`);setTimeout(()=>$('#emv')?.focus(),50);return;}
- if(e.target.id==='emgo'){const b=e.target;b.disabled=true;try{const r=await post('me/contact',{email:$('#emv').value});D.email=r.email;closeSheet();paint();toast('Email saved');}catch(x){$('#emsg').innerHTML=`<div class="msg bad">${esc(x.message)}</div>`;b.disabled=false;}return;}
- if(e.target.closest('[data-chg-phone]')){sheet(`<h3>Change phone number</h3><p>Your phone number is how we recognise you, so a change is done by our team. Send the new number and we will update it.</p><div id="cmsg"></div><textarea id="ctext" rows="3" maxlength="600">Please change my phone number to: </textarea><button class="btn" id="cgo" style="width:100%">Send</button>`);return;}
-});
 function paint(){
  if(D.service==='pppoe')return paintPppoe();
  const d=D,st=d.status,label={active:'Connected plan active',expired:'Expired',suspended:'Deactivated'}[st]||st;
@@ -78,7 +55,7 @@ ${(d.recentPayments&&d.recentPayments.length)?`<section class="card"><header><h2
  const at=$('#addtv');if(at)at.onclick=()=>sheet(`<h3>Add a TV</h3><p>Enter the TV's MAC address (Settings → Network → About on most TVs).</p><div id="tmsg"></div><input id="tvname" placeholder="Living room TV" maxlength="40"><input id="tvmac" placeholder="AA:BB:CC:11:22:33" autocapitalize="characters" autocomplete="off"><button class="btn" id="tvgo" style="width:100%">Register TV</button>`);
  for(const b of document.querySelectorAll('[data-rmtv]'))b.onclick=async()=>{b.disabled=true;try{D=await post('me/tv',{remove:true,mac:b.dataset.rmtv});paint();}catch(x){toast(x.message);b.disabled=false;}};
  const r=$('#redeem');if(r)r.onclick=()=>sheet(`<h3>Redeem points</h3><p>Turn ${pts} point${pts===1?'':'s'} into wallet credit${worth?` of ${esc(kes(worth))}`:''}.</p><div id="rmsg"></div><button class="btn" id="rgo" style="width:100%">Redeem ${pts} points</button>`),r&&setTimeout(()=>{const g=$('#rgo');},0);
- for(const b of document.querySelectorAll('[data-p]'))b.onclick=()=>buy(d.plans.find(p=>p.id===b.dataset.p));afterPaint(D);enforceBan();
+ for(const b of document.querySelectorAll('[data-p]'))b.onclick=()=>buy(d.plans.find(p=>p.id===b.dataset.p));enforceBan();
 }
 
 // PPPoE customers get their own dashboard: connection, package, usage this month and all time, wallet, reset, extend, contact.
@@ -115,7 +92,7 @@ function paintPppoe(){
  const rl=$('#resetln');if(rl)rl.onclick=async()=>{rl.disabled=true;try{const r=await post('me/reset',{});D=r;paint();toast(r.reset&&r.reset.queued?'Reconnecting. Your router redials in a few seconds.':'We could not reach your router from here. Switch it off and on, or contact support.');}catch(x){toast(x.message);rl.disabled=false;}};
  const ch=$('#chg');if(ch)ch.onclick=()=>sheet(`<h3>Change package</h3><p>Choose the package you want. You pay for it with M-Pesa, and it starts when the payment is confirmed.</p><div class="pk pk-sheet">${d.plans.map(p=>{const cur=p.current,can=!d.banned&&(cur||p.available);return `<div class="p ${cur?'cur':''}"><h3><span>${esc(p.name)}</span>${cur?'<span class="tag">✓ Current</span>':''}</h3><b>${esc(kes(p.price))}</b><small>${esc(p.duration)}</small><button class="btn ${cur?'ok':''}" data-p="${esc(p.id)}" ${can?'':'disabled'}>${cur?'Renew':can?'Choose':'Unavailable'}</button></div>`;}).join('')||'<p>No packages are on sale right now.</p>'}</div>`);
  $('#ppay').onclick=()=>{const cur=d.plans.find(p=>p.current)||(pi?{id:'',current:true,name:pi.name,price:pi.price,duration:pi.duration}:null);if(!cur)return toast('This account has no package yet. Contact support.');const ph=$('#pphone').value;sheet('');buyWith(cur,ph);};
- document.addEventListener('click',ppChoose);afterPaint(D);enforceBan();
+ document.addEventListener('click',ppChoose);enforceBan();
 }
 function ppChoose(e){if(D?.banned)return;const b=e.target.closest('.pk-sheet [data-p]');if(!b||!D)return;const p=D.plans.find(x=>x.id===b.dataset.p);if(p)buy(p);}
 function buyWith(p,phone){buy(p);const i=$('#phone');if(i&&phone)i.value=phone;}
