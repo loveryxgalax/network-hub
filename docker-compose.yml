@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     environment:
       NETWORK_PUBLIC_ORIGIN: https://netops.kadenetworks.com
+      # Customer address (captive portal, account pages, payments, short links), e.g. https://my.kadenetworks.com.
+      # Set it in .env only after that hostname is live in Cloudflare; empty = customers use the address above.
+      NETWORK_PORTAL_ORIGIN: ${NETWORK_PORTAL_ORIGIN:-}
       # GenieACS NBI is reached inside the private Compose network as http://acs:7557 (never published).
       NETWORK_TRUSTED_HTTP_HOSTS: acs
       NETWORK_POLL_MS: ${NETWORK_POLL_MS:-30000}
