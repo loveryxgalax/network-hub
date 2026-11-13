@@ -242,11 +242,14 @@ CI on the PR re-runs the tests. If it goes red, fix it immediately: the branch d
 
 ## 9. Current state (update this every session)
 
-As of **2026-11-11**:
+As of **2026-11-13**:
 
-- **Tests:** 268 passing locally (includes wallet-only Hotspot identities and distinct available/current balances).
+- **Tests:** 270 passing locally (includes the new self-service recent-payments/weekly-usage coverage).
 
 ### Recently finished
+
+- **Self-service account page — recent payments & weekly usage:** `portal/account.html` (hotspot and PPPoE both) now shows a "This week" 7-day usage bar chart and a masked "Recent payments" list (reusing the existing M-Pesa reference masking pattern from `lib/hotspotme.cjs`). Backed by two new fields on `lib/selfservice.cjs`'s `view()` — `recentPayments` and `weeklyUsageMB` — and by exporting the previously-private `dailyUse()` helper from `lib/insights.cjs`. New test in `test/selfservice.test.cjs`. No pricing/business settings changed; loyalty points remain disabled pending an owner decision on point economics (unchanged from before this session).
+- **netops.kadenetworks.com domain split (infra, not code):** customer-facing traffic now goes through `my.kadenetworks.com` (Cloudflare Tunnel route to the `hub` service) and the LAB-HEX hotspot captive portal now points at `wifi.kadenetworks.com` (public A record to its hotspot-address, `dns-name` updated on the `netops-hs` hotspot profile). Server `.env` on the production host got `NETWORK_PORTAL_ORIGIN=https://my.kadenetworks.com`, container restarted. Verified end-to-end with real authenticated hotspot and PPPoE customer sessions on LAB-HEX only; no other production router was touched. Cloudflare Access in front of the admin `netops` host, and rolling the domain change out to the other production routers, are both still deferred to the owner's own timing (see section 2 — those routers are off limits without explicit new instruction).
 
 - **ISPman export formats:** supports actual November 2026 customer headings, separate currency/available/current balance fields, wallet-only Hotspot identities, blank unpurchased packages, source last-device/last-seen/active-connect/status. Preview validation found 120 PPPoE and 3,652 identifiable Hotspot rows; two Hotspot rows lack identifiers and are retained locally as exceptions. Exports omit expiry. Live import is in progress.
 
@@ -278,6 +281,8 @@ As of **2026-11-11**:
 ---
 
 ## 10. Session log (newest first; one line per session)
+
+- 2026-11-13: split `netops.kadenetworks.com` into `my.kadenetworks.com` (customer traffic, Cloudflare Tunnel + server env var) and `wifi.kadenetworks.com` (LAB-HEX hotspot captive portal only), verified with real authenticated sessions, LAB-HEX only; added masked "Recent payments" and a 7-day "This week" usage chart to the customer self-service page (`lib/selfservice.cjs`, `portal/account.js/.css/.html`), exported `dailyUse()` from `lib/insights.cjs`, new test added. 270 tests pass. No pricing/loyalty settings changed, no other production router touched.
 
 - 2026-11-11: owner authorized source data imports and follow-through without routine reapproval; inspected actual ISPman export schemas and adapted the isolated overview, preserving two distinct balances and wallet-only identities. 268 tests pass. No service-control changes.
 

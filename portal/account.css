@@ -67,6 +67,10 @@ body.pp #help .hi{margin-right:3px}
 .pp-conn b{display:block;font-size:18px}.pp-conn small{opacity:.92;font-size:13px}.pp-conn .pp-r{text-align:right;font-size:12px;opacity:.95}.pp-conn .pp-r b{font-size:13px}
 .pp-kv{display:grid;gap:2px}.pp-kv>div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.pp-kv>div:last-child{border:0}
 .pp-kv span{color:var(--mut);font-size:12px;letter-spacing:.04em;text-transform:uppercase}.pp-kv>.btn{justify-self:start;margin:6px 0}
+.wk{display:flex;gap:6px;align-items:flex-end;height:70px}
+.wk-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.wk-col i{display:block;width:100%;background:var(--brand);border-radius:3px 3px 0 0;min-height:3px}
+.wk-col span{font-size:10px;color:var(--mut);margin-top:4px}
 .pp-lab{color:var(--mut);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
 .pp-all{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;text-align:center}.pp-all b{display:block;font-size:15px}.pp-all span{color:var(--mut);font-size:12px}
 .pp-bal{background:color-mix(in srgb,var(--brand) 8%,#fff);border-radius:12px;padding:16px;text-align:center}.pp-bal span{display:block;color:var(--mut);font-size:12px;letter-spacing:.06em;text-transform:uppercase}.pp-bal b{display:block;font-size:28px;color:var(--brand);margin:2px 0}.pp-bal small{color:var(--mut)}

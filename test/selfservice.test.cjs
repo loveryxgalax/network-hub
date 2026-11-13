@@ -33,3 +33,17 @@ test('PPPoE dashboard data, PIN/phone hand-over to the dashboard, and customer-p
  const out=ss.reset(st,st.get('subscribers',s.id));assert.equal(out.queued,true);assert.equal(st.list('routerJobs')[0].type,'disconnect');
  assert.equal(ss.reset(st,st.get('subscribers',s.id)).queued,false,'a second press while one is queued does not stack');
 });
+test('self-service view exposes masked recent payments and a 7-day usage series',async()=>{
+ const ss=require('../lib/selfservice.cjs');
+ const st=new (require('../lib/store.cjs').Store)(fs.mkdtempSync(path.join(os.tmpdir(),'pp2-')));
+ const plan=st.put('plans',radius.plan({name:'Home',service:'pppoe',downloadMbps:10,uploadMbps:10,price:2000,durationValue:1,durationUnit:'months'}));
+ const s=st.put('subscribers',radius.subscriber(st,{name:'J',username:'kne-pp2',phone:'0721000111',service:'pppoe',planId:plan.id,expiresAt:Date.now()+864e5}));
+ st.put('subscriberPayments',{subscriberId:s.id,amount:1500,method:'mpesa',reference:'QGR1A2B3C4',time:Date.now()-3600000});
+ st.put('subscriberPayments',{subscriberId:s.id,amount:500,method:'mpesa',reference:'XYZ987',time:Date.now()-7200000});
+ const v=ss.view(st,st.get('subscribers',s.id));
+ assert.ok(Array.isArray(v.recentPayments));assert.equal(v.recentPayments.length,2);
+ assert.equal(v.recentPayments[0].amount,1500,'most recent payment first');
+ assert.equal(v.recentPayments[0].ref,'\u2022\u2022\u2022\u2022\u2022\u2022B3C4','reference is masked, keeping only the last 4 characters');
+ assert.ok(Array.isArray(v.weeklyUsageMB),'weeklyUsageMB is present even with no usage data');
+ assert.ok(v.weeklyUsageMB.length<=7);
+});
