@@ -1531,12 +1531,51 @@ function layoutCustomer(root){if(!root||root.dataset.cp)return;root.dataset.cp='
  const row1=document.createElement('div');row1.className='cp-row1';row1.append(pay,actions);
  const row2=document.createElement('div');row2.className='cp-row2';row2.append(left,uc);
  if(head){head.classList.add('cp-head');wrap.append(head);}if(notes.length){const nn=document.createElement('div');nn.className='cp-notes';for(const n of notes)nn.append(n);wrap.append(nn);}
- wrap.append(row1,row2,ac);
- const pair=(a,b)=>{const row=document.createElement('div');row.className='cp-paired';if(a)row.append(a);if(b)row.append(b);wrap.append(row);};
+ // Tabs: Overview / Sessions / Payments / Package history / Tickets / Notes.
+ const TABS=[['overview','Overview'],['sessions','Sessions'],['payments','Payments'],['packages','Package history'],['tickets','Tickets'],['notes','Notes']];
+ const tabs=document.createElement('div');tabs.className='cp-tabs';tabs.setAttribute('role','tablist');tabs.innerHTML=TABS.map(([k,l],i)=>`<button type="button" role="tab" data-cptab="${k}" aria-selected="${i?'false':'true'}">${l}</button>`).join('');
+ const panel=k=>{const p=document.createElement('div');p.className='cp-panel';p.dataset.panel=k;p.hidden=k!=='overview';return p;};
+ const P=Object.fromEntries(TABS.map(([k])=>[k,panel(k)]));
  const extra=title=>[...more.children].find(c=>c.querySelector('h3')?.textContent.trim().toLowerCase()===title);
- pair(hc,extra('router jobs for this customer'));pair(extra('payments'),extra('recent mac addresses'));
- if(more.children.length)wrap.append(more);
- root.replaceChildren(wrap);profileTablePages(root);}
+ const pair=(host,a,b)=>{if(!a&&!b)return;const row=document.createElement('div');row.className='cp-paired';if(a)row.append(a);if(b)row.append(b);host.append(row);};
+ const ins=document.createElement('div');ins.className='cp-insight';ins.innerHTML='<section class="cp-card"><div class="cp-b"><p class="muted">Loading lifetime value and activity…</p></div></section>';
+ P.overview.append(row1,ins,row2);
+ P.sessions.append(ac);pair(P.sessions,hc,extra('router jobs for this customer'));const macs=extra('recent mac addresses');if(macs)P.sessions.append(macs);
+ const payCard=extra('payments');const ltv=document.createElement('div');ltv.className='cp-ltv-slot';P.payments.append(ltv);if(payCard)P.payments.append(payCard);
+ for(const k of ['packages','tickets','notes']){const c=card('cp-'+k,TABS.find(t=>t[0]===k)[1],null);c.querySelector('.cp-b').innerHTML='<p class="muted">Loading…</p>';P[k].append(c);}
+ if(more.children.length)P.overview.append(more);
+ wrap.append(tabs,...Object.values(P));
+ tabs.onclick=e=>{const b=e.target.closest('[data-cptab]');if(!b)return;for(const x of tabs.children)x.setAttribute('aria-selected',String(x===b));for(const p of Object.values(P))p.hidden=p.dataset.panel!==b.dataset.cptab;try{sessionStorage.setItem('cp-tab',b.dataset.cptab);}catch{}};
+ try{const t=sessionStorage.getItem('cp-tab');if(t&&t!=='overview')tabs.querySelector(`[data-cptab="${t}"]`)?.click();}catch{}
+ root.replaceChildren(wrap);profileTablePages(root);
+ // Header quick actions (SMS, Set expiry, Edit) that press the same buttons as the Actions card.
+ if(head){const qa=document.createElement('div');qa.className='cp-qa';qa.innerHTML=[['sms','SMS'],['extend','Set expiry'],['edit','Edit']].filter(([k])=>root.querySelector(`[data-pf="${k}"]`)).map(([k,l])=>`<button type="button" class="button ${k==='edit'?'primary':'secondary'}" data-qa="${k}">${l}</button>`).join('');
+  qa.onclick=e=>{const b=e.target.closest('[data-qa]');if(b)root.querySelector(`[data-pf="${b.dataset.qa}"]:not([data-qa])`)?.click();};head.append(qa);}
+ customerInsight(sub,P,ins,ltv).catch(x=>{ins.innerHTML=`<section class="cp-card"><div class="cp-b"><p class="muted">${E(x.message)}</p></div></section>`;});}
+// Lifetime value, lifecycle timeline, a year of activity as a heatmap, package history, tickets and notes for one customer.
+async function customerInsight(sub,P,ins,ltvSlot){const d=await api('radius/subscribers/'+sub.id+'/insight');
+ const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),money=n=>'KSh '+Number(n||0).toLocaleString('en-KE',{maximumFractionDigits:0});
+ const day=t=>t?new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'Africa/Nairobi'}):'—';
+ const L=d.lifetime,up=L.trend>0,flat=L.trend===0;
+ const ltvHtml=`<section class="cp-card cp-ltv"><header class="cp-h"><h3>Lifetime value</h3><div class="cp-hr"><span class="cp-pts" title="Loyalty points">★ ${E(d.points)} points</span></div></header><div class="cp-b"><div class="cp-ltv-n"><b>${money(L.total)}</b><span class="cp-trend ${flat?'flat':up?'up':'down'}" title="Last 30 days compared with the 30 days before">${flat?'→ 0%':(up?'▲ ':'▼ ')+Math.abs(L.trend)+'%'}</span></div>
+  <div class="cp-ltv-g"><span>Last 30 days<b>${money(L.last30)}</b></span><span>Previous 30 days<b>${money(L.prev30)}</b></span><span>Per month<b>${money(L.perMonth)}</b></span><span>Payments<b>${E(L.payments)}</b></span></div></div></section>`;
+ const tl=`<section class="cp-card cp-tl"><header class="cp-h"><h3>Lifecycle</h3></header><div class="cp-b"><ol class="cp-tline">${d.timeline.map(x=>`<li class="${x.at?'':'none'} k-${E(x.key)}"><b>${E(x.label)}</b><span>${x.at?E(day(x.at)):'Not yet'}</span>${x.detail?`<small>${E(x.detail)}</small>`:''}</li>`).join('')}</ol></div></section>`;
+ // Heatmap: 53 weeks × 7 days, darker = more data used that day.
+ const days=d.activity.days,end=new Date(d.activity.to+'T00:00:00Z'),start=new Date(end);start.setUTCDate(start.getUTCDate()-364-start.getUTCDay());
+ const vals=Object.values(days).map(v=>v.bytes).filter(Boolean).sort((a,b)=>a-b),q=f=>vals.length?vals[Math.min(vals.length-1,Math.floor(vals.length*f))]:0,cut=[q(.25),q(.5),q(.75)];
+ const lvl=v=>!v?0:v.bytes<=cut[0]?1:v.bytes<=cut[1]?2:v.bytes<=cut[2]?3:4;let cells='',months='',lastM=-1;
+ for(let i=0,t=new Date(start);t<=end;i++,t.setUTCDate(t.getUTCDate()+1)){const k=t.toISOString().slice(0,10),v=days[k],w=Math.floor(i/7);
+  if(t.getUTCDay()===0&&t.getUTCMonth()!==lastM){lastM=t.getUTCMonth();months+=`<span style="grid-column:${w+1}">${t.toLocaleDateString('en-GB',{month:'short',timeZone:'UTC'})}</span>`;}
+  cells+=`<i class="l${lvl(v)}" style="grid-column:${w+1};grid-row:${t.getUTCDay()+1}" title="${E(new Date(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}))}: ${v?`${v.sessions} session${v.sessions===1?'':'s'}, ${bytesShort(v.bytes)}, ${Math.round(v.minutes/60*10)/10} h online`:'no activity'}"></i>`;}
+ const hm=`<section class="cp-card cp-heat"><header class="cp-h"><h3>Activity, last 12 months</h3><div class="cp-hr"><span class="muted">${E(d.activity.activeDays)} active day${d.activity.activeDays===1?'':'s'}</span></div></header><div class="cp-b"><div class="cp-hm-scroll"><div class="cp-hm-m">${months}</div><div class="cp-hm">${cells}</div></div><div class="cp-hm-key"><span>Less</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>More</span></div></div></section>`;
+ ins.innerHTML=`<div class="cp-paired">${ltvHtml}${tl}</div>${hm}`;ltvSlot.innerHTML=ltvHtml;
+ const body=k=>P[k].querySelector('.cp-'+k+' .cp-b');
+ body('packages').innerHTML=d.packages.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>PACKAGE</th><th>FROM</th><th>LAST PAID</th><th>PAYMENTS</th><th>AMOUNT</th></tr></thead><tbody>${d.packages.map(x=>`<tr><td>${E(x.name)}</td><td>${E(day(x.from))}</td><td>${E(day(x.until))}</td><td>${E(x.payments)}</td><td>${money(x.amount)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="cp-empty"><b>No package history</b><span>Packages appear here once the customer pays for one</span></div>';
+ body('tickets').innerHTML=(d.tickets.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>TICKET</th><th>STATUS</th><th>PRIORITY</th><th>OPENED</th><th>RATING</th></tr></thead><tbody>${d.tickets.map(x=>`<tr><td><a href="#tickets?id=${encodeURIComponent(x.id)}">#${E(String(x.id).slice(0,6).toUpperCase())}</a> ${E(x.title)}</td><td>${E(x.status)}</td><td>${E(x.priority||'—')}</td><td>${E(day(x.created))}</td><td>${x.rating?'★'.repeat(x.rating):'—'}</td></tr>`).join('')}</tbody></table></div>`:'<div class="cp-empty"><b>No tickets</b><span>This customer has not had a support ticket</span></div>')+`<p style="margin-top:10px"><button type="button" class="button secondary" data-qa-ticket>Open a ticket</button></p>`;
+ body('tickets').querySelector('[data-qa-ticket]').onclick=()=>document.querySelector('#cp-host [data-pf="ticket"]')?.click()||(location.hash='tickets');
+ const nb=body('notes');nb.innerHTML=`<form class="cp-note"><textarea rows="4" maxlength="1000" placeholder="Notes only your team can see">${E(d.notes)}</textarea><button class="button primary" type="submit">Save notes</button></form><h4 class="cp-sub">Account activity</h4>${d.log.length?`<ul class="cp-log">${d.log.map(a=>`<li><span>${E(stamp(a.time))} · ${E(a.by)}</span><b>${E(a.action)}</b></li>`).join('')}</ul>`:'<p class="muted">Nothing recorded yet.</p>'}`;
+ nb.querySelector('form').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('button');b.disabled=true;try{await api('radius/subscribers/'+sub.id,'PATCH',{notes:e.target.querySelector('textarea').value});toast('Notes saved');}catch(x){toast(x.message);}finally{b.disabled=false;}};
+ profileTablePages(P.packages);profileTablePages(P.tickets);}
 function profileTablePages(root){for(const table of root.querySelectorAll('table.data-table')){if(table.dataset.profilePaged)continue;table.dataset.profilePaged='1';table.dataset.kt='1';const rows=[...table.tBodies[0].rows];if(!rows.length)continue;let size=5,page=0;const foot=document.createElement('div');foot.className='cp-pagination';table.closest('.table-wrap').after(foot);
  const paint=()=>{const pages=Math.max(1,Math.ceil(rows.length/size));page=Math.min(page,pages-1);rows.forEach((r,i)=>r.hidden=i<page*size||i>=(page+1)*size);foot.innerHTML=`<span>${page*size+1}–${Math.min((page+1)*size,rows.length)} of ${rows.length}</span><label>Show <select aria-label="Rows per page">${[5,10,15,25,50,100].map(n=>`<option ${n===size?'selected':''}>${n}</option>`).join('')}</select></label><button class="button secondary" data-prev ${page?'':'disabled'}>‹</button><button class="button secondary" data-next ${page+1<pages?'':'disabled'}>›</button>`;foot.querySelector('select').onchange=e=>{size=Number(e.target.value);page=0;paint();};foot.querySelector('[data-prev]').onclick=()=>{page--;paint();};foot.querySelector('[data-next]').onclick=()=>{page++;paint();};};paint();}}
 // Bans & blocks: one register of banned accounts, blocked devices (MACs), deactivated and recently deleted accounts.
