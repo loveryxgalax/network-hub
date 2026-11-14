@@ -5,7 +5,10 @@ const report=(overrides={})=>({schema:overrides.events?2:1,tables:Object.fromEnt
 const peer=(extra={})=>({ip:'192.0.2.20',mac:'00:11:22:33:44:55',name:'Fixture subscriber',uptime:'00:02:00',...extra});
 test('customer reports accept only observed fields and enforce bounds without assuming CPE type',()=>{
  const value=customers.normalize(report({dhcp:[peer({status:'bound',password:'excluded'})]}));assert.equal(value.tables.dhcp.rows[0].password,undefined);assert.equal(value.tables.dhcp.rows[0].rx,null);
- for(const raw of [report({arp:[peer({ip:'bad'})]}),report({arp:[peer({mac:'bad'})]}),report({ppp:[peer({rx:-1})]}),report({dhcp:new Array(501).fill(peer())})])assert.throws(()=>customers.normalize(raw));
+ assert.throws(()=>customers.normalize(report({dhcp:new Array(501).fill(peer())})));
+ // One odd value is cleaned or dropped instead of discarding the whole report.
+ assert.equal(customers.normalize(report({arp:[peer({ip:'bad'})]})).tables.arp.rows[0].ip,'');assert.equal(customers.normalize(report({arp:[peer({mac:'bad'})]})).tables.arp.rows[0].mac,'');assert.equal(customers.normalize(report({ppp:[peer({rx:-1})]})).tables.ppp.rows[0].rx,null);
+ assert.equal(customers.normalize(report({arp:[peer({ip:'bad',mac:'bad'})]})).tables.arp.rows.length,0);assert.equal(customers.normalize(report({dhcp:[peer({name:'tab\there'+'x'.repeat(300)})]})).tables.dhcp.rows[0].name,'tab here'+'x'.repeat(142));
  const invalid=report();invalid.tables.dhcp.ok=false;invalid.tables.dhcp.rows=[peer()];assert.throws(()=>customers.normalize(invalid));
 });
 test('discovery batches stay below RouterOS fetch limits and commit only complete authenticated snapshots',()=>{
@@ -49,8 +52,12 @@ test('customer discovery credentials are isolated from router monitoring, user s
   assert.equal((await api('customers')).status,401);const owner=await api('setup','POST',{name:'Customer QA',workspace:'QA',email:'customer@example.test',password:'fixture-owner-password-123'});cookie=owner.response.headers.get('set-cookie').split(';')[0];csrf=owner.body.csrf;
   const a=(await api('router-agent/enroll','POST',{name:'One'})).body,b=(await api('router-agent/enroll','POST',{name:'Two'})).body;const agentToken=a.script.match(/Authorization:Bearer ([A-Za-z0-9_-]{43})/)[1];
   assert.equal((await api('customer-agent/enroll','POST',{deviceId:a.device.id},{'X-CSRF-Token':''})).status,403);
-  const enrolled=await api('customer-agent/enroll','POST',{deviceId:a.device.id});assert.equal(enrolled.status,201);const token=enrolled.body.script.match(/Authorization:Bearer ([A-Za-z0-9_-]{43})/)[1];assert.match(enrolled.body.script,/interval=2m/);assert.match(enrolled.body.script,/check-certificate=yes/);assert.ok(!/\/system reboot|\/system package|\/import|\/ppp secret|\/ip firewall|\/radius/.test(enrolled.body.script));
+  const enrolled=await api('customer-agent/enroll','POST',{deviceId:a.device.id});assert.equal(enrolled.status,201);const token=enrolled.body.script.match(/Authorization:Bearer ([A-Za-z0-9_-]{43})/)[1];assert.match(enrolled.body.script,/interval=2m/);assert.match(enrolled.body.script,/check-certificate=yes/);assert.ok(!/\/system reboot|\/system package|\/import|\/ppp secret|\/ip firewall(?! connection (find|get)| (filter|nat) print)|\/radius|\/system logging|\/ip dns set/.test(enrolled.body.script));
   assert.equal((await api('customer-agent/enroll','POST',{deviceId:a.device.id})).status,409);
+  {const get=(route,auth)=>fetch(origin+'/api/'+route,{headers:auth?{Authorization:'Bearer '+auth}:{}});
+   const fresh=await get('customer-agent/script/'+a.device.id,token);assert.equal(fresh.status,200);const text=await fresh.text();assert.ok(text.includes('Bearer '+token),'the upgrade keeps the router\'s own token');assert.match(text,/backup monitoring v9/);
+   assert.equal((await get('customer-agent/script/'+a.device.id,'x'.repeat(43))).status,401);assert.equal((await get('customer-agent/script/'+a.device.id)).status,401);
+   const up=await (await get('customer-agent/upgrade.rsc')).text();assert.match(up,/check-in\//);assert.ok(!/Bearer [A-Za-z0-9_-]{43}/.test(up),'the upgrade file holds no token');}
   const push=(id,credential,payload)=>api('customer-agent/check-in/'+id,'POST',payload,{Cookie:'','X-CSRF-Token':'',Authorization:'Bearer '+credential});
   assert.equal((await push(a.device.id,agentToken,report())).status,401);assert.equal((await push(b.device.id,token,report())).status,401);assert.equal((await api('customers','GET',undefined,{Cookie:'',Authorization:'Bearer '+token})).status,401);
   const encoded=Buffer.from(JSON.stringify(report({dhcp:[peer({status:'bound'})],ppp:[peer({name:'api-subscriber',service:'pppoe',sessionId:'*9',rx:10,tx:20})],events:[{time:'oct/20 18:22:13',topics:'pppoe,ppp,error',message:'user api-subscriber authentication failed'}]}))).toString('base64'),chunks=[encoded.slice(0,40),encoded.slice(40)];
@@ -62,4 +69,10 @@ test('customer discovery credentials are isolated from router monitoring, user s
   assert.ok(!JSON.stringify((await api('customers')).body).includes(token));assert.equal((await api('customer-agent/'+a.device.id+'/credential','DELETE',{})).status,403);
   const ownerAgain=await api('login','POST',{email:'customer@example.test',password:'fixture-owner-password-123'});cookie=ownerAgain.response.headers.get('set-cookie').split(';')[0];csrf=ownerAgain.body.csrf;assert.equal((await api('customer-agent/'+a.device.id+'/credential','DELETE',{})).status,200);assert.equal((await push(a.device.id,token,report())).status,401);assert.equal((await api('customers')).body.items[0].status,'Reporting disabled');
  }finally{await app.close();assert.equal(path.dirname(path.resolve(directory)),path.resolve(os.tmpdir()));fs.rmSync(directory,{recursive:true,force:true});}
+});
+test('RADIUS timeouts and management login failures raise specific router alerts',()=>{
+const script=customers.generate('https://netops.example.test','00000000-0000-4000-8000-000000000000','x'.repeat(43));assert.ok(script.includes('[Rr][Aa][Dd][Ii][Uu][Ss] (server is not responding|timeout)'));assert.match(script,/monitoring v9/);assert.ok(!script.includes('/log print as-value'),'the script never walks the whole log');assert.ok(script.includes('/log find where topics~"dns"')&&script.includes('[/log get $id message]'));
+ const classes=['<pppoe-a>: user a authentication failed: radius timeout','login failed: RADIUS server is not responding','login failure for user ispman from 10.124.0.171 via winbox'];
+ const keys=classes.map(message=>customers.eventKeyForTest({topics:'system,error,critical',message}));
+ assert.deepEqual(keys,['radius-unreachable','radius-unreachable','management-login-failed']);
 });

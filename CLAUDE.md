@@ -1,5 +1,7 @@
 # Network Hub — Claude Code handoff
 
+> Any assistant (Claude, ChatGPT/Codex, …): read `docs/AI-HANDOFF.md` first. It has the current rules, code map, state and session log, and must be updated at the end of every session.
+
 ## Purpose
 
 Network Hub is an independent Node.js and SQLite network-operations dashboard. It monitors MikroTik routers, PPPoE and Hotspot customers, fibre inventory, OLT/ONU records, SNMP devices, and TR-069 devices through a private GenieACS deployment. The production site is `https://netops.kadenetworks.com` through a locally managed Cloudflare Tunnel.
@@ -8,6 +10,7 @@ This project was reconstructed from observed workflows. It does not use Texin or
 
 ## Non-negotiable equipment rules
 
+- Production routers CCR (CCR2004), HEX (hEX S Ikutha) and RBX (RB951 Kyandula) are off limits: do not run, queue or suggest any command, script, job or test on them. All tests and new features are tried on the test router TEST-1 (hAP lite, WireGuard 10.99.0.2) only.
 - Never update RouterOS.
 - Never reboot a MikroTik.
 - Do not disconnect subscribers or change customer service without a new, explicit user instruction.
@@ -52,6 +55,10 @@ The app listens on `http://127.0.0.1:4317`. Opening `dist/index.html` directly d
 - The dashboard currently retains 89 last-known CCR PPPoE sessions and labels them `Report stale`; it must not present them as currently connected until a fresh complete CCR report arrives.
 - TR-069 work for CCR, hEX, and customer CPEs is deferred. Do not infer TR-069 enrollment from customer discovery.
 
+## Router job runner (opt-in, added 2026-10-30)
+
+The discovery script still never downloads commands. A separate, opt-in `network-hub-jobs` script (installed per router from MikroTik → Router jobs, with its own token `jobs:<routerId>`) polls `/api/router-jobs/next/<id>` every minute and runs one job from the whitelist in `lib/jobs.cjs` (disconnect, reset device, connect, backup now, push portal pages, static IP apply/remove, live speed change, reboot, RouterOS upgrade). Values are validated against fixed patterns before they are placed in a script; there is no free-form command job. Reboot and upgrade require the operator to type the router name, are admin-only and are never retried automatically. A router without the runner installed cannot receive any job. Never queue reboot or upgrade jobs yourself: they exist for the owner to trigger.
+
 ## Recent feature behavior
 
 The `PPPoE & router alerts` page is read-only. It shows current/stale/disconnected PPPoE sessions, session uptime, exact-interface traffic when available, router freshness, and deduplicated warning/error events. The RouterOS discovery script uses schema 2 and reads log rows locally before filtering topics because filtering `topics` in `/log print where ...` was unreliable on the tested hEX.
@@ -79,3 +86,6 @@ Never print, commit, or paste secrets from those files. The live database and `d
 - Do not mark devices healthy or sessions connected from stale, partial, failed, or truncated reports.
 - Run the focused test file for a small change; run the full suite before a release or deployment package.
 
+
+## WireGuard peers (managed in netops)
+Peers live in the netops database; `deployment/wireguard/sync-peers.sh` (run on the host, usually by its systemd timer) applies them to `wg0`, keeps the `NETOPS-WG` forwarding chain (staff laptops → routers' management ports only) and reports handshakes. It never sends the interface line of `wg show dump` (private key) into the container. Do not run it or change wg0 on the live server without the user's go-ahead.

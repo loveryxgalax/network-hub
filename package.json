@@ -7,10 +7,11 @@
   },
   "scripts": {
     "start": "node server.cjs",
-    "check": "node --check dist/workspace.js && node --check dist/icons.js && node --check server.cjs && node --check lib/store.cjs && node --check lib/domain.cjs && node --check lib/connectors.cjs && node --check dist/permissions.js && node --check lib/snmp.cjs && node --check lib/acs.cjs && node --check dist/tr069.js && node --check lib/gis.cjs && node --check lib/router-agent.cjs && node --check dist/router-agent.js && node --check lib/customers.cjs && node --check dist/customers.js && node --check dist/subscriber-monitoring.js",
+    "check": "node --check dist/workspace.js && node --check dist/icons.js && node --check server.cjs && node --check lib/store.cjs && node --check lib/domain.cjs && node --check lib/connectors.cjs && node --check dist/permissions.js && node --check lib/snmp.cjs && node --check lib/acs.cjs && node --check dist/tr069.js && node --check lib/gis.cjs && node --check lib/router-agent.cjs && node --check dist/router-agent.js && node --check lib/customers.cjs && node --check dist/customers.js && node --check dist/subscriber-monitoring.js && node --check lib/ispman.cjs && node --check dist/ispman.js",
     "test": "node --test test/*.test.cjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.3.0",
     "net-snmp": "3.29.2"
   }
 }

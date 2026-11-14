@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="sw">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kade Networks Wi-Fi</title>
+<meta name="theme-color" content="#0a3cff">
+<link rel="icon" type="image/png" href="/img/favicon.png">
+<link rel="preload" href="/fonts/maven-pro-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/portal/portal.css?v=20261112d">
+<script src="/portal/portal.js?v=20261112bb" defer></script>
+</head>
+<body data-theme="midnight">
+<div id="boot" class="boot" role="status"><div class="boot-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><p class="boot-text"><!--loading-text--></p><div class="boot-bar" aria-hidden="true"><i></i></div></div>
+<canvas id="snow"></canvas>
+
+<div id="layout">
+  <!-- Split Screen brand panel (only visible on "split") -->
+  <aside class="brandpanel">
+    <div class="bp-top"><div class="logo" data-logo></div><b class="brand-name" data-bind="brandName"></b></div>
+    <h1 data-i18n="splitHeadline"></h1>
+    <p data-bind="intro"></p>
+    <a class="otg" data-otg></a>
+    <div class="chips"><span data-i18n="chipHotspot"></span><span data-i18n="chipFiber"></span></div>
+    <div class="bp-help"><span data-i18n="needHelp"></span> <a data-phone></a></div>
+  </aside>
+
+  <div class="rightside">
+    <header class="topbar">
+      <div class="wrap">
+        <div class="logo" data-logo></div>
+        <div style="min-width:0">
+          <div class="brand-name" data-bind="brandName"></div>
+          <div class="help"><span><span data-i18n="needHelp"></span> <a data-phone></a></span><a data-whatsapp></a></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="lang" data-lang></div>
+      </div>
+    </header>
+    <div class="lights" aria-hidden="true"></div>
+    <div class="split-lang"><div class="lang" data-lang></div></div>
+
+    <main class="wrap">
+      <div id="portal-alert" class="alert" role="alert" hidden></div>
+      <section class="hero">
+        <div class="eyebrow" data-i18n-theme="eyebrow"></div>
+        <h1 data-headline></h1>
+        <p class="intro" data-bind="intro"></p>
+        <p class="sub" data-i18n="manageSub"></p>
+        <a class="otg" data-otg></a>
+      </section>
+
+      <div class="main-grid">
+        <!-- Bento-only tiles -->
+        <div class="bento-hero tile-brand">
+          <div class="logo" data-logo></div>
+          <div class="tb-text"><h1 data-bind="brandName"></h1><p data-bind="intro"></p></div>
+        </div>
+
+        <div id="accountCol">
+          <div class="card" id="accountCard">
+            <h2 data-i18n-theme="accountTitle"></h2>
+            <p class="lead" data-i18n="accountLead"></p>
+
+            <div class="detect" id="detect"><div class="spin"></div><span data-i18n="detecting"></span></div>
+
+            <button class="find-btn" id="findBtn" type="button">
+              <svg class="i" viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01"/></svg>
+              <div data-i18n="connectFind"></div><span data-i18n="findBtn"></span>
+            </button>
+
+            <div class="howto" id="howto">
+              <b data-i18n="howTitle"></b>
+              <ul><li data-i18n="how1"></li><li data-i18n="how2"></li></ul>
+            </div>
+
+            <form id="accForm" novalidate>
+              <label class="fl" for="acc" data-i18n="accLabel"></label>
+              <textarea id="acc" class="acc" data-i18n-ph="accPh"></textarea>
+              <div class="example" data-i18n="accExample"></div>
+              <div class="detected-acc hide" id="detectedAcc"></div>
+              <label class="fl" for="acc-pin"><span data-i18n="pinLabel">PIN (optional, to see balance and usage)</span></label><input id="acc-pin" class="acc-pin" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{4,6}">
+              <button class="btn" type="submit"><span data-i18n="accessBtn"></span> <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              <div class="msg" id="accMsg"></div>
+            </form>
+            <div id="accResult" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <a class="tile-otg bento-hero" data-otg-tile></a>
+        <div class="tile-help bento-hero">
+          <small style="color:var(--muted)" data-i18n="needHelp"></small>
+          <a data-phone></a><a data-whatsapp></a>
+        </div>
+
+        <div id="packagesCol">
+          <div class="card" id="hotspotCard">
+            <div class="section-head"><h2 data-i18n="hotspotTitle"></h2><small data-i18n="hotspotSub"></small></div>
+            <div class="pkgs" id="hotspotPkgs"></div>
+          </div>
+        </div>
+        <div id="pppoeWrap">
+          <div class="card" id="pppoeCard">
+            <div class="section-head"><h2 data-i18n="pppoeTitle"></h2><small data-i18n="pppoeSub"></small></div>
+            <div class="pkgs" id="pppoePkgs"></div>
+          </div>
+        </div>
+        <div class="contactCard">
+          <div class="card">
+            <div class="section-head"><h2 data-i18n="contactTitle"></h2></div>
+            <div class="contact" id="contact"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="foot"><div class="wrap" id="footer"></div></footer>
+  </div>
+</div>
+
+<!-- ============ ADMIN ============ -->
+<button id="adminFab" class="hide">🎨 Design</button>
+<aside id="admin" aria-label="Landing page admin">
+  <header><b>Landing page design</b><button id="closeAdmin" aria-label="Close">×</button></header>
+  <div class="body">
+    <h4>Design</h4>
+    <div class="theme-grid" id="themeGrid"></div>
+    <div class="theme-desc" id="themeDesc"></div>
+
+    <h4>Brand</h4>
+    <div class="row"><label>Business name</label></div>
+    <input type="text" id="cfgName">
+    <div class="row" style="margin-top:10px"><label>Brand colour</label><input type="color" id="cfgColor"></div>
+    <div class="colors" id="presetColors"></div>
+
+    <h4>Intro</h4>
+    <textarea id="cfgIntro" placeholder="Leave empty to use each design's own wording"></textarea>
+    <small style="color:#64748b">The line under the headline, on every design. Clear it to use each design's own wording.</small>
+
+    <h4>Contact</h4>
+    <div class="row"><label for="cfgPhone">Phone</label></div><input type="text" id="cfgPhone" placeholder="0181 820 518">
+    <div class="row"><label for="cfgWhatsapp">WhatsApp</label></div><input type="text" id="cfgWhatsapp" placeholder="same as phone if empty">
+    <div class="row"><label for="cfgEmail">Email</label></div><input type="text" id="cfgEmail" placeholder="info@kadenetworks.com">
+    <div class="row"><label for="cfgLang">Default language</label><select id="cfgLang"><option value="sw">Kiswahili</option><option value="en">English</option><option value="fr">Français</option></select></div>
+    <div class="row"><label for="cfgPopular">Popular package (badge)</label></div><input type="text" id="cfgPopular" placeholder="e.g. NET PLUS">
+
+    <h4>Show on the landing page</h4>
+    <div class="row"><label for="tPppoe">PPPoE packages</label><span class="switch"><input type="checkbox" id="tPppoe"><span></span></span></div>
+    <div class="row"><label for="tHotspot">Hotspot packages</label><span class="switch"><input type="checkbox" id="tHotspot"><span></span></span></div>
+    <div class="row"><label for="tFind">Find my account</label><span class="switch"><input type="checkbox" id="tFind"><span></span></span></div>
+    <div class="row"><label for="tAccess">Access my account</label><span class="switch"><input type="checkbox" id="tAccess"><span></span></span></div>
+    <div class="row"><label for="tOtg">On-the-Go WiFi card</label><span class="switch"><input type="checkbox" id="tOtg"><span></span></span></div>
+    <div class="row"><label for="tContact">Contact section</label><span class="switch"><input type="checkbox" id="tContact"><span></span></span></div>
+    <div class="row"><label for="tSpeed">Show package speed</label><span class="switch"><input type="checkbox" id="tSpeed"><span></span></span></div>
+    <div class="row"><label for="tUsage">Show data used (account)</label><span class="switch"><input type="checkbox" id="tUsage"><span></span></span></div>
+    <div class="row"><label for="tMessage">"Leave a message" form</label><span class="switch"><input type="checkbox" id="tMessage"><span></span></span></div>
+    <div class="row"><label for="tChat">Chat button (message box, call and WhatsApp)</label><span class="switch"><input type="checkbox" id="tChat"><span></span></span></div>
+  </div>
+  <footer><button id="copyCfg">Copy JSON</button><button id="saveCfg">Save</button></footer>
+</aside>
+
+<!-- Buy sheet -->
+<div class="sheet-backdrop" id="sheet" hidden>
+  <form class="sheet" id="buy-form" role="dialog" aria-modal="true" aria-labelledby="sheet-name">
+    <div class="sheet-grip" aria-hidden="true"></div>
+    <button type="button" class="sheet-close" id="sheet-close" aria-label="Close">×</button>
+    <p class="sheet-kicker" id="sheet-kicker">You picked</p>
+    <h3 id="sheet-name">—</h3>
+    <p class="sheet-price" id="sheet-price">KES 0</p>
+    <ul class="sheet-facts" id="sheet-facts"></ul>
+    <label id="sheet-qty-label" class="hide"><span data-i18n="qty">How many</span><select name="qty" id="sheet-qty"></select></label>
+    <label id="sheet-phone-label"><span id="sheet-phone-text">M-Pesa number</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678"></label>
+    <label id="sheet-promo-label"><span data-i18n="promo">Promo code (optional)</span><input name="promo" autocomplete="off" autocapitalize="characters" maxlength="24" placeholder="e.g. WELCOME20"></label>
+    <button class="btn" type="submit" id="sheet-pay"><span id="sheet-pay-text">Pay with M-Pesa</span> <span aria-hidden="true">→</span></button>
+    <div id="sheet-card" class="hide"><label><span data-i18n="cardEmail">Email (for the card receipt)</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label><button type="button" class="btn ghost" id="sheet-card-pay"><span data-i18n="payCard">Pay with card</span></button></div>
+    <button type="button" class="btn ghost hide" id="sheet-trial"></button>
+    <p class="muted small" id="sheet-note"></p>
+    <div class="contact hide" id="sheet-contact"></div>
+  </form>
+</div>
+<!-- Waiting / done -->
+<div class="overlay" id="portal-wait" hidden>
+  <div class="overlay-card">
+    <div class="pulse" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></div>
+    <h2 id="wait-title">Check your phone</h2>
+    <p id="wait-text" class="muted">Sending the M-Pesa prompt…</p>
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+  </div>
+</div>
+<div class="overlay" id="portal-done" hidden><div class="overlay-card" id="done-card"></div></div>
+<div id="adminNote" class="hide" style="position:fixed;left:12px;right:12px;bottom:12px;z-index:60;background:#0f172a;color:#fff;border-radius:12px;padding:12px 16px;font-size:13px;text-align:center">To edit this page, sign in to netops as admin in this browser, then <a href="" style="color:#7dd3ff">reload</a>.</div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const {createApp}=require('../server.cjs');
+test('capabilities and router scope are enforced by the server',async()=>{
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'access-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test',radiusToken:'bridge-token-for-tests-0123456789',radiusPort:0});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));await new Promise(r=>app.bridge.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+app.server.address().port;
+ const as=s=>async(route,method='GET',input)=>{const r=await fetch(origin+'/api/'+route,{method,headers:{'Content-Type':'application/json',Cookie:s.cookie,'X-CSRF-Token':s.csrf},...(input===undefined?{}:{body:JSON.stringify(input)})});return {status:r.status,body:await r.json()};};
+ const login=async(email,password)=>{const r=await fetch(origin+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});return {cookie:r.headers.get('set-cookie').split(';')[0],csrf:(await r.json()).csrf};};
+ try{const o=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'own@example.test',password:'fixture-owner-password-123'})});const owner=as({cookie:o.headers.get('set-cookie').split(';')[0],csrf:(await o.json()).csrf});
+  const r1=(await owner('records/devices','POST',{name:'North',type:'router',driver:'none'})).body,r2=(await owner('records/devices','POST',{name:'South',type:'router',driver:'none'})).body;
+  const plan=(await owner('radius/plans','POST',{name:'Home',service:'pppoe',downloadMbps:5,uploadMbps:2,price:1000,durationValue:30,durationUnit:'days'})).body;
+  const north=(await owner('radius/subscribers','POST',{name:'N1',username:'n1',service:'pppoe',planId:plan.id,routerId:r1.id})).body,south=(await owner('radius/subscribers','POST',{name:'S1',username:'s1',service:'pppoe',planId:plan.id,routerId:r2.id})).body;
+  const m=(await owner('team','POST',{name:'Mgr',email:'mgr@example.test',role:'manager',password:'manager-password-123'})).body;
+  assert.equal((await owner('team/'+m.id+'/access','PUT',{grant:['payments.reverse'],deny:['wallet.adjust'],routerIds:[r1.id]})).status,200);
+  assert.equal((await owner('team/'+m.id+'/access','PUT',{grant:['x.y']})).status,400);
+  const mgr=as(await login('mgr@example.test','manager-password-123'));
+  const sess=await fetch(origin+'/api/session',{headers:{Cookie:(await login('mgr@example.test','manager-password-123')).cookie}}).then(r=>r.json());assert.ok(sess.user.capabilities.includes('payments.reverse'));assert.ok(!sess.user.capabilities.includes('wallet.adjust'));assert.deepEqual(sess.user.routerScope,[r1.id]);
+  const list=(await mgr('radius')).body.subscribers.map(s=>s.username);assert.deepEqual(list,['n1']);
+  assert.equal((await mgr('customers/'+south.id+'/profile')).status,403);assert.equal((await mgr('customers/'+north.id+'/profile')).status,200);
+  assert.equal((await mgr('radius/subscribers/'+south.id+'/payments','POST',{amount:1000,reference:'SCOPE001',method:'cash'})).status,403);
+  assert.equal((await mgr('radius/subscribers','POST',{name:'X',username:'x1',service:'pppoe',planId:plan.id,routerId:r2.id})).status,403);
+  assert.equal((await mgr('radius/subscribers','POST',{name:'X',username:'x1',service:'pppoe',planId:plan.id,routerId:r1.id})).status,201);
+  assert.equal((await mgr('radius/subscribers/'+north.id+'/wallet','POST',{amount:10,reason:'goodwill'})).status,403,'denied permission');
+  const pay=(await mgr('radius/subscribers/'+north.id+'/payments','POST',{amount:1000,reference:'SCOPE002',method:'cash'})).body;
+  assert.equal((await mgr('payments/'+pay.payment.id+'/reverse','POST',{reason:'test grant',confirm:'SCOPE002'})).status,200,'granted permission');
+  assert.equal((await mgr('bulk/preview','POST',{filters:{service:'all'}})).status,403,'scoped bulk must pick a router');
+  assert.equal((await mgr('bulk/preview','POST',{filters:{service:'all',routerId:r1.id}})).status,200);
+  assert.equal((await mgr('payouts/00000000-0000-0000-0000-000000000000/approve','POST',{})).status,403);
+ }finally{await new Promise(r=>app.server.close(r));await new Promise(r=>app.bridge.close(r));app.close?.();fs.rmSync(directory,{recursive:true,force:true});}
+});

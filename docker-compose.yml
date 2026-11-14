@@ -1,0 +1,124 @@
+# Always-on Network Hub for a Linux server. Memory caps fit a 1 GB server with swap; raise them in .env on larger servers. No ports are published: the only way in is the Cloudflare Tunnel.
+# Setup: docs/ALWAYS-ON.md
+services:
+  hub:
+    mem_limit: ${HUB_MEMORY:-300m}
+    build: .
+    restart: unless-stopped
+    environment:
+      NETWORK_PUBLIC_ORIGIN: https://netops.kadenetworks.com
+      # Customer address (captive portal, account pages, payments, short links), e.g. https://my.kadenetworks.com.
+      # Set it in .env only after that hostname is live in Cloudflare; empty = customers use the address above.
+      NETWORK_PORTAL_ORIGIN: ${NETWORK_PORTAL_ORIGIN:-}
+      # GenieACS NBI is reached inside the private Compose network as http://acs:7557 (never published).
+      NETWORK_TRUSTED_HTTP_HOSTS: acs
+      NETWORK_POLL_MS: ${NETWORK_POLL_MS:-30000}
+      # 1 on a rehearsal copy: no automatic messages, deactivation or router changes (set by the migration import).
+      NETWORK_PASSIVE: ${NETWORK_PASSIVE:-}
+      # Internal RADIUS bridge for FreeRADIUS (port 4318 on the private network only). Empty = disabled.
+      NETWORK_RADIUS_TOKEN: ${NETWORK_RADIUS_TOKEN:-}
+      NETWORK_RADIUS_HOST: 0.0.0.0
+      # Same value as FreeRADIUS's: written into a router's "Link a MikroTik" script when you choose netops RADIUS.
+      NETWORK_RADIUS_SECRET: ${RADIUS_SECRET:-}
+      # Phoenix live view (optional, profile "live"). The feed listens on 4319 on the private network only.
+      NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
+      NETWORK_LIVE_URL: ${NETWORK_LIVE_URL:-}
+      NETWORK_LIVE_HOST: 0.0.0.0
+      # Optional: only these roles may open /live (comma list, e.g. admin,manager). Empty = everyone but installers.
+      NETWORK_LIVE_ROLES: ${NETWORK_LIVE_ROLES:-}
+      # Lets the hub allow a customer router's serial on the ACS automatically (shared with the acs container).
+      NETWORK_ACS_PRIVATE_DIR: /acs-private
+      NETWORK_ACS_PUBLIC_URL: ${NETWORK_ACS_PUBLIC_URL:-}
+    volumes:
+      - hub-data:/data
+      - acs-private:/acs-private
+    networks: [internal]
+
+  # Phoenix live NOC view: docker compose --profile live up -d --build live
+  # Reached only through the hub at /live (sign-in checked there); never published, no database.
+  # LIVE_IMAGE=ghcr.io/<owner>/netops-live:latest uses the image CI built (docker compose pull live) instead of
+  # compiling Elixir on the server.
+  live:
+    profiles: [live]
+    mem_limit: ${LIVE_MEMORY:-384m}
+    image: ${LIVE_IMAGE:-netops-live:local}
+    build: ./live
+    restart: unless-stopped
+    environment:
+      # Not ":?" here: Compose checks those for every command, even with this profile off. Phoenix refuses to
+      # start without them instead (config/runtime.exs).
+      NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
+      SECRET_KEY_BASE: ${LIVE_SECRET_KEY_BASE:-}
+      LIVE_API_URL: http://hub:4319/internal/v1
+      PUBLIC_HOST: netops.kadenetworks.com
+      LIVE_ROLES: ${NETWORK_LIVE_ROLES:-}
+    depends_on: [hub]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks: [internal]
+  mongo:
+    mem_limit: ${MONGO_MEMORY:-450m}
+    image: ${MONGO_IMAGE:-mongo:8.2}
+    restart: unless-stopped
+    command: ["mongod", "--auth", "--bind_ip_all", "--wiredTigerCacheSizeGB", "${MONGO_CACHE_GB:-0.25}"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?set in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set in .env}
+    volumes:
+      - mongo-data:/data/db
+    networks: [internal]
+
+  acs:
+    mem_limit: ${ACS_MEMORY:-400m}
+    build:
+      context: .
+      dockerfile: deployment/docker/acs/Dockerfile
+    restart: unless-stopped
+    depends_on: [mongo]
+    environment:
+      MONGO_ROOT_USER: ${MONGO_ROOT_USER:?set in .env}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set in .env}
+      MONGO_APP_USER: ${MONGO_APP_USER:-networkhub-acs}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?set in .env}
+    volumes:
+      - acs-private:/private
+    networks: [internal]
+
+  # Netops RADIUS (replaces ISPman's). Off until you run: docker compose --profile radius up -d
+  # Listens only on the WireGuard address (wg0, 10.99.0.1), so only enrolled MikroTiks can reach it.
+  radius:
+    profiles: [radius]
+    mem_limit: ${RADIUS_MEMORY:-96m}
+    build: deployment/docker/radius
+    restart: unless-stopped
+    depends_on: [hub]
+    environment:
+      RADIUS_SECRET: ${RADIUS_SECRET:-}
+      NETWORK_RADIUS_TOKEN: ${NETWORK_RADIUS_TOKEN:-}
+    ports:
+      - "${RADIUS_BIND:-10.99.0.1}:1812:1812/udp"
+      - "${RADIUS_BIND:-10.99.0.1}:1813:1813/udp"
+    networks: [internal]
+
+  tunnel:
+    mem_limit: ${TUNNEL_MEMORY:-100m}
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on: [hub, acs]
+    # Dashboard-managed tunnel: hostnames are set in Cloudflare Zero Trust, the server only holds the token.
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+    networks: [internal]
+
+volumes:
+  hub-data:
+  mongo-data:
+  acs-private:
+
+networks:
+  internal:

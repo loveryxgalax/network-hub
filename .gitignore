@@ -9,3 +9,5 @@ data/
 *.sqlite*
 coverage/
 deployment/*.local.*
+!.env.docker.example
+deployment/docker/backup.env
