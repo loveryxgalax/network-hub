@@ -27,17 +27,19 @@ test('live view without Phoenix configured says so instead of failing',async()=>
   const r=await fetch(origin+'/live',{headers:{Cookie:cookie}});assert.equal(r.status,503);assert.match(await r.text(),/not running/);assert.equal(app.liveFeed,null);
  }finally{await app.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
-test('live snapshot counts what routers report, plus netops RADIUS sessions only for routers that do not report',()=>{
- const now=Date.now(),{snapshot}=require('../lib/live.cjs');
+test('live snapshot: fresh router rows and netops RADIUS merged once; stale router reports not counted',()=>{
+ const now=Date.now(),{snapshot}=require('../lib/live.cjs'),rep=now-30000;
  const rows={devices:[{id:'r1',name:'CCR',type:'router',ip:'10.0.0.1',lastSeen:now},{id:'r2',name:'HEX',type:'router',lastSeen:now},{id:'r3',name:'RBX',type:'router'}],subscribers:[],alerts:[],subscriberPayments:[]};
- const settings={'onlineSeries:r1':{points:[[now-60000,5,40]]},'onlineSeries:r3':{points:[[now-3*36e5,9,9]]},
-  'customerDiscovery:r1':{observations:[{evidence:{ppp:{name:'kithwa',ip:'10.28.0.50',uptime:'1h00m00s'.replace('1h00m00s','01:00:00'),tx:5e9,rx:1e8,observedAt:now-30000}}},{evidence:{hotspot:{name:'KNE-OLD',tx:9e9,rx:0,observedAt:now-36e5}}}]}};
- const sessions=[{username:'a',service:'pppoe',nasName:'10.0.0.1',updatedAt:now,startedAt:now},{username:'b',service:'hotspot',nasName:'HEX',updatedAt:now,startedAt:now}];
+ const settings={'customerDiscovery:r1':{lastReport:rep,observations:[{evidence:{ppp:{name:'kithwa',ip:'10.28.0.50',uptime:'01:00:00',tx:5e9,rx:1e8,observedAt:rep}}},{evidence:{ppp:{name:'a',ip:'10.28.0.51',uptime:'00:10:00',tx:1e6,rx:1e5,observedAt:rep}}},{evidence:{hotspot:{name:'KNE-OLD',tx:9e9,rx:0,observedAt:now-36e5}}}]},
+  'customerDiscovery:r3':{lastReport:now-3*36e5,observations:[{evidence:{ppp:{name:'old1',observedAt:now-3*36e5}}}]}};
+ // 'a' is reported by CCR and by netops RADIUS (NAS address 10.0.0.1): one connection. 'b' only RADIUS on HEX.
+ const sessions=[{username:'a',service:'pppoe',nas:'10.0.0.1',updatedAt:now,startedAt:now-600000},{username:'b',service:'hotspot',nasName:'HEX',updatedAt:now,startedAt:now}];
  const store={list:k=>rows[k]||[],setting:k=>settings[k],sessionsSince:()=>sessions};
  const s=snapshot(store,now);
- // CCR: 5 PPPoE + 40 hotspot reported (its RADIUS session is not counted twice); HEX: 1 RADIUS session; RBX: report too old.
- assert.deepEqual({total:s.online.total,hotspot:s.online.hotspot,pppoe:s.online.pppoe},{total:46,hotspot:41,pppoe:5});
- assert.deepEqual(s.online.byRouter.map(r=>r.name),['CCR','HEX']);
- // Top list: CCR's own session list (the stale entry is left out) plus HEX's netops RADIUS session; CCR's RADIUS session is not repeated.
- assert.deepEqual(s.online.top.map(x=>[x.username,x.router,x.down]),[['kithwa','CCR',5e9],['b','HEX',0]]);assert.equal(s.online.top[0].since,now-3600000);
+ assert.deepEqual({total:s.online.total,hotspot:s.online.hotspot,pppoe:s.online.pppoe},{total:3,hotspot:1,pppoe:2});
+ assert.deepEqual(s.online.byRouter.map(r=>[r.name,r.hotspot,r.pppoe]),[['CCR',0,2],['HEX',1,0]]);
+ assert.deepEqual(s.online.staleRouters,['RBX'],'a router whose report is old is named, not counted');
+ assert.equal(s.online.byStatus.unmatched,3,'accounts not in netops are counted and labelled');
+ // Top list: the same three connections; the old hotspot row and the stale router are left out; 'a' is listed once.
+ assert.deepEqual(s.online.top.map(x=>[x.username,x.router,x.down]),[['kithwa','CCR',5e9],['a','CCR',1e6],['b','HEX',0]]);assert.equal(s.online.top[0].since,rep-3600000);
 });

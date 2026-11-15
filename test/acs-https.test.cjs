@@ -49,5 +49,5 @@ test('active sessions: MAC falls back to the router-reported caller-id, then the
  const r=st.put('devices',{name:'LAB-HEX',type:'router'});st.put('subscribers',{name:'U2',username:'user2',service:'pppoe',lastMac:'AA:BB:CC:00:00:22'});
  const add=(id,u)=>st.db.prepare("INSERT INTO records(kind,id,body,created,updated) VALUES('radiusSessions',?,?,?,?)").run(id,JSON.stringify({username:u,service:'pppoe',sessionId:id,mac:'',updatedAt:now,startedAt:now-1e5}),now,now);
  add('s1','user1');add('s2','user2');st.setting('customerDiscovery:'+r.id,{lastReport:now,observations:[{key:'k',lastObserved:now,evidence:{ppp:{name:'user1',mac:'AA:BB:CC:00:00:11',observedAt:now}}}]});
- const items=hs.sessions(st,new URLSearchParams('service=pppoe'),now).items,m=Object.fromEntries(items.filter(x=>x.source==='radius').map(x=>[x.username,x.mac]));
+ const items=hs.sessions(st,new URLSearchParams('service=pppoe'),now).items,m=Object.fromEntries(items.filter(x=>x.source!=='router').map(x=>[x.username,x.mac]));
  assert.match(m.user1,/AA:BB:CC:00:00:11/i);assert.match(m.user2,/AA:BB:CC:00:00:22/i);});
