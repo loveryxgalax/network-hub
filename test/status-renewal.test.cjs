@@ -7,7 +7,9 @@ test('all status designs preserve encoded hotspot context for renewal',()=>{
   const html=page({...DEFAULTS,design},'https://netops.example',false);
   const href=html.match(/class="btn buy" href="([^"]+)"/)[1].replaceAll('&amp;','&');
   const values={'mac-esc':'EA%3A6A%3A55%3AD7%3AE4%3AEF','ip-esc':'10.5.3.245','link-login-only-esc':encodeURIComponent('http://wifi.kade/login')};
-  const url=new URL(href.replace(/\$\(([^)]+)\)/g,(_,key)=>values[key]));
+  // Buy more stays on the router's own WiFi page (buy.html next to status.html), never the customer address.
+  assert.match(href,/^\/buy\.html\?/);
+  const url=new URL(href.replace(/\$\(([^)]+)\)/g,(_,key)=>values[key]),'http://wifi.kadenetworks.com');assert.equal(url.host,'wifi.kadenetworks.com');
   assert.equal(url.searchParams.get('mac'),'EA:6A:55:D7:E4:EF');
   assert.equal(url.searchParams.get('login'),'http://wifi.kade/login');
   assert.equal(url.searchParams.get('ip'),'10.5.3.245');

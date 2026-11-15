@@ -11,7 +11,7 @@ stamp=$(date -u +%Y%m%dT%H%M%SZ); work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
 mkdir "$work/b"
 # Consistent SQLite copy while the hub keeps running (includes WAL content).
 docker compose exec -T hub node -e "
-const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('/data/network.sqlite');d.exec(\"VACUUM INTO '/tmp/backup.sqlite'\");" 
+const fs=require('node:fs');try{fs.rmSync('/tmp/backup.sqlite');}catch{}const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('/data/network.sqlite');d.exec(\"VACUUM INTO '/tmp/backup.sqlite'\");const c=new DatabaseSync('/tmp/backup.sqlite',{readOnly:true});const r=c.prepare('PRAGMA integrity_check').get().integrity_check;if(r!=='ok'){console.error('backup copy failed integrity check: '+r);process.exit(1);}" 
 docker compose cp hub:/tmp/backup.sqlite "$work/b/network.sqlite"
 docker compose exec -T hub rm -f /tmp/backup.sqlite
 docker compose cp hub:/data/master.key "$work/b/master.key"

@@ -17,6 +17,6 @@ test('Connect now on an account: no password for its own device, password asked 
 });
 test('router logout page: disconnected message with Connect again and Buy a package, and Disconnect asks first',()=>{
  const html=status.logoutPage({...status.DEFAULTS,brandName:'Kade Networks'},'https://netops.example');
- assert.match(html,/You are disconnected/);assert.match(html,/href="\$\(link-login-only\)"/);assert.match(html,/https:\/\/netops\.example\/portal\//);
+ assert.match(html,/You are disconnected/);assert.match(html,/href="\$\(link-login-only\)"/);assert.match(html,/href="\/buy\.html\?mac=\$\(mac-esc\)/,'Buy a package stays on the router WiFi page');assert.doesNotMatch(html,/netops\.example\/portal/);
  assert.match(status.page({...status.DEFAULTS,brandName:'K'},'https://n',false),/confirm\('Disconnect this device\?/);
 });
