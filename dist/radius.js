@@ -19,8 +19,10 @@ const expiryText=s=>s.expiresAt==null?'No expiry':stamp(s.expiresAt);
 const stateBadge=s=>`<span class="status ${s.state==='active'?'online':s.state==='expired'||s.state==='unpaid'?'warning':'offline'}" ${s.deactivatedReason?`title="${h(s.deactivatedReason)}"`:''}>${{active:'Active',expired:'Expired',unpaid:'Never paid',suspended:'Deactivated'}[s.state]||h(s.state)}</span>${s.online&&(s.state==='expired'||s.state==='unpaid')?'<small>online while expired</small>':''}${s.installFeeDue>0?`<small>install fee due KSh ${s.installFeeDue}</small>`:''}`;
 const bytesShort=n=>{const u=['B','KB','MB','GB','TB'];let i=0;n=Number(n)||0;while(n>=1024&&i<u.length-1){n/=1024;i++;}return (n>=10||i===0?Math.round(n):n.toFixed(1))+' '+u[i];};
 function radiusForm(title,description,fields,submitLabel,onSubmit){
+ // A form opened from a customer profile button (Renew, Record payment, Edit) refreshes that profile after saving.
+ const after=window.__pfAfterSave&&Date.now()-window.__pfAfterSave.at<10000?window.__pfAfterSave:null;window.__pfAfterSave=null;
  $('#editor-title').textContent=title;$('#editor-description').textContent=description;$('#editor-fields').innerHTML=fields;$('#editor-error').textContent='';$('#editor-form [type=submit]').textContent=submitLabel;
- $('#editor-form').onsubmit=async event=>{event.preventDefault();const form=event.currentTarget,button=$('[type=submit]',form);button.disabled=true;try{await onSubmit(Object.fromEntries(new FormData(form)));$('#editor').close();await loadRadius();}catch(error){$('#editor-error').textContent=error.message;}finally{button.disabled=false;}};
+ $('#editor-form').onsubmit=async event=>{event.preventDefault();const form=event.currentTarget,button=$('[type=submit]',form);if(form.dataset.busy)return;form.dataset.busy='1';button.disabled=true;$('#editor-error').textContent='';let ok=false;try{await onSubmit(Object.fromEntries(new FormData(form)));ok=true;}catch(error){$('#editor-error').textContent=error.message;}finally{delete form.dataset.busy;button.disabled=false;}if(ok){$('#editor').close();try{await loadRadius();}catch{}if(after)window.refreshProfile?.(after.id);}};
  $('#editor').showModal();
 }
 const radiusField=(label,input)=>`<label>${label}${input}</label>`;
