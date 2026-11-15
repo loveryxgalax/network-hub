@@ -41,6 +41,15 @@ test('service separation by page, wrong-domain accounts, direct links and router
   st.setting('pagesHash:'+lab.id,'x');jobs.setPages('https://my.example.test',()=>'x');st.put('routerJobs',{routerId:lab.id,type:'push-design-auto',status:'succeeded',params:{},createdAt:1});
   r=await fetch(o+'/portal/'+q+'&renew=1',{headers:{Host:'my.example.test'},redirect:'manual'});assert.equal(r.status,302);assert.match(r.headers.get('location'),/^http:\/\/wifi\.example\.test\/buy\.html\?/);
   r=await fetch(o+'/portal/?mac=AA:BB:CC:00:00:01&nas=LAB-HEX&login='+encodeURIComponent('http://evil.example/x'),{headers:{Host:'my.example.test'},redirect:'manual'});assert.match(r.headers.get('location'),/^http:\/\/wifi\.example\.test\/login$/);
+  // Hotspot self-service: any central link goes to the router's own account page; staff View portal gets a signed preview.
+  r=await fetch(o+'/portal/account.html?t='+encodeURIComponent(t),{headers:{Host:'my.example.test'},redirect:'manual'});assert.equal(r.status,302);assert.match(r.headers.get('location'),/^http:\/\/wifi\.example\.test\/account\.html\?t=/);
+  const sp=require('../lib/portalmode.cjs').pass(st,'staff');page=await (await fetch(o+'/portal/account.html?t='+encodeURIComponent(t)+'&sp='+sp,{headers:{Host:'my.example.test'}})).text();assert.match(page,/name="portal-pass"/);
+  assert.equal((await fetch(o+'/portal/api/me?t='+encodeURIComponent(t),{headers:{...MY,'X-Portal-Pass':sp}})).status,200,'staff preview loads the hotspot account');
+  const me=await fetch(o+'/portal/api/me?t='+encodeURIComponent(t),{headers:WIFI});assert.equal(me.status,200,'the customer on the WiFi page');assert.equal((await me.json()).account,'g55g4hva');
+  assert.equal((await post('me/tv',{t,mac:'2C:FE:E2:F6:01:E2',name:'TV'},WIFI)).status,200,'TV registration from the WiFi page');
+  const acc=await (await fetch(o+'/portal/api/router/account.html',{headers:{Host:'my.example.test'}})).text();assert.match(acc,/portal-base" content="https:\/\/my\.example\.test"/);assert.match(acc,/src="https:\/\/my\.example\.test\/portal\/account\.js/);
+  // PPPoE account page stays on the customer address.
+  const pt=require('../lib/selfservice.cjs').token(st,st.list('subscribers').find(x=>x.username==='user2'));assert.equal((await fetch(o+'/portal/account.html?t='+encodeURIComponent(pt),{headers:{Host:'my.example.test'},redirect:'manual'})).status,200);
   // The router pages: login.html carries the portal and the router's CHAP values; buy.html is plain.
   const login=await (await fetch(o+'/portal/api/router/login.html',{headers:{Host:'my.example.test'}})).text();
   assert.match(login,/name="portal-mode" content="hotspot"/);assert.match(login,/\$\(chap-challenge\)/);assert.match(login,/src="https:\/\/my\.example\.test\/portal\/portal\.js/);
