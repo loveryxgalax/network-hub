@@ -864,3 +864,6 @@ body[data-sit=wifi-active] #hotspotCard.sit-collapsed{display:none}
 *,*::before,*::after,*::placeholder{text-transform:none!important}
 
 .account-ban{padding:18px;border:1px solid #dc2626;border-radius:14px;background:#fff1f2;color:#881337;line-height:1.6}.account-ban h3{margin:0 0 8px}
+/* One service per address: the router's WiFi page shows the hotspot, my.kadenetworks.com shows home internet (PPPoE). */
+html[data-mode="pppoe"] #packagesCol,html[data-mode="pppoe"] #detect,html[data-mode="pppoe"] #findBtn,html[data-mode="pppoe"] #howto,html[data-mode="pppoe"] [data-otg-tile]{display:none!important}
+html[data-mode="hotspot"] #pppoeWrap{display:none!important}

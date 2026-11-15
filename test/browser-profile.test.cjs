@@ -12,8 +12,10 @@ test('customer profile, session history, router jobs and Online now in the brows
  const {createApp}=require('../server.cjs'),radius=require('../lib/radius.cjs'),jobs=require('../lib/jobs.cjs');
  const app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'bp-')),collector:false});
  await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const o='http://127.0.0.1:'+app.server.address().port;
- const browser=await chromium.launch();
- try{const owner=await fetch(o+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'bp@example.test',password:'fixture-owner-password-123'})});
+ // A browser that cannot start (e.g. a sandbox forbids its sockets) fails the test and still closes the app, so the run
+ // never hangs. It is reported as a failure, not a pass or a skip.
+ let browser=null;
+ try{browser=await chromium.launch();const owner=await fetch(o+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'bp@example.test',password:'fixture-owner-password-123'})});
   const cookie=owner.headers.get('set-cookie').split(';')[0],st=app.store,now=Date.now(),PW='Fixture-pw-4420';
   const r=st.put('devices',{name:'LAB-HEX',type:'router',ip:'10.5.0.1'});jobs.enroll(st,r.id);
   const plan=st.put('plans',radius.plan({name:'Lab Day',service:'hotspot',downloadMbps:5,uploadMbps:5,price:1,durationValue:1,durationUnit:'days'}));
@@ -61,5 +63,5 @@ test('customer profile, session history, router jobs and Online now in the brows
   assert.ok(d?.online,'overview has the reconciled online block');assert.equal(d.online.byService.hotspot+d.online.byService.pppoe,d.online.total);assert.equal(d.online.total,1,'only the live session of qa-active');
   assert.match(await pg.locator('.kd2-kpi, [data-kpi="online"], body').first().innerText(),/1 hotspot · 0 PPPoE/);
   assert.deepEqual(errors,[]);
- }finally{await browser.close();app.server.close();}
+ }finally{try{await browser?.close();}catch{}app.server.close();}
 });

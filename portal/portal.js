@@ -4,12 +4,18 @@
 // dst, chapId, chapChallenge, error in the address; after a payment the customer is logged in through the router.
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const params=new URLSearchParams(location.search);
+// Where this page runs: on the router's own WiFi page (wifi.kadenetworks.com, mode "hotspot", talking to the central
+// backend at BASE) or on the customer address (my.kadenetworks.com, mode "pppoe"). The server decides what each may do.
+const META=n=>document.querySelector('meta[name="'+n+'"]')?.content||'',BASE=META('portal-base'),PASS=META('portal-pass');let MODE=META('portal-mode');
+if(MODE)document.documentElement.dataset.mode=MODE;
+// Server-relative media (/portal/media/…, /img/…) must come from the backend when this page runs on the router.
+const abs=u=>typeof u==='string'&&u.startsWith('/')&&!u.startsWith('//')?BASE+u:u;
 const ADM=!!params.get('viewas');
 const router={login:params.get('login')||'',dst:params.get('dst')||'',chapId:params.get('chapId')||'',chapChallenge:params.get('chapChallenge')||'',mac:params.get('mac')||''};
 // Live "on the portal now" count for the netops dashboard: the view shown, pinged every 10 s while the page is visible.
 const presence={page:'Packages',service:'hotspot',tab:Math.random().toString(36).slice(2,10),timer:null};
 function here(page,service){if(page)presence.page=page;if(service)presence.service=service;if(params.get('admin')||params.get('frame')||ADM)return;
- fetch('/portal/api/presence',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:presence.page,service:presence.service,mac:router.mac,nas:params.get('nas')||'',tab:presence.tab}),keepalive:true}).catch(()=>{});
+ fetch(BASE+'/portal/api/presence',{method:'POST',headers:{'Content-Type':'application/json',...(PASS?{'X-Portal-Pass':PASS}:{})},body:JSON.stringify({page:presence.page,service:presence.service,mac:router.mac,nas:params.get('nas')||'',tab:presence.tab}),keepalive:true}).catch(()=>{});
  clearTimeout(presence.timer);presence.timer=setTimeout(()=>{if(!document.hidden)here();},10000);}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)here();});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -132,7 +138,8 @@ const DTK='portal-dt',getDT=()=>{if(ADM)return params.get('pv')||'';try{return l
 async function call(path,options={}){
  const mac=/^(session|active|usage)\?mac=/.test(path)?'&dt='+encodeURIComponent(getDT()):'';
  let opt=options;if(opt.body&&/^(connect-now|connect-account|redeem-points|code-login|account)$/.test(path)){try{const b=JSON.parse(opt.body);b.dt=getDT();if(path==='code-login'&&params.get('nas'))b.nas=params.get('nas');opt={...opt,body:JSON.stringify(b)};}catch{}}
- const r=await fetch('/portal/api/'+path+mac,{...opt,headers:{'Content-Type':'application/json'}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Something went wrong. Try again.');
+ const r=await fetch(BASE+'/portal/api/'+path+mac,{...opt,headers:{'Content-Type':'application/json',...(PASS?{'X-Portal-Pass':PASS}:{})}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Something went wrong. Try again.');
+ if(/^config/.test(path)&&data.mode&&data.mode!=='any'&&!MODE){MODE=data.mode;document.documentElement.dataset.mode=MODE;}
  if(data&&data.dt){try{localStorage.setItem(DTK,data.dt);}catch{}}return data;}
 function inkFor(hex){const n=parseInt(hex.replace('#',''),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;return (0.299*r+0.587*g+0.114*b)>170?'#0f172a':'#ffffff';}
 const digits=s=>String(s||'').replace(/\D/g,''),intl=s=>{const d=digits(s);return d.startsWith('0')?'254'+d.slice(1):d;};
@@ -149,7 +156,7 @@ function render(){
  $$('[data-bind=brandName]').forEach(e=>e.textContent=CFG.brandName);$$('[data-bind=intro]').forEach(e=>e.textContent=intro);
  $$('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));$$('[data-i18n-ph]').forEach(e=>e.placeholder=t(e.dataset.i18nPh));
  $$('[data-i18n-theme=eyebrow]').forEach(e=>{e.textContent=tc('e');e.classList.toggle('hide',!tc('e'));});$$('[data-i18n-theme=accountTitle]').forEach(e=>e.textContent=tc('a'));$$('[data-headline]').forEach(e=>e.textContent=tc('h')||CFG.brandName);
- $$('[data-logo]').forEach(e=>e.innerHTML=`<img src="${esc(CFG.logoUrl||'/img/kade-mark.png')}" alt="">`);
+ $$('[data-logo]').forEach(e=>e.innerHTML=`<img src="${esc(abs(CFG.logoUrl)||BASE+'/img/kade-mark.png')}" alt="">`);
  // Bento: the logo is exactly as tall as the brand name + tagline beside it, on any screen and in any language.
  {const tb=document.querySelector('.tile-brand'),tx=tb&&tb.querySelector('.tb-text'),lg=tb&&tb.querySelector('.logo');
   if(tx&&lg&&!tb.dataset.sized){tb.dataset.sized='1';const fit=()=>{const h=Math.round(tx.getBoundingClientRect().height);if(h>0){const v=Math.max(40,Math.min(h,120))+'px';lg.style.width=v;lg.style.height=v;}};
@@ -312,8 +319,8 @@ function renderExpired(){const on=params.get('expired')==='1';let b=$('#expired-
 async function hotspotGo(r){const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}
 function renderEngage(){let box=$('#engage');if(!engage.ads.length&&!engage.quiz){if(box)box.remove();return;}
  if(!box){box=document.createElement('div');box.id='engage';box.className='engage';$('#packagesCol').append(box);}
- const ad=a=>`<div class="card ad-card" data-ad="${esc(a.id)}"><small class="ad-label">${esc(t('adLabel'))}${a.advertiser?' · '+esc(a.advertiser):''}</small>${a.imageUrl?`<img src="${esc(a.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:''}<b>${esc(a.title)}</b>${a.text?`<p>${esc(a.text)}</p>`:''}<div class="ad-actions">${a.hasLink?`<a class="btn ghost" href="/portal/api/ads/${esc(a.id)}/click" target="_blank" rel="noopener sponsored">${esc(t('adOpen'))}</a>`:''}${a.earn?`<button type="button" class="btn" data-ad-earn="${esc(a.id)}">${esc(t('adEarn',{n:a.earn.seconds,m:a.earn.minutes}))}</button>`:''}</div></div>`;
- const q=engage.quiz;box.innerHTML=engage.ads.map(ad).join('')+(q?`<form class="card quiz-card" id="quiz-form"><div class="section-head"><h2>${esc(t('quizTitle'))}</h2><small>${esc(t('quizFor',{m:q.minutes}))}</small></div><p><b>${esc(q.question)}</b></p><div class="${q.images?.some(Boolean)?'quiz-pics':''}">${q.options.map((o,i)=>`<label class="quiz-opt"><input type="radio" name="choice" value="${i}" required>${q.images?.[i]?`<img src="${esc(q.images[i])}" alt="" loading="lazy" referrerpolicy="no-referrer">`:''} <span>${esc(o)}</span></label>`).join('')}</div><button class="btn" type="submit">${esc(t('quizBtn'))}</button><p class="msg" id="quiz-msg"></p></form>`:'');
+ const ad=a=>`<div class="card ad-card" data-ad="${esc(a.id)}"><small class="ad-label">${esc(t('adLabel'))}${a.advertiser?' · '+esc(a.advertiser):''}</small>${a.imageUrl?`<img src="${esc(abs(a.imageUrl))}" alt="" loading="lazy" referrerpolicy="no-referrer">`:''}<b>${esc(a.title)}</b>${a.text?`<p>${esc(a.text)}</p>`:''}<div class="ad-actions">${a.hasLink?`<a class="btn ghost" href="${BASE}/portal/api/ads/${esc(a.id)}/click" target="_blank" rel="noopener sponsored">${esc(t('adOpen'))}</a>`:''}${a.earn?`<button type="button" class="btn" data-ad-earn="${esc(a.id)}">${esc(t('adEarn',{n:a.earn.seconds,m:a.earn.minutes}))}</button>`:''}</div></div>`;
+ const q=engage.quiz;box.innerHTML=engage.ads.map(ad).join('')+(q?`<form class="card quiz-card" id="quiz-form"><div class="section-head"><h2>${esc(t('quizTitle'))}</h2><small>${esc(t('quizFor',{m:q.minutes}))}</small></div><p><b>${esc(q.question)}</b></p><div class="${q.images?.some(Boolean)?'quiz-pics':''}">${q.options.map((o,i)=>`<label class="quiz-opt"><input type="radio" name="choice" value="${i}" required>${q.images?.[i]?`<img src="${esc(abs(q.images[i]))}" alt="" loading="lazy" referrerpolicy="no-referrer">`:''} <span>${esc(o)}</span></label>`).join('')}</div><button class="btn" type="submit">${esc(t('quizBtn'))}</button><p class="msg" id="quiz-msg"></p></form>`:'');
  for(const el of box.querySelectorAll('[data-ad]'))call('ads/'+el.dataset.ad+'/view',{method:'POST',body:JSON.stringify({mac:router.mac||''})}).then(r=>{el.dataset.ticket=r.ticket;}).catch(()=>{});
  for(const b of box.querySelectorAll('[data-ad-earn]'))b.onclick=()=>{const a=engage.ads.find(x=>x.id===b.dataset.adEarn),card=b.closest('[data-ad]');if(!router.login||!router.mac){alertBox(t('freeNeedWifi'),true);return;}
   b.disabled=true;let left=a.earn.seconds;card.classList.add('watching');card.scrollIntoView({block:'center',behavior:'smooth'});b.textContent=t('adWait',{n:left});
