@@ -1025,6 +1025,7 @@ function createApp(options={}){
   }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'RADIUS bridge error'});if(!cause.status)console.error(cause.name+': RADIUS bridge failed');}
  }):null;
  const walletTimer=setInterval(()=>{try{portal.expirePending(store);}catch{}},60000);walletTimer.unref();
+ try{radius.attributeAliases(store);}catch{}
  server.on('listening',()=>{if(options.collector!==false){timer=setInterval(()=>collect().catch(()=>{}),pollMs);timer.unref();const t2=setInterval(()=>{if(process.env.NETWORK_PASSIVE==='1')return;acs.list(store).then(async r=>{const c=require('./lib/cpelink.cjs');c.verify(store,r);await c.autoRegister(store,r,acs);try{await c.fibre(store,r,acs);}catch{}try{acs.recordHosts(store,r);require('./lib/insights.cjs').recordSignal(store,r);await acs.refreshHosts(store,r);}catch{}}).catch(()=>{});},120000);t2.unref();collect().catch(()=>{});}});
  return {server,bridge,liveFeed,store,poll,close:async()=>{closing=true;clearInterval(timer);clearInterval(walletTimer);for(const sock of liveSockets)sock.destroy();await new Promise(resolve=>server.close(resolve));if(bridge?.listening)await new Promise(resolve=>bridge.close(resolve));if(liveFeed?.listening)await new Promise(resolve=>liveFeed.close(resolve));while(busy.size)await new Promise(resolve=>setTimeout(resolve,50));store.close();}};
 }
