@@ -537,6 +537,7 @@ function createApp(options={}){
   const restoreRoute=route.match(/^\/api\/deleted\/([a-f0-9-]{36})\/restore$/);
   if(restoreRoute&&method==='POST'){role(user,['admin','manager']);const s=trash.restore(store,restoreRoute[1],user);try{statics.sync(store,jobs,radius.stateOf,user);}catch{}store.audit(user,'Restored deleted subscriber '+s.username,s.id);return json(res,200,s);}
   if(route==='/api/system-logs'&&method==='GET'){if(user.role==='installer')throw error(403,'Not allowed');const q=k=>url.searchParams.get(k)||'';return json(res,200,syslog.list(store,{level:q('level'),category:q('category'),status:q('status'),q:q('q')}));}
+  if(route==='/api/system-logs/delete'&&method==='POST'){role(user,['admin','manager']);const input=await body(req,65536),r=syslog.remove(store,input.ids,user);store.audit(user,'Deleted '+r.deleted+' system log entr'+(r.deleted===1?'y':'ies'),'system-logs');return json(res,200,r);}
   if(route==='/api/system-logs/acknowledge'&&method==='POST'){role(user,['admin','manager','operator']);const input=await body(req,65536),r=syslog.acknowledge(store,input.ids,user);store.audit(user,'Acknowledged '+r.acknowledged+' system log entr'+(r.acknowledged===1?'y':'ies'),'system-logs');return json(res,200,r);}
   if(route==='/api/portal-now'&&method==='GET'){if(user.role==='installer')throw error(403,'Not allowed');return json(res,200,presence.now());}
   // The dashboard's business strip: who this workspace is and how to reach it. Money figures are shown to admins only.
