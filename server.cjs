@@ -217,6 +217,7 @@ function createApp(options={}){
   if(route==='/api/pppoe'&&method==='GET'){if(user.role==='installer')throw error(403,'PPPoE monitoring is not available to field installers');return json(res,200,customers.pppoe(store,url.searchParams));}
   if(route==='/api/fair-usage'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,require('./lib/fairuse.cjs').summary(store));}
   if(route==='/api/trends'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,require('./lib/trends.cjs').build(store,{days:url.searchParams.get('days')}));}
+  if(route==='/api/dashboard/extra'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,require('./lib/dashextra.cjs').build(store,url.searchParams.get('sms')||'today'));}
   if(route==='/api/overview/heatmap'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');const days=[7,30,90].includes(Number(url.searchParams.get('days')))?Number(url.searchParams.get('days')):30;return json(res,200,require('./lib/rollup.cjs').heatmap(store,{days,routerId:url.searchParams.get('routerId')||''}));}
   // Small and cheap: the dashboard asks every few seconds so a new or cleared alert shows up almost at once.
   if(route==='/api/alerts/live'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');
