@@ -53,7 +53,7 @@ function createApp(options={}){
  const custOrigin=portalUrl?.origin||publicUrl?.origin||'',custHost=portalUrl?.hostname||publicUrl?.hostname||'';
  if(custOrigin)require('./lib/shortlink.cjs').setOrigin(custOrigin,[publicUrl?.origin].filter(o=>o&&o!==custOrigin));
  if(!passive){try{require('./lib/jobs.cjs').autoNeighbor(store);}catch{}}
- {const jb=require('./lib/jobs.cjs');jb.setRadiusSecret(options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'');if(custOrigin)jb.setPages(custOrigin);}
+ {const jb=require('./lib/jobs.cjs');jb.setRadiusSecret(options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'');if(custOrigin)jb.setPages(custOrigin,()=>{const c=statusPage.get(store);return crypto.createHash('sha256').update(portal.hotspotLoginPage(custOrigin)+'\0'+statusPage.page(c,custOrigin,false)+'\0'+statusPage.logoutPage(c,custOrigin)).digest('hex').slice(0,16);});}
  // The RADIUS shared secret (same as FreeRADIUS's RADIUS_SECRET), only to write it into a router's link script.
  const radiusSecret=options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'';
  if(publicUrl&&(publicUrl.protocol!=='https:'||publicUrl.username||publicUrl.password||publicUrl.pathname!=='/'||publicUrl.search||publicUrl.hash))throw new Error('NETWORK_PUBLIC_ORIGIN must be an HTTPS origin');

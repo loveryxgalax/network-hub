@@ -35,6 +35,8 @@ netops (`https://netops.kadenetworks.com`) is the owner's own replacement for IS
 
 ## 2. Hard rules (never break these)
 
+**Deploy (owner, 2026-11-15):** always deploy automatically. Finish, test, merge into `claude/always-online-hosting` and push without asking. Router jobs are still never queued automatically by code: staff press the button (e.g. Router jobs → Update WiFi pages).
+
 ### Equipment and network
 
 1. **Production routers are off limits.** These are the CCR2004, the hEX S (Ikutha) and the RB951 (KYANDULA).
@@ -245,7 +247,8 @@ CI on the PR re-runs the tests. If it goes red, fix it immediately: the branch d
 As of **2026-11-15**:
 
 - **Tests:** 294 passing locally on branch `claude/netops-five-fixes` (the browser test needs Playwright and is skipped in CI).
-- **Not live yet:** the five fixes in `docs/FIXES-2026-11-15.md` are on `claude/netops-five-fixes`, waiting for the owner's go-ahead to merge into `claude/always-online-hosting`. Take the backup in that doc first.
+- **Deployed 2026-11-15:** the five fixes in `docs/FIXES-2026-11-15.md` plus the WiFi-pages indicator, merged into `claude/always-online-hosting`.
+- **WiFi pages:** Router jobs shows per router whether the login/status/Disconnect pages are current; "Update WiFi pages" queues the page push (only offered on routers that already run netops pages).
 
 ### Recently finished
 
@@ -301,7 +304,7 @@ As of **2026-11-15**:
 
 ## 10. Session log (newest first; one line per session)
 
-- 2026-11-15: five confirmed issues fixed on branch `claude/netops-five-fixes` (history Online, Online now scope, hotspot server count, job password exposure, profile refresh after Extend); 294 tests; not deployed, awaiting the owner; two-device test plan in `docs/FIXES-2026-11-15.md`.
+- 2026-11-15: five confirmed issues fixed (history Online, Online now scope, hotspot server count, job password exposure, profile refresh after Extend); router Disconnect page was MikroTik's default because the netops logout.html was never pushed: added WiFi-pages out-of-date indicator and Update button; owner made deploys automatic; deployed.
 - 2026-11-13 (later): borrowed portal and profile features added, then reverted at the owner's request (commit 4044d52).
 - 2026-11-13: merged with another session's `my.kadenetworks.com`/ban/wallet-checkout work; split `netops.kadenetworks.com` into `my.kadenetworks.com` (customer traffic, Cloudflare Tunnel + server env var) and `wifi.kadenetworks.com` (LAB-HEX hotspot captive portal only), verified with real authenticated sessions, LAB-HEX only; added masked "Recent payments" and a 7-day "This week" usage chart to the customer self-service page (`lib/selfservice.cjs`, `portal/account.js/.css/.html`), exported `dailyUse()` from `lib/insights.cjs`, new test added. 288 tests pass after merge. No pricing/loyalty settings changed, no other production router touched.
 - 2026-11-12: customer address split: `NETWORK_PORTAL_ORIGIN` (e.g. https://my.kadenetworks.com) serves only the portal (also at /), portal API, short links, img/fonts; admin/API/live 404 there; customer links, router pages, payment returns, upsell/insight messages use it; netops still serves the portal for old links; push-design jobs add the customer host to the walled garden; HSTS. Steps for the owner in `docs/CUSTOMER-DOMAINS.md` (Cloudflare tunnel hostname, .env, LAB-HEX first, router dns-name wifi.kadenetworks.com). Also: one-tap hotspot Connect, router logout page, CSP-safe Close buttons.
