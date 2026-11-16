@@ -81,3 +81,23 @@ test('4. a removed TV can no longer log in with its old device secret or its MAC
   assert.equal(hm.connectNow(st,{mac:PHONE,dt:phoneDt,...chap}).username,s.username,'the phone keeps its access');
   assert.equal(st.sessionsOf(TV.toLowerCase(),0).length,1,'TV history kept');
  }finally{done();}});
+test('3b. password change is atomic: if revoking sessions fails, the old password and sessions stay exactly as they were',()=>{
+ const {st,done}=store();try{const s=customer(st),t=self.token(st,s),dt=hm.trust(st,s.username,'AA:00:00:00:00:0A');
+  const put=st.put.bind(st);let armed=true;st.put=(kind,...rest)=>{if(armed&&kind==='subscribers'){armed=false;throw new Error('write failed');}return put(kind,...rest);};
+  try{assert.throws(()=>radius.setPassword(st,s.id,'new-pass-9'),/write failed/);}finally{st.put=put;}
+  assert.equal(radius.password(st,s.id),'old-pass-1','password not changed');
+  assert.ok(self.subscriberOf(st,t),'old session still valid (nothing half-applied)');assert.equal(hm.active(st,'AA:00:00:00:00:0A',Date.now(),dt).found,true);
+  radius.setPassword(st,s.id,'new-pass-9');assert.equal(radius.password(st,s.id),'new-pass-9');assert.equal(self.subscriberOf(st,t),null,'retry applies both together');
+ }finally{done();}});
+test('2b. retrying a logout of an already-invalid session changes nothing (legacy and current links)',()=>{
+ const {st,done}=store();try{const s=customer(st);
+  const legacyBody=Buffer.from(JSON.stringify({s:s.id,e:Date.now()+864e5})).toString('base64url'),legacy=legacyBody+'.'+crypto.createHmac('sha256',self.key(st)).update(legacyBody).digest('base64url').slice(0,32);
+  self.logout(st,legacy);const fresh=self.token(st,st.get('subscribers',s.id));assert.ok(self.subscriberOf(st,fresh));
+  const epoch=st.get('subscribers',s.id).sessionEpoch;
+  for(let i=0;i<3;i++)self.logout(st,legacy);
+  assert.equal(st.get('subscribers',s.id).sessionEpoch,epoch,'epoch not raised again');assert.ok(self.subscriberOf(st,fresh),'the new session survives the retries');
+  // A current-format link from before a password change is also a no-op when logged out late.
+  const older=self.token(st,st.get('subscribers',s.id));radius.setPassword(st,s.id,'pw-after-1');const newest=self.token(st,st.get('subscribers',s.id));
+  self.logout(st,older);self.logout(st,older);assert.ok(self.subscriberOf(st,newest));
+  self.logout(st,newest);self.logout(st,newest);assert.equal(self.subscriberOf(st,newest),null);
+ }finally{done();}});
