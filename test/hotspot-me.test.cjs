@@ -10,18 +10,20 @@ test('hotspot device flow: connect now, M-Pesa code, usage, loaders, new designs
   const sub=st.put('subscribers',radius.subscriber(st,{name:'Amina',username:'kne-abc123',service:'hotspot',planId:plan.id,phone:'0712345678',expiresAt:Date.now()+25*60000}));st.put('subscribers',{...sub,lastMac:'AA:BB:CC:DD:EE:01'},sub);radius.setPassword(st,sub.id,'pass-12345');
   st.put('subscriberPayments',{subscriberId:sub.id,username:sub.username,amount:7,reference:'UK3IF0TW26',method:'mpesa',time:Date.now()-60000,planName:'NET PLUS'});
   const get=u=>fetch(o+u).then(async r=>({status:r.status,body:await r.json()})),post=(u,b)=>fetch(o+u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(async r=>({status:r.status,body:await r.json()}));
-  const a=await get('/portal/api/active?mac=AA:BB:CC:DD:EE:01');assert.equal(a.body.found,true);assert.equal(a.body.trusted,false,'a MAC alone is not trusted');assert.equal(a.body.plan,'NET PLUS');assert.ok(a.body.left>20*60000);
+  const a=await get('/portal/api/active?mac=AA:BB:CC:DD:EE:01');assert.equal(a.body.found,true);assert.equal(a.body.trusted,true,'the account\'s own device is greeted (owner\'s choice)');assert.equal(a.body.plan,'NET PLUS');assert.ok(a.body.left>20*60000);
   assert.equal((await get('/portal/api/active?mac=AA:BB:CC:DD:EE:99')).body.found,false);
   // never a plain password: needs a CHAP challenge
   assert.equal((await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01'})).status,400);
-  // A forged MAC (no device secret) cannot be auto-connected, read or redeemed.
-  assert.equal((await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c'})).status,404);
+  // The account's own device connects with one tap (a CHAP answer for this router's challenge only); a device that never
+  // used the account cannot. Usage and session details still need the device secret.
+  assert.equal((await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c'})).status,200);
+  assert.equal((await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:98',chapId:'01',chapChallenge:'0a0b0c'})).status,404);
   assert.equal((await get('/portal/api/usage?mac=AA:BB:CC:DD:EE:01')).body.found,false);assert.equal((await get('/portal/api/session?mac=AA:BB:CC:DD:EE:01')).body.found,false);
   assert.equal((await post('/portal/api/login',{username:sub.username,password:'wrong',mac:'AA:BB:CC:DD:EE:01'})).status,401);
   const signed=await post('/portal/api/login',{username:sub.username,password:'pass-12345',mac:'AA:BB:CC:DD:EE:01'});assert.equal(signed.status,200);
   const dt=signed.body.dt;assert.ok(dt,'successful credential login remembers this browser');
   assert.equal((await get('/portal/api/session?mac=AA:BB:CC:DD:EE:01&dt='+dt)).body.found,true);
-  assert.equal((await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c',dt:'wrong-secret'})).status,404);
+  assert.equal((await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c',dt:'wrong-secret'})).status,200,'connect is by the device itself');assert.equal((await get('/portal/api/usage?mac=AA:BB:CC:DD:EE:01&dt=wrong-secret')).body.found,false,'details still need the right secret');
   assert.equal((await get('/portal/api/active?mac=AA:BB:CC:DD:EE:01&dt='+dt)).body.trusted,true);
   const cn=await post('/portal/api/connect-now',{mac:'AA:BB:CC:DD:EE:01',chapId:'01',chapChallenge:'0a0b0c',dt});assert.equal(cn.status,200);assert.equal(cn.body.username,'kne-abc123');assert.equal(cn.body.chap,true);
   assert.equal((await post('/portal/api/code-login',{code:'WRONGCODE1',chapId:'01',chapChallenge:'0a0b0c'})).status,404);
