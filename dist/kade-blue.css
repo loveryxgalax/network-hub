@@ -1086,7 +1086,7 @@ dialog.sx-dialog::backdrop{background:rgba(15,23,42,.45);backdrop-filter:blur(3p
 @media(min-width:1100px){dialog.modal{width:min(820px,calc(100vw - 48px))!important;max-width:820px!important}
  dialog.modal #editor-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;align-items:start}
  dialog.modal #editor-fields>*:not(label),dialog.modal #editor-fields>label:has(textarea),dialog.modal #editor-fields>label.check-label,dialog.modal #editor-fields>label.pk-switch{grid-column:1/-1}}
-.ct-wrap table th,.ct-wrap table td{padding-left:8px;padding-right:8px}.ct-wrap table td{white-space:nowrap}
+
 .sl-row .sl-pick{flex:none;width:16px;height:16px;margin:4px 2px 0 0}
 /* Top bar search on large screens: a wider, rounded field */
 @media(min-width:1100px){.topbar .search-trigger{min-width:340px;border-radius:999px!important;padding:9px 16px!important;box-shadow:0 1px 2px rgba(15,23,42,.06)}.topbar .search-trigger:hover{box-shadow:0 2px 8px rgba(15,23,42,.12)}}
@@ -1115,3 +1115,25 @@ dialog.sx-dialog::backdrop{background:rgba(15,23,42,.45);backdrop-filter:blur(3p
 .cp-ico{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#f1f5f9;color:#94a3b8;vertical-align:middle}.cp-ico.on{background:#dcfce7;color:#15803d}.cp-ico.bad{background:#fee2e2;color:#b91c1c}
 .pay-blue table thead th{background:var(--primary,#0b3bff)!important;color:#fff!important}
 .kd-x-rev{align-items:start}
+/* Switches replace Turn on / Turn off buttons everywhere */
+button.tg-btn{border:0!important;background:none!important;box-shadow:none!important;padding:2px!important;min-height:0!important;min-width:0!important;width:auto!important;cursor:pointer}
+.tg-sw{display:inline-block;width:42px;height:24px;border-radius:99px;background:#cbd5e1;position:relative;transition:background .15s;vertical-align:middle}.tg-sw i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.3);transition:left .15s}.tg-sw.on{background:var(--primary,#0b3bff)}.tg-sw.on i{left:21px}
+button.tg-btn:focus-visible .tg-sw{outline:2px solid var(--primary,#0b3bff);outline-offset:2px}
+/* Customer portal links and loading-screen designer spacing */
+.card h3+p,.card p+h3{margin-top:6px}
+/* Large screens: every table fits its card (all columns, no sideways scroll). Phones keep their scroll. */
+@media(min-width:1100px){.table-wrap,.ct-wrap,.sites-panel .table-wrap{overflow-x:visible!important}
+ table.data-table,.table-wrap table,.ct-wrap table{width:100%!important;table-layout:auto}
+ table.data-table th,table.data-table td,.table-wrap table th,.table-wrap table td{padding:8px 6px!important;font-size:12px!important;white-space:normal!important;overflow-wrap:anywhere;word-break:normal;vertical-align:middle}
+ table.data-table th,.table-wrap table th{font-size:10.5px!important;letter-spacing:.02em}
+ table.data-table td small,.table-wrap table td small{font-size:10.5px!important}
+ table.data-table .status,.table-wrap table .status{white-space:nowrap!important}}
+/* Portal links page and loading-screen designer */
+.card.sites-panel:has(>h3){padding:22px 26px}
+form .check-label{white-space:normal;line-height:1.35;margin:8px 0}
+form .form-grid label{display:grid;gap:6px;align-content:start}form input[type=color]{width:100%;height:44px;padding:4px;border-radius:8px}
+@media(min-width:1100px){.ct-wrap .data-table,.table-wrap .data-table,.ct-compact .data-table,#customer-results table{min-width:0!important}.data-table td:has(> small){min-width:0!important}.data-table td.radius-message{min-width:0!important;max-width:none!important}}
+@media(min-width:1100px){html body table.data-table td,html body table.data-table th,html body .table-wrap table td,html body .table-wrap table th{overflow-wrap:anywhere!important;word-break:normal!important;white-space:normal!important}
+ html body table.data-table td .ct-ac,html body table.data-table td .row-actions,html body table.data-table td .status{white-space:normal!important}
+ html body table.data-table td .row-actions{flex-wrap:wrap}html body table.data-table td .ic-btn{width:30px!important;height:30px!important;min-width:30px!important}
+ html body table.data-table td .status{padding:2px 7px!important;font-size:11px!important}}
