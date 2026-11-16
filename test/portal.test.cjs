@@ -159,7 +159,11 @@ test('landing page settings are validated, admin-only to change, and public to r
   lk=await post('account',{query:'kne-a52mde',phone:'0700000000'});assert.equal(lk.locked,true);assert.equal(lk.wrong,true);
   assert.equal((await post('account',{query:'kne-a52mde',phone:'0712345678'})).status,'active');
   await post('account',{query:'x'});store.put('subscribers',{...store.get('subscribers',wallet.id),lastMac:'AA:BB:CC:00:00:09'},store.get('subscribers',wallet.id));
-  assert.equal((await post('account',{query:'kne-a52mde',mac:'aa-bb-cc-00-00-09'})).status,'active','the account\'s own device needs no phone check');
+  // A MAC alone (even the account's last one) is a claim: it is locked until the phone matches; the device secret then skips the check.
+  assert.equal((await post('account',{query:'kne-a52mde',mac:'aa-bb-cc-00-00-09'})).locked,true,'a cloned MAC is not proof');
+  const proved=await post('account',{query:'kne-a52mde',mac:'aa-bb-cc-00-00-09',phone:'0712345678'});assert.ok(proved.dt,'the phone check gives this device its secret');
+  assert.equal((await post('account',{query:'kne-a52mde',mac:'aa-bb-cc-00-00-09',dt:proved.dt})).status,'active','the device secret needs no phone check');
+  assert.equal((await post('account',{query:'kne-a52mde',mac:'aa-bb-cc-00-00-09',dt:'forged-token'})).locked,true,'an invalid secret is not proof');
   let a=await post('account',{query:'kne-a52mde',phone:'0712345678'});assert.equal(a.found,true);assert.equal(a.account,'kne-a52mde');assert.equal(a.status,'active');assert.equal(a.plan,'OFA MOTO');assert.equal(a.phone,undefined,'no contact details are returned');assert.equal(a.name,undefined);
   a=await post('account',{query:'  christine   mwikali ',phone:'0723632248'});assert.equal(a.found,true);assert.equal(a.status,'expired');assert.equal(a.price,1500);
   assert.equal((await post('account',{query:'0723 632 248'})).account,'christine mwikali');assert.deepEqual(await post('account',{query:'nobody-here'}),{found:false});

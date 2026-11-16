@@ -445,7 +445,7 @@ function hxBar(){const card=$('#hotspotCard');if(!card||card.querySelector('.hx-
  $('#hx-code').onclick=()=>hxSheet(hx('codeT'),hx('codeS'),hx('codePh'),async v=>{if(!router.login)throw new Error(hx('needWifi'));await hxJoin('code-login',{code:v});});}
 let hxTimer=null;
 async function hxActive(){if(params.get('renew')==='1')return;if(!router.mac||(!ADM&&(!router.login||!router.chapId))||CFG.show?.autoConnect===false)return;
- let a;try{a=await call('active?mac='+encodeURIComponent(router.mac));}catch{return;}if(!a.found||!a.trusted)return;
+ let a;try{a=await call('active?mac='+encodeURIComponent(router.mac)+'&dt='+encodeURIComponent(getDT()||''));}catch{return;}if(!a.found||!a.trusted)return;
  const mark=()=>{for(const b of document.querySelectorAll('.pkg[data-pkg]'))if(b.dataset.pkg===a.planId&&!b.querySelector('.hx-chip')){b.classList.add('hx-cur');const c=document.createElement('span');c.className='hx-chip';c.textContent=a.left!=null?hx('expIn',{t:leftText(a.left)}):hx('active2');b.append(c);}};
  mark();new MutationObserver(mark).observe($('#hotspotPkgs'),{childList:true});
  const col=$('#packagesCol');if(!col||document.getElementById('hx-active'))return;let n=4;
