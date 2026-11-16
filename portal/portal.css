@@ -869,3 +869,5 @@ html[data-mode="pppoe"] #packagesCol,html[data-mode="pppoe"] #detect,html[data-m
 html[data-mode="hotspot"] #pppoeWrap{display:none!important}
 /* The four quick tiles line up with the cards around them (no extra side margins) */
 .sit-tiles{margin-left:0!important;margin-right:0!important;padding-left:0!important;padding-right:0!important;width:100%!important;max-width:none!important}
+/* Sheets stay solid on designs whose card colour is see-through (e.g. Midnight). */
+.hx-sheet{background-color:var(--bg,#fff);background-image:linear-gradient(var(--surface,#fff),var(--surface,#fff))}
