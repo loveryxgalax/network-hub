@@ -101,3 +101,22 @@ test('2b. retrying a logout of an already-invalid session changes nothing (legac
   self.logout(st,older);self.logout(st,older);assert.ok(self.subscriberOf(st,newest));
   self.logout(st,newest);self.logout(st,newest);assert.equal(self.subscriberOf(st,newest),null);
  }finally{done();}});
+test('4b. removing a TV that is online sends its router a disconnect for that device only; without a job runner it says so',()=>{
+ const {st,done}=store();try{const jobs=require('../lib/jobs.cjs'),s=customer(st),TV='CC:00:00:00:00:02',PHONE='AA:00:00:00:00:0B';
+  const r=st.put('devices',{name:'LAB-HEX',type:'router',ip:'10.5.0.1'});
+  self.addTv(st,st.get('subscribers',s.id),{mac:TV,name:'Lounge'});
+  const start=(user,mac,id)=>radius.accounting(st,{'Acct-Status-Type':'Start','Acct-Session-Id':id,'NAS-IP-Address':'10.5.0.1','NAS-Identifier':'LAB-HEX','User-Name':user,'Calling-Station-Id':mac});
+  start(TV.toLowerCase(),TV,'tv2');start(s.username,PHONE,'ph2');
+  // No job runner on the router: nothing is queued and the result says the session ends at its next login.
+  let out=self.removeTv(st,st.get('subscribers',s.id),TV);assert.equal(out.tvStillOnline,true);assert.match(out.tvDisconnect,/no job runner/);assert.equal(st.list('routerJobs').length,0);
+  // With the job runner: one reset-device job for the TV's MAC, nothing for the phone.
+  self.addTv(st,st.get('subscribers',s.id),{mac:TV,name:'Lounge'});jobs.enroll(st,r.id);
+  out=self.removeTv(st,st.get('subscribers',s.id),TV);assert.equal(out.tvDisconnect,'disconnect sent to the router');
+  const q=st.list('routerJobs').filter(j=>j.type==='reset-device');assert.equal(q.length,1,JSON.stringify(st.list('routerJobs').map(j=>j.type+':'+JSON.stringify(j.params))));assert.equal(q[0].params.mac,TV);assert.equal(q[0].routerId,r.id);
+  assert.ok(!st.sessionsOf(TV.toLowerCase(),0)[0].stoppedAt,'accounting is not edited: the Stop comes from the router');
+  // A TV that is not online queues nothing.
+  self.addTv(st,st.get('subscribers',s.id),{mac:'CC:00:00:00:00:03',name:'Spare'});out=self.removeTv(st,st.get('subscribers',s.id),'CC:00:00:00:00:03');assert.equal(out.tvDisconnect,'not online');assert.equal(st.list('routerJobs').filter(j=>j.type==='reset-device').length,1);
+ }finally{done();}});
+test('9. campaigns: every audience the server offers has a label on the page',()=>{
+ const src=fs.readFileSync(path.join(__dirname,'../dist/ispmenu.js'),'utf8'),m=/const labels=\{(all:'Everyone'[^}]*)\}/.exec(src);assert.ok(m);
+ const keys=[...m[1].matchAll(/(\w+):'/g)].map(x=>x[1]);for(const seg of require('../lib/campaigns.cjs').SEGMENTS)assert.ok(keys.includes(seg),'label for '+seg);});
