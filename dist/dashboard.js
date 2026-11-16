@@ -198,6 +198,7 @@ async function kdBehaviour(){const host=document.querySelector('#kd');if(!host||
  for(const el of sec.querySelectorAll('[data-beh]'))el.onchange=e=>{kd.behPeriod=e.target.value;kdBehaviour();};}
 async function kdExtra(){const host=document.querySelector('#kd');if(!host)return;let sec=document.querySelector('#kd-extra');
  if(!sec){sec=document.createElement('section');sec.id='kd-extra';sec.className='kd-extra';(document.querySelector('#kd-rb')||host.lastElementChild).after(sec);}
+ {const old=document.querySelector('#kd-top');if(old){const c=old.querySelector('.kd-pn');if(c)old.before(c);old.remove();}}
  const period=kd.smsPeriod||'today';let x;try{x=await api('dashboard/extra?sms='+period);}catch{return;}if(!document.body.contains(sec))return;
  const c=x.checkouts,s=x.sms,mx=Math.max(1,...s.series.map(p=>p.sent+p.failed)),W=Math.max(300,s.series.length*22),step=Math.max(1,Math.ceil(s.series.length/10));
  const bars=s.series.map((p,i)=>{const slot=W/s.series.length,bw=Math.min(26,Math.max(4,slot-6)),X=i*slot+(slot-bw)/2,hs=p.sent/mx*110,hf=p.failed/mx*110;return `<g><title>${E(p.label)}: ${p.sent} sent, ${p.failed} failed</title><rect x="${X.toFixed(1)}" y="${(120-hs).toFixed(1)}" width="${bw.toFixed(1)}" height="${hs.toFixed(1)}" rx="2" fill="#3b5bfd"/><rect x="${X.toFixed(1)}" y="${(120-hs-hf).toFixed(1)}" width="${bw.toFixed(1)}" height="${hf.toFixed(1)}" rx="2" fill="#ef4444"/>${i%step?'':`<text x="${(X+bw/2).toFixed(1)}" y="134" font-size="8" text-anchor="middle" fill="currentColor" opacity=".6">${E(p.label)}</text>`}</g>`;}).join('');
@@ -211,6 +212,13 @@ async function kdExtra(){const host=document.querySelector('#kd');if(!host)retur
   <div class="kd-x-grid"><div class="kd-x-card"><h3>By customer type</h3><div class="kd-x-donut" id="kd-x-d1"></div><div class="kd-x-key">${legend(s.byType)||'<span>No messages</span>'}</div></div>
    <div class="kd-x-card"><h3>By message type</h3><div class="kd-x-donut" id="kd-x-d2"></div><div class="kd-x-key">${legend(s.byKind)||'<span>No messages</span>'}</div></div>
    <div class="kd-x-card"><h3>Sent vs failed</h3><div class="kd-x-bars"><svg viewBox="0 0 ${W} 138" preserveAspectRatio="none" role="img" aria-label="SMS sent and failed">${bars}</svg></div><div class="kd-x-key"><span><i style="background:#3b5bfd"></i>Sent: ${kc.fmtNum(s.sent)}</span><span><i style="background:#ef4444"></i>Failed: ${kc.fmtNum(s.failed)}</span></div></div></div>`;
+ // Layout: captive strip + checkouts on one row; revenue (with latest payments) beside quick actions.
+ {const cap=document.querySelector('#kd .kd-pn'),chk=sec.querySelector('.kd-x-check'),rev=sec.querySelector('.kd-x-rev');
+  if(cap&&chk&&rev){const cards=rev.querySelectorAll(':scope > .kd-x-card');if(cards.length>1){const lp=cards[1];lp.classList.add('kd-x-lp-in');cards[0].append(lp);}
+   const top=document.createElement('div');top.id='kd-top';top.className='kd-top';cap.before(top);
+   const qa=document.createElement('div');qa.className='kd-x-card kd-top-qa';qa.innerHTML='<h3>Quick actions</h3><p class="muted small">Looking for someone? Use Search your business above — name, phone, account, MAC, IP or payment reference.</p><a class="button primary" href="#cust-hotspot" data-kd-add="hotspot">+ Add Hotspot customer</a><a class="button primary" href="#cust-pppoe" data-kd-add="pppoe">+ Add PPPoE customer</a><div class="kd-top-links"><a href="#mikrotiks">Devices</a><a href="#hs-packages">Hotspot packages</a><a href="#pp-packages">PPPoE packages</a></div>';
+   top.append(cap,chk,rev,qa);for(const a of qa.querySelectorAll('[data-kd-add]'))a.onclick=e=>{if(typeof window.subscriberEditor==='function'){e.preventDefault();window.subscriberEditor(null,{service:a.dataset.kdAdd});}};}}
+
  const col=items=>items.map((it,i)=>({...it,color:kdPalette[i%kdPalette.length]}));
  if(s.byType.length)kc.donut(sec.querySelector('#kd-x-d1'),col(s.byType),{size:150,stroke:20,center:kc.fmtNum(s.sent),sub:'sent'});if(s.byKind.length)kc.donut(sec.querySelector('#kd-x-d2'),col(s.byKind),{size:150,stroke:20,center:kc.fmtNum(s.sent),sub:'sent'});
  sec.querySelector('#kd-x-period').onchange=e=>{kd.smsPeriod=e.target.value;kdExtra();};}

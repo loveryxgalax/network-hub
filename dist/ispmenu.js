@@ -1586,10 +1586,10 @@ function layoutCustomer(root){if(!root||root.dataset.cp)return;root.dataset.cp='
  // Quick numbers under the header: loyalty points, paid so far, recent sessions, devices seen.
  {const tiles=document.createElement('div');tiles.className='cp-tiles';const dv=(d.devices||[]).length,ss=(d.sessions||[]).length;
   tiles.innerHTML=[['Loyalty points',sub.points||0],['Paid (6 mo)',money(d.paid6m)],['Sessions (30 d)',d.sessions30??ss],['Captive strikes (30 d)',d.strikes30||0]].map(([l,v])=>`<div class="cp-tile"><small>${l}</small><b>${E(v)}</b></div>`).join('');wrap.append(tiles);}
- wrap.append(row1,row2,ac);
+ wrap.append(row1,row2);
  const pair=(a,b)=>{const row=document.createElement('div');row.className='cp-paired';if(a)row.append(a);if(b)row.append(b);wrap.append(row);};
  const extra=title=>[...more.children].find(c=>c.querySelector('h3')?.textContent.trim().toLowerCase()===title);
- pair(hc,extra('router jobs for this customer'));pair(extra('payments'),extra('recent mac addresses'));
+ pair(hc,extra('router jobs for this customer'));pair(extra('payments'),null);pair(extra('recent mac addresses'),ac);
  if(more.children.length)wrap.append(more);
  root.replaceChildren(wrap);profileTablePages(root);}
 function profileTablePages(root){for(const table of root.querySelectorAll('table.data-table')){if(table.dataset.profilePaged)continue;table.dataset.profilePaged='1';table.dataset.kt='1';const rows=[...table.tBodies[0].rows];if(!rows.length)continue;let size=5,page=0;const foot=document.createElement('div');foot.className='cp-pagination';table.closest('.table-wrap').after(foot);
