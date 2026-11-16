@@ -9,6 +9,9 @@ const when=t=>t?new Date(t).toLocaleString('en-GB',{day:'numeric',month:'short',
 let D=null;
 // On the router's WiFi page (wifi.kadenetworks.com/account.html) the backend is at BASE; a staff preview carries a pass.
 const META=n=>document.querySelector('meta[name="'+n+'"]')?.content||'',BASE=META('portal-base'),PASS=META('portal-pass'),HOME=BASE?'/login':'/portal/';
+// Logout ends the session on the server (copied links stop working) and forgets this browser's device secret.
+function signOut(){let dt='';try{dt=localStorage.getItem('portal-dt')||'';localStorage.removeItem('portal-dt');}catch{}
+ try{fetch(BASE+'/portal/api/me/logout',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',...(PASS?{'X-Portal-Pass':PASS}:{})},body:JSON.stringify({t:T,dt})}).catch(()=>{});}catch{}}
 async function api(path,opt={}){const r=await fetch(BASE+'/portal/api/'+path,{...opt,headers:{...(opt.headers||{}),...(PASS?{'X-Portal-Pass':PASS}:{})}}),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||j.message||'Something went wrong');return j;}
 const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:T,...b})});
 const left=t=>{const ms=t-Date.now();if(ms<=0)return 'Expired';const m=Math.floor(ms/60000);if(m<60)return 'Expires in '+m+' minute'+(m===1?'':'s');const h=Math.floor(m/60);if(h<48)return 'Expires in '+h+' hour'+(h===1?'':'s');return 'Expires in '+Math.floor(h/24)+' days';};
@@ -54,7 +57,7 @@ ${(d.recentPayments&&d.recentPayments.length)?`<section class="card"><header><h2
 
  {const secs=[...document.querySelectorAll('#app>section')],by=t=>secs.find(x=>(x.querySelector('h2')?.textContent||'').startsWith(t)),first=secs[0];let at=first;for(const t of ['Loyalty','Data usage','This week','Recent payments','Extend your','Choose a']){const x=by(t);if(x&&x!==at){at.after(x);at=x;}else if(x)at=x;}}
  $('#app').insertAdjacentHTML('beforeend','<button class="btn logout" id="logout">Log Out</button>');$('#chat-fab').hidden=false;
- const lo=$('#logout');if(lo)lo.onclick=()=>{try{history.replaceState(null,'',location.pathname);}catch{}document.title='Signed out';$('#chat-fab').remove();$('#app').innerHTML='<div class="card"><div class="body empty"><b>You have signed out</b><p>Taking you to the customer portal…</p></div></div>';window.scrollTo(0,0);setTimeout(()=>location.replace(HOME),400);};
+ const lo=$('#logout');if(lo)lo.onclick=()=>{signOut();try{history.replaceState(null,'',location.pathname);}catch{}document.title='Signed out';$('#chat-fab').remove();$('#app').innerHTML='<div class="card"><div class="body empty"><b>You have signed out</b><p>Taking you to the customer portal…</p></div></div>';window.scrollTo(0,0);setTimeout(()=>location.replace(HOME),400);};
  const cf=$('#chat-fab');if(cf)cf.onclick=()=>sheet(`<h3>Chat with us</h3><p>Send a message to ${esc(d.brand.name||'support')}. We will reply on your phone number.</p><div id="cmsg"></div><textarea id="ctext" rows="4" maxlength="600" placeholder="How can we help?"></textarea><button class="btn" id="cgo" style="width:100%">Send message</button>`);
  bindContact();
 const cd=$('#connect-dev');if(cd)cd.onclick=async()=>{cd.disabled=true;try{const R=window.ROUTER||{},okLogin=u=>/^https?:\/\/[^\s\/]+(:\d+)?\/login$/i.test(String(u||'')),clean=v=>/^\$\(/.test(String(v||''))?'':String(v||''),
@@ -98,7 +101,7 @@ function paintPppoe(){
  <section class="card"><header><h2>Contact details</h2></header><div class="body pp-kv pp-contact">${[['phone','Phone',d.phone],['email','Email',d.email]].map(([k,l,v])=>`<div><span>${l}</span><b>${esc(v||'—')}</b><em><button class="ic" data-cedit="${k}" title="Edit ${l.toLowerCase()}" aria-label="Edit ${l.toLowerCase()}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button></em></div>`).join('')}</div></section>
  </div><button class="btn logout" id="logout">Log Out</button>`;
  $('#chat-fab').hidden=false;
- $('#logout').onclick=()=>{try{history.replaceState(null,'',location.pathname);}catch{}document.title='Signed out';$('#chat-fab').remove();$('#app').innerHTML='<div class="card"><div class="body empty"><b>You have signed out</b><p>Taking you to the customer portal…</p></div></div>';window.scrollTo(0,0);setTimeout(()=>location.replace(HOME),400);};
+ $('#logout').onclick=()=>{signOut();try{history.replaceState(null,'',location.pathname);}catch{}document.title='Signed out';$('#chat-fab').remove();$('#app').innerHTML='<div class="card"><div class="body empty"><b>You have signed out</b><p>Taking you to the customer portal…</p></div></div>';window.scrollTo(0,0);setTimeout(()=>location.replace(HOME),400);};
  const cf=$('#chat-fab');cf.onclick=()=>sheet(`<h3>Chat with us</h3><p>Send a message to ${esc(d.brand.name||'support')}. We will reply on your phone number.</p><div id="cmsg"></div><textarea id="ctext" rows="4" maxlength="600" placeholder="How can we help?"></textarea><button class="btn" id="cgo" style="width:100%">Send message</button>`);
  bindContact();
  const rl=$('#resetln');if(rl)rl.onclick=async()=>{rl.disabled=true;try{const r=await post('me/reset',{});D=r;paint();toast(r.reset&&r.reset.queued?'Reconnecting. Your router redials in a few seconds.':'We could not reach your router from here. Switch it off and on, or contact support.');}catch(x){toast(x.message);rl.disabled=false;}};

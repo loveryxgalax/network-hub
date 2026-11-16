@@ -16,7 +16,7 @@ test('vouchers, manual connects, campaigns, reports, logs and nav counts',async(
   const made=await api('radius/vouchers','POST',{planId:plan.id,count:3,length:8});assert.equal(made.status,201);assert.equal(made.body.codes.length,3);
   const code=made.body.codes[0];assert.match(code,/^[A-Z2-9]{8}$/);
   assert.equal((await api('radius/vouchers')).body.batches[0].unused,3);
-  let r=await ask('authorize',rest({'User-Name':code,'Service-Type':'Login-User'}));
+  let r=await ask('authorize',rest({'User-Name':code,'User-Password':code.toLowerCase(),'Service-Type':'Login-User'}));
   assert.equal(r.status,200,'an unused voucher is redeemed by the first login');assert.ok(Number(r.body['reply:Session-Timeout'])>86000&&Number(r.body['reply:Session-Timeout'])<=86400);
   assert.equal(r.body['control:Cleartext-Password'],code.toLowerCase());
   assert.equal((await api('radius/vouchers')).body.batches[0].used,1);
