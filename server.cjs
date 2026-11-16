@@ -53,7 +53,7 @@ function createApp(options={}){
  const custOrigin=portalUrl?.origin||publicUrl?.origin||'',custHost=portalUrl?.hostname||publicUrl?.hostname||'';
  if(custOrigin)require('./lib/shortlink.cjs').setOrigin(custOrigin,[publicUrl?.origin].filter(o=>o&&o!==custOrigin));
  if(!passive){try{require('./lib/jobs.cjs').autoNeighbor(store);}catch{}}
- {const jb=require('./lib/jobs.cjs');jb.setRadiusSecret(options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'');if(custOrigin)jb.setPages(custOrigin,()=>{const c=statusPage.get(store);return crypto.createHash('sha256').update(portal.hotspotLoginPage(custOrigin)+'\0'+statusPage.page(c,custOrigin,false)+'\0'+statusPage.logoutPage(c,custOrigin)+'\0buy+account v2').digest('hex').slice(0,16);});}
+ {const jb=require('./lib/jobs.cjs');jb.setRadiusSecret(options.radiusSecret??process.env.NETWORK_RADIUS_SECRET??'');if(custOrigin)jb.setPages(custOrigin,()=>{const c=statusPage.get(store);return crypto.createHash('sha256').update(portal.hotspotLoginPage(custOrigin)+'\0'+statusPage.page(c,custOrigin,false)+'\0'+statusPage.logoutPage(c,custOrigin)+'\0buy+account v3').digest('hex').slice(0,16);});}
  // The customer portal page (portal/index.html) with the landing's loading style, plus extra <head> tags.
  function portalIndex(t,head=''){const lc=landing.get(store),esc=v=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   return t.replace('<head>','<head>'+head).replace('<body','<body data-loading="'+esc(lc.loadingStyle||'spinner')+'" style="--brand:'+esc(lc.brandColor)+(lc.loadingBg?';--boot-bg:'+esc(lc.loadingBg):'')+(lc.loadingFg?';--boot-fg:'+esc(lc.loadingFg):'')+'"').replace('<!--loading-text-->',esc(lc.loadingText||lc.brandName||''));}

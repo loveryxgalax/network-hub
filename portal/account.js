@@ -58,7 +58,7 @@ ${(d.recentPayments&&d.recentPayments.length)?`<section class="card"><header><h2
  bindContact();
 const cd=$('#connect-dev');if(cd)cd.onclick=async()=>{cd.disabled=true;try{const R=window.ROUTER||{},okLogin=u=>/^https?:\/\/[^\s\/]+(:\d+)?\/login$/i.test(String(u||'')),clean=v=>/^\$\(/.test(String(v||''))?'':String(v||''),
  login=okLogin(clean(R.login))?clean(R.login):(BASE?'/login':''),dst=/^https?:\/\//i.test(clean(R.dst))?clean(R.dst):'http://www.google.com';
- if(!login){location.href='/portal/';return;}
+ if(!login||!clean(R.mac)){toast('This WiFi page is out of date. Opening the WiFi login page instead.');setTimeout(()=>{location.href=BASE?'/login':'/portal/';},1800);cd.disabled=false;return;}
  const r=await api('connect-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({account:D.account,mac:clean(R.mac),chapId:clean(R.chapId),chapChallenge:clean(R.chapChallenge)})});
  location.href=login+'?'+new URLSearchParams({username:r.username,password:r.password,dst,popup:'false'});}catch(x){toast(x.message);cd.disabled=false;}};
  const sb=$('#sharebtn');if(sb)sb.onclick=()=>{try{navigator.clipboard.writeText(D.share.code);}catch{}toast('Share code '+D.share.code+' (copied). A friend types it on the WiFi page; '+D.share.left+' device slot'+(D.share.left===1?'':'s')+' left.');};
