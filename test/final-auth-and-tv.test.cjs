@@ -63,3 +63,15 @@ test('automatic WiFi page updates: only opted-in routers, once per 30 minutes, s
  assert.deepEqual(jobs.autoUpdatePages(st,now+400*60000),[],'stopped after repeated failures');
  assert.ok(!st.list('routerJobs').some(j=>/reboot|upgrade/.test(j.type)));
 });
+test('LAB-HEX updates its WiFi pages automatically by default; other routers stay off; a saved choice wins',()=>{
+ const portal=require('../lib/portal.cjs'),st=mk(),a=st.put('devices',{name:'LAB-HEX',type:'router'}),b=st.put('devices',{name:'CCR2004',type:'router'});
+ assert.equal(portal.routerPortal(st,a.id).autoPages,true);assert.equal(portal.routerPortal(st,b.id).autoPages,false);
+ portal.saveRouterPortal(st,a.id,{...portal.routerPortal(st,a.id),autoPages:false});assert.equal(portal.routerPortal(st,a.id).autoPages,false);
+});
+test('account page: connected comes from the routers\' active list too, and lists the connected device MACs',()=>{
+ const st=mk(),ss=require('../lib/selfservice.cjs'),p=st.put('plans',radius.plan({name:'P',service:'hotspot',downloadMbps:5,uploadMbps:5,price:1,durationValue:1,durationUnit:'days'})),now=Date.now();
+ const s=st.put('subscribers',radius.subscriber(st,{name:'A',username:'kne-aaa111',service:'hotspot',planId:p.id,expiresAt:now+864e5}));
+ const r=st.put('devices',{name:'LAB-HEX',type:'router'});
+ st.setting('customerDiscovery:'+r.id,{lastReport:now-6e4,tables:{hotspot:{ok:true},ppp:{ok:true}},observations:[{evidence:{hotspot:{name:'kne-aaa111',mac:'5e:cb:3a:bf:9a:3d',ip:'10.5.3.248',observedAt:now-6e4}}}]});
+ const c=ss.view(st,st.get('subscribers',s.id)).connection;assert.equal(c.connected,true,'router reports it online even without RADIUS accounting');assert.deepEqual(c.macs,['5E:CB:3A:BF:9A:3D']);
+});
