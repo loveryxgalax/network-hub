@@ -24,4 +24,7 @@ docker compose exec -T mongo mongodump --quiet --username "$MONGO_ROOT_USER" --p
 tar -C "$work" -czf - b | age -r "$AGE_RECIPIENT" > "$work/network-hub-$stamp.tar.gz.age"
 rclone copyto "$work/network-hub-$stamp.tar.gz.age" "$OFFSITE_PATH/network-hub-$stamp.tar.gz.age"
 rclone delete --min-age "${KEEP_DAYS:-30}d" "$OFFSITE_PATH"
+# Tell the hub (a small note in its data volume) so the Health page shows the off-site backup's age and warns when it is old.
+size=$(du -h "$work/network-hub-$stamp.tar.gz.age" | cut -f1)
+docker compose exec -T hub node -e "const fs=require('node:fs');fs.mkdirSync('/data/backups',{recursive:true});fs.writeFileSync('/data/backups/offsite.json',JSON.stringify({time:Date.now(),name:process.argv[1],size:process.argv[2]}));" "network-hub-$stamp.tar.gz.age" "$size" || echo "could not record the upload in the hub (the backup itself succeeded)" >&2
 echo "backup $stamp uploaded ($(du -h "$work/network-hub-$stamp.tar.gz.age" | cut -f1))"

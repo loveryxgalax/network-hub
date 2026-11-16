@@ -15,6 +15,7 @@ const billing=require('./lib/billing.cjs');
 const mpesa=require('./lib/mpesa.cjs');
 const portal=require('./lib/portal.cjs');
 const c2b=require('./lib/c2b.cjs');
+const totp=require('./lib/totp.cjs');
 const landing=require('./lib/landing.cjs'),statusPage=require('./lib/status.cjs');
 const overview=require('./lib/overview.cjs');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
@@ -183,7 +184,16 @@ function createApp(options={}){
    const ip=String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||'').slice(0,64),key=ip,a=attempts.get(key),ua=String(req.headers['user-agent']||'').slice(0,160);
    const logAccess=(email,u,status,reason)=>{const l=store.setting('accessLog')||{items:[]};l.items=[{time:Date.now(),email:String(email||'').toLowerCase().trim().slice(0,120),name:u?.name||'',ip,status,reason,ua},...l.items].slice(0,1000);store.setting('accessLog',l);};
    if(a&&a.until>Date.now()&&a.n>=8){logAccess(null,null,'blocked','Too many attempts from this address');throw error(429,'Too many attempts. Try again in 15 minutes.');}const input=await body(req),user=typeof input.email==='string'?store.db.prepare('SELECT * FROM users WHERE email=? AND active=1').get(input.email.toLowerCase().trim()):null;
-   const valid=checkPassword(typeof input.password==='string'?input.password.slice(0,257):'',user?.password||hashPassword('constant-dummy-password'));if(!user||!valid){attempts.set(key,{n:a&&a.until>Date.now()?a.n+1:1,until:Date.now()+900000});logAccess(input.email,user,'failed',user?'Wrong password':'No active account with this email');throw error(401,'Email or password is incorrect');}attempts.delete(key);logAccess(user.email,user,'success','Signed in');signinAlert(user,ip,ua);return json(res,200,session(res,user,secure));
+   // A second lock counts failures per account whatever address they come from (guessing spread over many addresses).
+   const ukey='u:'+String(input.email||'').toLowerCase().trim().slice(0,120),ua2=attempts.get(ukey);
+   if(ua2&&ua2.until>Date.now()&&ua2.n>=10){logAccess(input.email,user,'blocked','Too many failed sign-ins for this account');throw error(429,'Too many failed sign-ins for this account. Try again in 15 minutes.');}
+   const miss=()=>{attempts.set(key,{n:a&&a.until>Date.now()?a.n+1:1,until:Date.now()+900000});const c=attempts.get(ukey);attempts.set(ukey,{n:c&&c.until>Date.now()?c.n+1:1,until:Date.now()+900000});if(attempts.size>50000)attempts.clear();};
+   const valid=checkPassword(typeof input.password==='string'?input.password.slice(0,257):'',user?.password||hashPassword('constant-dummy-password'));if(!user||!valid){miss();logAccess(input.email,user,'failed',user?'Wrong password':'No active account with this email');throw error(401,'Email or password is incorrect');}
+   // Two-step sign-in: the password alone is not enough once the user has switched it on.
+   if(totp.enabled(store,user.id)){const code=typeof input.code==='string'?input.code.slice(0,20):'';
+    if(!code)return json(res,401,{error:'Enter the 6-digit code from your authenticator app',needCode:true});
+    if(!totp.check(store,user.id,code)){miss();logAccess(user.email,user,'failed','Wrong sign-in code');return json(res,401,{error:'That code is not right. Use the newest code from your app, or a recovery code.',needCode:true});}}
+   attempts.delete(key);attempts.delete(ukey);logAccess(user.email,user,'success','Signed in');signinAlert(user,ip,ua);return json(res,200,session(res,user,secure));
   }
   const user=auth(req);if(!user)throw error(401,'Sign in to continue');if(mutating.has(method)&&req.headers['x-csrf-token']!==user.csrf)throw error(403,'Session verification failed. Reload the page.');
   if(route==='/api/ispman'&&method==='GET'){role(user,['admin']);return json(res,200,require('./lib/ispman.cjs').overview(store,Object.fromEntries(url.searchParams)));}
@@ -196,7 +206,14 @@ function createApp(options={}){
    return json(res,200,{user:publicUser(user),signinAlerts:!!store.setting('signinAlerts:'+user.id),emailReady:!!emailLib.config?.(store),
     signins:(store.setting('accessLog')?.items||[]).filter(l=>l.email===em).slice(0,15).map(l=>({time:l.time,ip:l.ip,status:l.status,reason:l.reason,ua:l.ua})),
     activity:store.db.prepare('SELECT time,action,target FROM audit WHERE user_id=? ORDER BY id DESC LIMIT 20').all(user.id),
+    twoStep:totp.status(store,user.id),
     otherSessions:store.db.prepare('SELECT COUNT(*) n FROM sessions WHERE user_id=? AND token<>? AND expires>?').get(user.id,user.token,now).n});}
+  // Two-step sign-in set-up for the signed-in user. Starting and switching off both need the current password.
+  if(route==='/api/me/2fa/start'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.password||'').slice(0,257),user.password))throw error(400,'Your password is not right');return json(res,200,totp.start(store,user,store.setting('workspace')?.name||'NetOps'));}
+  if(route==='/api/me/2fa/enable'&&method==='POST'){const input=await body(req),r=totp.enable(store,user,String(input.code||''));store.db.prepare('DELETE FROM sessions WHERE user_id=? AND token<>?').run(user.id,user.token);store.audit(user,'Switched on two-step sign-in',user.id);return json(res,200,r);}
+  if(route==='/api/me/2fa/disable'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.password||'').slice(0,257),user.password))throw error(400,'Your password is not right');if(!totp.check(store,user.id,String(input.code||'')))throw error(400,'Enter a current code from your app (or a recovery code) to switch it off');totp.disable(store,user.id);store.audit(user,'Switched off two-step sign-in',user.id);return json(res,200,{enabled:false});}
+  // An admin can clear two-step sign-in for someone who lost their phone and recovery codes (never for themselves here).
+  {const r2=route.match(/^\/api\/users\/([a-f0-9-]{36})\/2fa\/reset$/);if(r2&&method==='POST'){role(user,['admin']);if(r2[1]===user.id)throw error(400,'Switch your own off from My account');const u=store.db.prepare('SELECT * FROM users WHERE id=?').get(r2[1]);if(!u)throw error(404,'User not found');totp.disable(store,u.id);store.db.prepare('DELETE FROM sessions WHERE user_id=?').run(u.id);store.audit(user,'Reset two-step sign-in for '+u.email,u.id);return json(res,200,{ok:true});}}
   if(route==='/api/me/password'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.current||'').slice(0,257),user.password))throw error(400,'Your current password is not right');
    const next=password(input.next);if(next===input.current)throw error(400,'Choose a password different from the current one');
    store.transaction(()=>{store.db.prepare('UPDATE users SET password=? WHERE id=?').run(hashPassword(next),user.id);store.db.prepare('DELETE FROM sessions WHERE user_id=? AND token<>?').run(user.id,user.token);store.audit(user,'Changed own password',user.id);});
@@ -245,6 +262,7 @@ function createApp(options={}){
    role(user,['admin']);if(method==='PUT'&&url.searchParams.get('section')==='portal'){const saved=portal.updateSettings(store,await body(req));store.audit(user,'Updated portal settings','portal');return json(res,200,saved);}
    if(method==='PUT'){const saved=mpesa.setConfig(store,await body(req));store.audit(user,'Updated M-Pesa settings','mpesa');return json(res,200,saved);}
   }
+  if(route==='/api/mpesa/c2b/guard'&&method==='PUT'){role(user,['admin']);const g=c2b.setGuard(store,await body(req));store.audit(user,'Changed the paybill source check to '+g.mode,'c2b');return json(res,200,g);}
   if(route==='/api/mpesa/c2b/register'&&method==='POST'){role(user,['admin']);const r=await c2b.register(store,publicUrl?.origin||'http://'+req.headers.host);store.audit(user,'Registered paybill URLs',r.ok?'ok':'failed');return json(res,200,r);}
   const assignRoute=route.match(/^\/api\/mpesa\/c2b\/([a-f0-9-]{36})\/assign$/);
   if(assignRoute&&method==='POST'){role(user,['admin','manager']);const r=c2b.assign(store,assignRoute[1],(await body(req)).subscriberId);store.audit(user,'Assigned paybill payment',assignRoute[1]);return json(res,200,r);}
@@ -509,7 +527,8 @@ function createApp(options={}){
    const u=require('./lib/usage.cjs'),q=url.searchParams;return json(res,200,usageRoute[2]==='usage'?u.usage(store,x,{from:q.get('from')||'',to:q.get('to')||'',group:q.get('group')||'day'}):u.sessionsPage(store,x,q.get('page')));}
   const profileRoute=route.match(/^\/api\/customers\/([a-f0-9-]{36})\/profile$/);
   if(profileRoute&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');{const sc=access.scope(store,user),x=store.get('subscribers',profileRoute[1]);if(sc&&x&&!access.allowed(sc,x,compensation.routerOf(store)))throw error(403,'This customer is on a router you do not manage');}return json(res,200,revenue.profile(store,profileRoute[1]));}
-  if(route==='/api/health'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,health.overview(store));}
+  if(route==='/api/health'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,{...health.overview(store),system:['admin','manager'].includes(user.role)?require('./lib/dbbackup.cjs').status(store):null});}
+  if(route==='/api/system/backup-now'&&method==='POST'){role(user,['admin']);const r=require('./lib/dbbackup.cjs').nightly(store);store.audit(user,'Made a database copy and test-restored it: '+(r.ok?'passed':'FAILED'),'backup');return json(res,200,r);}
   if(route==='/api/neighbour-map'&&method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');const m=oltDetect.map(store);return json(res,200,{...m,summary:require('./lib/topology.cjs').summary(store,m)});}
   // Upgrade suggestions: who uses their package to the full, and the next package up (sent only on request, or daily when on).
   // Insights: churn risk (PPPoE), win-back (hotspot), router capacity and weak fibre signal.
@@ -890,7 +909,16 @@ function createApp(options={}){
  // Public captive portal (no login). Limits per client address keep the M-Pesa prompt and code checks from abuse.
  const portalRoot=path.join(__dirname,'portal'),portalHits=new Map();
  // Customers on one hotspot share a public IP, so per-IP limits are generous; the tight limits are per phone, per payment and per login name.
- const limit=(req,bucket,max,windowMs,who)=>{const ip=String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||''),key=bucket+'|'+(who??ip),now=Date.now(),hit=portalHits.get(key);if(!hit||now>hit.until){portalHits.set(key,{n:1,until:now+windowMs});if(portalHits.size>50000)portalHits.clear();return;}if(++hit.n>max)throw error(429,'Too many attempts. Wait a few minutes and try again.');};
+ // Portal rate limits. Every customer behind one router reaches us from the same public address, so a limit counted
+ // per address alone would be shared by a whole site. Each limit is therefore counted per device (address + browser
+ // signature), with a ceiling 25 times higher per address so one address still cannot flood us by changing its signature.
+ // Limits given an explicit subject (a username, a phone, a payment code) are counted on that subject, as before.
+ const hitOnce=(key,max,windowMs,now)=>{const hit=portalHits.get(key);if(!hit||now>hit.until){portalHits.set(key,{n:1,until:now+windowMs});if(portalHits.size>200000)portalHits.clear();return true;}return ++hit.n<=max;};
+ const limit=(req,bucket,max,windowMs,who)=>{const ip=String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||''),now=Date.now(),busy=()=>{throw error(429,'Too many attempts. Wait a few minutes and try again.');};
+  if(who!==undefined&&who!==null){if(!hitOnce(bucket+'|'+who,max,windowMs,now))busy();return;}
+  let dev='';try{const q=new URL(req.url,'http://x').searchParams;dev=String(q.get('mac')||q.get('d')||'').toUpperCase().replace(/[^0-9A-F]/g,'').slice(0,12);}catch{}
+  const sig=crypto.createHash('sha256').update(dev+'|'+String(req.headers['user-agent']||'')+'|'+String(req.headers['accept-language']||'')).digest('hex').slice(0,12);
+  if(!hitOnce(bucket+'|ip|'+ip,max*25,windowMs,now))busy();if(!hitOnce(bucket+'|'+ip+'|'+sig,max,windowMs,now))busy();};
  async function portalApi(req,res,url){
   const route=url.pathname,method=req.method,origin=custOrigin||'http://'+req.headers.host;
   // The router's own WiFi pages (plain http, e.g. wifi.kadenetworks.com) call this backend across origins. No cookies.
@@ -978,7 +1006,7 @@ function createApp(options={}){
   // Safaricom paybill notifications. Always answer "Accepted" (it retries otherwise); problems are logged instead.
   if(pay&&method==='POST'){if(!c2b.validSecret(store,pay[1]))throw error(404,'Not found');const input=await body(req,16384);
    if(pay[2]==='validation')return json(res,200,c2b.validate(store,input));
-   try{c2b.confirm(store,input);}catch(cause){console.warn('Paybill payment not applied: '+cause.message);}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
+   try{c2b.confirm(store,input,Date.now(),{ip:String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||'').replace(/^::ffff:/,'')});}catch(cause){console.warn('Paybill payment not applied: '+cause.message);}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
   const b2c=route.match(/^\/portal\/api\/b2c\/([a-f0-9]{36})\/(result|timeout)$/);
   if(b2c&&method==='POST'){if(!payouts.validResultSecret(store,b2c[1]))throw error(404,'Not found');try{payouts.result(store,await body(req,65536),b2c[2]==='timeout');}catch(cause){console.warn('B2C result not applied: '+cause.message);}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
   if(route==='/portal/api/paystack/webhook'&&method==='POST'){let length=0;const chunks=[];for await(const c of req){length+=c.length;if(length>65536)throw error(413,'Request is too large');chunks.push(c);}const raw=Buffer.concat(chunks);
@@ -1055,9 +1083,14 @@ function createApp(options={}){
  }):null;
  const pagesTimer=setInterval(()=>{try{if(process.env.NETWORK_PASSIVE!=='1')require('./lib/jobs.cjs').autoUpdatePages(store);}catch{}},120000);pagesTimer.unref();
   const walletTimer=setInterval(()=>{try{portal.expirePending(store);}catch{}},60000);walletTimer.unref();
+ // Nightly database copy with a restore test (first check ten minutes after starting, then hourly; it runs once a day).
+ const backupTick=()=>{try{if(process.env.NETWORK_PASSIVE!=='1'&&options.collector!==false)require('./lib/dbbackup.cjs').tick(store);}catch(e){console.warn('Nightly database copy failed: '+e.message);}};const backupFirst=setTimeout(backupTick,600000);backupFirst.unref();const backupTimer=setInterval(backupTick,3600000);backupTimer.unref();
  try{radius.attributeAliases(store);}catch{}
  server.on('listening',()=>{if(options.collector!==false){timer=setInterval(()=>collect().catch(()=>{}),pollMs);timer.unref();const t2=setInterval(()=>{if(process.env.NETWORK_PASSIVE==='1')return;acs.list(store).then(async r=>{const c=require('./lib/cpelink.cjs');c.verify(store,r);await c.autoRegister(store,r,acs);try{await c.fibre(store,r,acs);}catch{}try{acs.recordHosts(store,r);require('./lib/insights.cjs').recordSignal(store,r);await acs.refreshHosts(store,r);}catch{}}).catch(()=>{});},120000);t2.unref();collect().catch(()=>{});}});
  return {server,bridge,liveFeed,store,poll,close:async()=>{closing=true;clearInterval(timer);clearInterval(walletTimer);for(const sock of liveSockets)sock.destroy();await new Promise(resolve=>server.close(resolve));if(bridge?.listening)await new Promise(resolve=>bridge.close(resolve));if(liveFeed?.listening)await new Promise(resolve=>liveFeed.close(resolve));while(busy.size)await new Promise(resolve=>setTimeout(resolve,50));store.close();}};
 }
-if(require.main===module){const app=createApp(),port=Number(process.env.PORT||4317),host=process.env.HOST||'127.0.0.1';app.server.listen(port,host,()=>console.log(`Network Hub: http://${host}:${port}`));if(app.bridge){const radiusPort=Number(process.env.NETWORK_RADIUS_PORT||4318);app.bridge.listen(radiusPort,process.env.NETWORK_RADIUS_HOST||host,()=>console.log('RADIUS bridge listening on port '+radiusPort));}if(app.liveFeed){const livePort=Number(process.env.NETWORK_LIVE_PORT||4319);app.liveFeed.listen(livePort,process.env.NETWORK_LIVE_HOST||host,()=>console.log('Live feed listening on port '+livePort));}for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>app.close().then(()=>process.exit(0)));}
+if(require.main===module){const app=createApp(),port=Number(process.env.PORT||4317),host=process.env.HOST||'127.0.0.1';app.server.listen(port,host,()=>console.log(`Network Hub: http://${host}:${port}`));if(app.bridge){const radiusPort=Number(process.env.NETWORK_RADIUS_PORT||4318);app.bridge.listen(radiusPort,process.env.NETWORK_RADIUS_HOST||host,()=>console.log('RADIUS bridge listening on port '+radiusPort));}if(app.liveFeed){const livePort=Number(process.env.NETWORK_LIVE_PORT||4319);app.liveFeed.listen(livePort,process.env.NETWORK_LIVE_HOST||host,()=>console.log('Live feed listening on port '+livePort));}for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>app.close().then(()=>process.exit(0)));
+ // One failed background task must not take the whole hub (and every login) down with it: log it and keep serving.
+ process.on('unhandledRejection',reason=>{console.error('Unhandled rejection (kept running): '+String(reason?.stack||reason).slice(0,600));});
+ process.on('uncaughtException',err=>{console.error('Uncaught exception (kept running): '+String(err?.stack||err).slice(0,600));});}
 module.exports={createApp};

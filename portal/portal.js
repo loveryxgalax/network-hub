@@ -138,7 +138,8 @@ const DTK='portal-dt',getDT=()=>{if(ADM)return params.get('pv')||'';try{return l
 async function call(path,options={}){
  const mac=/^(session|active|usage)\?mac=/.test(path)?'&dt='+encodeURIComponent(getDT()):'';
  let opt=options;if(opt.body&&/^(connect-now|connect-account|redeem-points|code-login|account)$/.test(path)){try{const b=JSON.parse(opt.body);b.dt=getDT();if(path==='code-login'&&params.get('nas'))b.nas=params.get('nas');opt={...opt,body:JSON.stringify(b)};}catch{}}
- const r=await fetch(BASE+'/portal/api/'+path+mac,{...opt,headers:{'Content-Type':'application/json',...(PASS?{'X-Portal-Pass':PASS}:{})}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Something went wrong. Try again.');
+ const dev=router.mac&&!/[?&]mac=/.test(path)?(path.includes('?')?'&':'?')+'d='+encodeURIComponent(router.mac):'';// lets the server count limits per device
+ const r=await fetch(BASE+'/portal/api/'+path+mac+dev,{...opt,headers:{'Content-Type':'application/json',...(PASS?{'X-Portal-Pass':PASS}:{})}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Something went wrong. Try again.');
  if(/^config/.test(path)&&data.mode&&data.mode!=='any'&&!MODE){MODE=data.mode;document.documentElement.dataset.mode=MODE;}
  if(data&&data.dt){try{localStorage.setItem(DTK,data.dt);}catch{}}return data;}
 function inkFor(hex){const n=parseInt(hex.replace('#',''),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;return (0.299*r+0.587*g+0.114*b)>170?'#0f172a':'#ffffff';}
@@ -455,7 +456,10 @@ async function hxActive(){if(params.get('renew')==='1')return;if(!router.mac||(!
  const go=async()=>{clearInterval(hxTimer);const b=$('#hx-now');b.disabled=true;try{await hxJoin('connect-now',{});}catch(e){b.disabled=false;$('#hx-msg').textContent=e.message;}};
  if(ADM){clearInterval(hxTimer);const bn=document.createElement('div');bn.className='hx-adm';bn.innerHTML='👁 Admin preview as <b>'+esc(params.get('viewas'))+'</b>. You are not on the hotspot WiFi, so Connect now is disabled.';card.before(bn);const au=$('#hx-auto');if(au)au.remove();const st=$('#hx-stay');if(st)st.remove();const nb=$('#hx-now');nb.disabled=true;nb.innerHTML='<span>Connect now (hotspot WiFi only)</span>';}
  $('#hx-now').onclick=go;if($('#hx-stay'))$('#hx-stay').onclick=()=>{clearInterval(hxTimer);$('#hx-auto').remove();$('#hx-n').parentElement.textContent=hx('now');};$('#hx-all').onclick=e=>{e.preventDefault();clearInterval(hxTimer);$('#hotspotCard').scrollIntoView({behavior:'smooth'});};
- if(!ADM)hxTimer=setInterval(()=>{n--;const el=$('#hx-n');if(el)el.textContent=n;const au=$('#hx-auto');if(au)au.textContent=hx('auto',{n:Math.max(n,0)});if(n<=0)go();},1000);}
+ // The router has just refused a login (it sent us back with an error): do not count down and try again by itself,
+ // or the page would retry every few seconds for ever. The customer can still press Connect now.
+ const justFailed=!!params.get('error');if(justFailed&&!ADM){const au=$('#hx-auto');if(au)au.remove();const nn=$('#hx-n');if(nn)nn.parentElement.textContent=hx('now');}
+ if(!ADM&&!justFailed)hxTimer=setInterval(()=>{n--;const el=$('#hx-n');if(el)el.textContent=n;const au=$('#hx-auto');if(au)au.textContent=hx('auto',{n:Math.max(n,0)});if(n<=0)go();},1000);}
 async function hxUsageCard(){if(!router.mac||CFG.show?.myUsage===false||document.getElementById('hx-usage-card'))return;
  let u;try{u=await call('usage?mac='+encodeURIComponent(router.mac));}catch{return;}if(!u.found)return;
  if(u.loyalty?.enabled&&!document.getElementById('hx-loy')){const lb=document.createElement('div');lb.id='hx-loy';lb.className='hx-loy';lb.innerHTML=`<span class="hx-ic">★</span><span><small>${esc(hx('loyalty'))}</small><b>${u.points} ${esc(hx('pts'))}</b></span><button type="button" class="hx-redeem" ${u.points>0?'':'disabled'}>${esc(hx('redeem'))}</button>`;($('#portal-alert')||$('#packagesCol')).after(lb);

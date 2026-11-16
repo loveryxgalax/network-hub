@@ -53,6 +53,7 @@ function showAuth(setup){clearTimeout(state.pollTimer);$('#application').hidden=
  <form id="auth-form" novalidate>${setup?`<label><span>Your name ${req}</span><input name="name" required autocomplete="name" maxlength="100"></label><label><span>Workspace name ${req}</span><input name="workspace" required maxlength="100"></label>`:''}
  <label><span>Email ${req}</span><input name="email" type="email" required autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false"></label>
  <label><span class="auth-row"><span>Password ${req}</span></span><span class="auth-pass"><input name="password" type="password" required minlength="12" maxlength="256" autocomplete="${setup?'new-password':'current-password'}"><button type="button" class="auth-eye" aria-label="Show password" title="Show password"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></span></label>
+ ${setup?'':'<label id="auth-code" hidden><span>Sign-in code</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="6-digit code from your authenticator app"></label>'}
  <p class="form-error" role="alert" id="auth-error"></p><button class="button primary auth-submit" type="submit">${setup?'Create workspace':'Sign in'}</button></form>
  ${setup?'<p class="auth-note">Choose a password of at least 12 characters. No sample devices or balances are added.</p>':''}</section>
  <p class="auth-foot">© ${new Date().getFullYear()} Kade Networks</p>`;
@@ -60,7 +61,7 @@ function showAuth(setup){clearTimeout(state.pollTimer);$('#application').hidden=
  eye.onclick=()=>{const show=pw.type==='password';pw.type=show?'text':'password';eye.setAttribute('aria-label',show?'Hide password':'Show password');eye.classList.toggle('on',show);pw.focus();};
  form.onsubmit=async event=>{event.preventDefault();const button=$('.auth-submit',form);$('#auth-error').textContent='';
   if(!form.checkValidity()){const bad=[...form.elements].find(e=>e.willValidate&&!e.checkValidity());$('#auth-error').textContent=bad?.type==='email'?'Enter your email address':bad?.name==='password'?'Enter your password (at least 12 characters)':'Fill in the highlighted fields';bad?.focus();return;}
-  button.disabled=true;button.classList.add('busy');try{state.session=await api(setup?'setup':'login','POST',Object.fromEntries(new FormData(form)));await enter();}catch(error){$('#auth-error').textContent=error.message;}finally{button.disabled=false;button.classList.remove('busy');}};
+  button.disabled=true;button.classList.add('busy');try{state.session=await api(setup?'setup':'login','POST',Object.fromEntries(new FormData(form)));await enter();}catch(error){$('#auth-error').textContent=error.message;const ac=$('#auth-code');if(ac&&/code/i.test(error.message)){ac.hidden=false;ac.querySelector('input').focus();}}finally{button.disabled=false;button.classList.remove('busy');}};
  setTimeout(()=>form.querySelector('input')?.focus(),50);
 }
 async function enter(){await load();$('#auth-screen').hidden=true;$('#application').hidden=false;chrome();navigate();schedule();}
