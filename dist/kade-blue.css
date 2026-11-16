@@ -1137,3 +1137,9 @@ form .form-grid label{display:grid;gap:6px;align-content:start}form input[type=c
  html body table.data-table td .ct-ac,html body table.data-table td .row-actions,html body table.data-table td .status{white-space:normal!important}
  html body table.data-table td .row-actions{flex-wrap:wrap}html body table.data-table td .ic-btn{width:30px!important;height:30px!important;min-width:30px!important}
  html body table.data-table td .status{padding:2px 7px!important;font-size:11px!important}}
+.kd-b-two{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}@media(max-width:900px){.kd-b-two{grid-template-columns:1fr}}
+.kd-b-tab thead th{background:#1d4ed8;color:#fff}
+.kd-x-card h3 select{float:right;font-size:12px;padding:3px 6px}
+.fu-month>div{min-width:44px;flex:1}
+.rtp-more{position:relative;display:inline-block}.rtp-more summary{list-style:none;cursor:pointer}.rtp-more summary::-webkit-details-marker{display:none}
+.rtp-more-menu{position:absolute;right:0;top:110%;z-index:20;display:grid;gap:4px;min-width:190px;padding:8px;background:var(--card,#fff);border:1px solid var(--line,#e2e8f0);border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.14)}

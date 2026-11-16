@@ -152,7 +152,7 @@ function kdPortalPaint(){const el=$('#kd-pn');if(!el)return;const p=kd.portal||{
   <div class="kd-pn-row"><span class="kd-pn-k">Devices</span><div class="kd-pn-chips">${chips(p.devices)}</div><div class="kd-pn-sync"><span>${kd.portalEvery?'live · every '+(sync.find(x=>x[0]===kd.portalEvery)?.[1]||kd.portalEvery+'s'):'paused'}</span><select id="kd-pn-every" aria-label="Refresh every">${sync.map(([v,l])=>`<option value="${v}" ${v===kd.portalEvery?'selected':''}>Sync: ${l}</option>`).join('')}</select></div></div>`;
  $('#kd-pn-every').onchange=e=>{kd.portalEvery=Number(e.target.value);try{localStorage.setItem('kd.portalEvery',String(kd.portalEvery));}catch{}kdPortalNow();};}
 const kdPalette=['#3b5bfd','#06b6d4','#a855f7','#10b981','#f59e0b','#ec4899','#14b8a6','#6366f1'];
-async function kdLoad(){const request=++kd.request;try{const d=await api('overview?range='+kd.range+'&hotspot='+kd.hs);if(request!==kd.request||!['dashboard','trends'].includes(state.page))return;kd.data=d;kdPaint(kd.first);kd.first=false;if(state.page==='dashboard')kdExtra();}catch(error){if(request===kd.request&&$('#kd')&&!kd.data)$('#kd').insertAdjacentHTML('afterbegin',notice('Could not load the overview',E(error.message),true));}}
+async function kdLoad(){const request=++kd.request;try{const d=await api('overview?range='+kd.range+'&hotspot='+kd.hs);if(request!==kd.request||!['dashboard','trends'].includes(state.page))return;kd.data=d;kdPaint(kd.first);kd.first=false;if(state.page==='dashboard')kdExtra().then(kdBehaviour);}catch(error){if(request===kd.request&&$('#kd')&&!kd.data)$('#kd').insertAdjacentHTML('afterbegin',notice('Could not load the overview',E(error.message),true));}}
 // Revenue breakdown donuts (admin): by service, package and location, and voucher revenue by package and location.
 const KD_RB=[{id:'svc',title:'Revenue by service',pick:r=>r.byService},{id:'plan',title:'Revenue by package',pick:r=>r.byPlan},{id:'loc',title:'Revenue by location',side:true,pick:r=>r.byLocation},
  {id:'vplan',title:'Voucher revenue by package',side:true,voucher:true,pick:r=>r.vouchers.byPlan},{id:'vloc',title:'Voucher revenue by location',voucher:true,pick:r=>r.vouchers.byLocation}];
@@ -177,6 +177,25 @@ setInterval(async()=>{if(!state.session?.user||!['dashboard','trends'].includes(
 setInterval(kdClock,1000);
 
 // Extra dashboard cards: today's checkouts, and SMS sent by customer type, by message type and sent vs failed.
+
+// Customer behaviour (visits by time of day, devices, operating systems) and Data usage (per customer, per device).
+async function kdBehaviour(){const host=document.querySelector('#kd');if(!host||state.session?.user?.role==='installer')return;let sec=document.querySelector('#kd-beh');
+ if(!sec){sec=document.createElement('section');sec.id='kd-beh';sec.className='kd-extra';(document.querySelector('#kd-extra')||host.lastElementChild).after(sec);}
+ const P=kd.behPeriod||'7d',O=[['today','Today'],['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days']];let x;try{x=await api('dashboard/behaviour?period='+P);}catch{return;}if(!document.body.contains(sec))return;
+ const sel=id=>`<select data-beh="${id}" aria-label="Period">${O.map(([v,l])=>`<option value="${v}" ${v===P?'selected':''}>${l}</option>`).join('')}</select>`,v=x.visits,mx=Math.max(1,...v.hours),
+  hrs=v.hours.map((n,i)=>`<g><title>${i}:00 – ${n} visit${n===1?'':'s'}</title><rect x="${i*14+1}" y="${(100-n/mx*96).toFixed(1)}" width="11" height="${(n/mx*96).toFixed(1)}" rx="2" fill="#3b5bfd"/></g>`).join('');
+ const list=(a,c)=>a.length?a.slice(0,6).map((it,i)=>`<span><i style="background:${kdPalette[i%kdPalette.length]}"></i>${E(it.name)}: ${kc.fmtNum(it.amount)}</span>`).join(''):'<span>No visits yet</span>';
+ const dm=Math.max(1,...x.usage.byDevice.map(d=>d.bytes));
+ sec.innerHTML=`<div class="kd-x-head"><div><h2>Customer behaviour</h2><p>When customers open the WiFi page, and what they use.</p></div></div><div class="kd-x-grid">
+  <div class="kd-x-card"><h3>Visits by time of day ${sel('a')}</h3><div class="kd-x-bars"><svg viewBox="0 0 336 112" preserveAspectRatio="none" role="img" aria-label="Visits by hour">${hrs}<text x="0" y="111" font-size="9" fill="currentColor">0h</text><text x="150" y="111" font-size="9" fill="currentColor">12h</text><text x="318" y="111" font-size="9" fill="currentColor">23h</text></svg></div><div class="kd-x-key"><span>${kc.fmtNum(v.total)} visits</span></div></div>
+  <div class="kd-x-card"><h3>Customers by device ${sel('b')}</h3><div class="kd-x-donut" id="kd-b-d1"></div><div class="kd-x-key">${list(v.devices)}</div></div>
+  <div class="kd-x-card"><h3>Customers by OS ${sel('c')}</h3><div class="kd-x-donut" id="kd-b-d2"></div><div class="kd-x-key">${list(v.os)}</div></div></div>
+ <div class="kd-x-head"><div><h2>Data usage</h2><p>Download and upload per customer, and data by device type.</p></div></div><div class="kd-x-grid kd-b-two">
+  <div class="kd-x-card kd-b-wide"><h3>Customer data usage ${sel('d')}</h3><div class="table-wrap"><table class="data-table kd-b-tab"><thead><tr><th>Customer</th><th>Service</th><th>Sessions</th><th>Download</th><th>Upload</th><th>Total</th></tr></thead><tbody>${x.usage.customers.map(c=>`<tr><td>${E(c.name)}<small class="muted"> ${E(c.username)}</small></td><td>${E(c.service)}</td><td>${c.sessions}</td><td>${E(kc.fmtBytes(c.down))}</td><td>${E(kc.fmtBytes(c.up))}</td><td><b>${E(kc.fmtBytes(c.total))}</b></td></tr>`).join('')||'<tr><td colspan="6">No usage recorded in this period</td></tr>'}</tbody></table></div></div>
+  <div class="kd-x-card"><h3>Data by device</h3>${x.usage.byDevice.length?x.usage.byDevice.map(d=>`<div class="kd-x-hb" title="${E(d.name)}: ${E(kc.fmtBytes(d.bytes))}"><span>${E(d.name)}</span><i style="width:${Math.max(3,d.bytes/dm*100)}%"></i><b>${E(kc.fmtBytes(d.bytes))}</b></div>`).join(''):'<p class="muted">No usage recorded</p>'}</div></div>`;
+ const col=a=>a.slice(0,6).map((it,i)=>({label:it.name,value:it.amount,color:kdPalette[i%kdPalette.length]}));
+ if(v.devices.length)kc.donut(sec.querySelector('#kd-b-d1'),col(v.devices),{size:150,stroke:20,center:kc.fmtNum(v.total),sub:'visits'});if(v.os.length)kc.donut(sec.querySelector('#kd-b-d2'),col(v.os),{size:150,stroke:20,center:kc.fmtNum(v.total),sub:'visits'});
+ for(const el of sec.querySelectorAll('[data-beh]'))el.onchange=e=>{kd.behPeriod=e.target.value;kdBehaviour();};}
 async function kdExtra(){const host=document.querySelector('#kd');if(!host)return;let sec=document.querySelector('#kd-extra');
  if(!sec){sec=document.createElement('section');sec.id='kd-extra';sec.className='kd-extra';(document.querySelector('#kd-rb')||host.lastElementChild).after(sec);}
  const period=kd.smsPeriod||'today';let x;try{x=await api('dashboard/extra?sms='+period);}catch{return;}if(!document.body.contains(sec))return;
