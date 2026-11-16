@@ -70,3 +70,13 @@ test('CSV export during concurrent writes: exactly the snapshot, no missing or d
  // Permissions unchanged: no session, no ledger.
  assert.equal((await fetch(a.o+'/api/ledger?format=csv')).status,401);
  }finally{await a.done();}});
+
+test('Safaricom paybill registration: a "Success" answer with code 00000000 counts as registered; old records read "Success" as registered',async()=>{
+ const c2b=require('../lib/c2b.cjs'),mpesa=require('../lib/mpesa.cjs'),{st,done}=fx();try{
+  mpesa._reset();mpesa.setConfig(st,{env:'production',type:'paybill',shortcode:'174379',consumerKey:'a',consumerSecret:'b',passkey:'c'});
+  const answer=code=>async(url)=>url.includes('oauth')?new Response(JSON.stringify({access_token:'t',expires_in:3599})):new Response(JSON.stringify({ResponseCode:code,ResponseDescription:'Success'}));
+  for(const code of ['0','00000000'])assert.equal((await c2b.register(st,'https://n',answer(code))).ok,true,code);
+  assert.equal((await c2b.register(st,'https://n',answer('1'))).ok,false,'a real failure stays not accepted');
+  st.setting('c2bRegistration',{time:Date.now(),ok:false,message:'Success'});assert.equal(c2b.overview(st,'https://n').registration.ok,true,'earlier record saved before this fix');
+  st.setting('c2bRegistration',{time:Date.now(),ok:false,message:'Invalid ShortCode'});assert.equal(c2b.overview(st,'https://n').registration.ok,false);
+ }finally{done();}});
