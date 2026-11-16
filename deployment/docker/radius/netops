@@ -40,8 +40,14 @@ server netops {
 		rest
 	}
 	post-auth {
+		# Final decision after PAP/CHAP/MS-CHAP: tell the hub (a hub error never blocks a login that already passed).
+		rest
+		if (fail) {
+			ok
+		}
 		Post-Auth-Type REJECT {
 			attr_filter.access_reject
+			rest_reject
 		}
 	}
 }

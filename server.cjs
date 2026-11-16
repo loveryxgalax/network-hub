@@ -895,7 +895,7 @@ function createApp(options={}){
   // The landing page: design settings plus real packages in one call, and the two visitor lookups (rate limited; no contact details returned).
   // Pages a router fetches into its hotspot folder (the job runner's "push design"). No secrets inside.
   if(route==='/portal/api/router/logout.html'&&method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(statusPage.logoutPage(statusPage.get(store),custOrigin||origin));}
-  if(route==='/portal/api/router/account.html'&&method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});const b=custOrigin||origin;return res.end(fs.readFileSync(path.join(portalRoot,'account.html'),'utf8').replace(/(href|src)="\/(?!\/)/g,'$1="'+b+'/').replace('<head>','<head><meta name="portal-base" content="'+b+'"><meta name="portal-mode" content="hotspot">'));}
+  if(route==='/portal/api/router/account.html'&&method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});const b=custOrigin||origin;return res.end(fs.readFileSync(path.join(portalRoot,'account.html'),'utf8').replace(/(href|src)="\/(?!\/)/g,'$1="'+b+'/').replace('<head>','<head><meta name="portal-base" content="'+b+'"><meta name="portal-mode" content="hotspot"><script>var ROUTER={mac:\'$(mac)\',ip:\'$(ip)\',login:\'$(link-login-only)\',dst:\'$(link-orig)\',chapId:\'$(chap-id)\',chapChallenge:\'$(chap-challenge)\'};</script>'));}
   if(route==='/portal/api/router/buy.html'&&method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(routerShell(custOrigin||origin,false));}
   if((route==='/portal/api/router/login.html'||route==='/portal/api/router/status.html')&&method==='GET'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(route.endsWith('login.html')?routerShell(custOrigin||origin,true):statusPage.page(statusPage.get(store),custOrigin||origin,false));}
   const adRoute=route.match(/^\/portal\/api\/ads\/([a-f0-9-]{36})\/(view|click|claim)$/);
@@ -1037,7 +1037,7 @@ function createApp(options={}){
    if(req.method!=='POST')throw error(405,'Method not allowed');const where=new URL(req.url,"http://localhost").pathname,input=await body(req);
    if(where==="/radius/authorize"){const r=radius.authorize(store,input);res.writeHead(r.status,{'Content-Type':'application/json'});return res.end(JSON.stringify(r.attributes));}
    if(where==="/radius/accounting"){radius.accounting(store,input);res.writeHead(204);return res.end();}
-   if(where==="/radius/post-auth"){res.writeHead(204);return res.end();}
+   if(where==="/radius/post-auth"){const verdict=new URL(req.url,"http://localhost").searchParams.get('result');if(verdict==='accept'||verdict==='reject')radius.finalDecision(store,input,verdict);res.writeHead(204);return res.end();}
    throw error(404,'Not found');
   }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'RADIUS bridge error'});if(!cause.status)console.error(cause.name+': RADIUS bridge failed');}
  }):null;

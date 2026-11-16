@@ -119,7 +119,7 @@ for(const k of Object.keys(THEME_FR))THEME_COPY[k].fr=THEME_FR[k];
 /* ===================== STATE ===================== */
 let CFG={theme:'midnight',brandName:'Kade Networks',brandColor:'#0032fd',intro:'',defaultLang:'sw',phone:'',whatsapp:'',email:'info@kadenetworks.com',accountPrefix:'KNE',popular:'',
  show:{pppoe:true,hotspot:true,findAccount:true,accessAccount:true,onTheGo:true,contact:true}};
-let plans=[],pppoePlans=[],mpesaOn=true,cardOn=false,state='loading',LANG='sw',selected=null,polling=null,lastKind='hotspot',csrf='',isAdmin=false;
+let plans=[],pppoePlans=[],mpesaOn=true,cardOn=false,state='loading',LANG='en',selected=null,polling=null,lastKind='hotspot',csrf='',isAdmin=false;
 try{const s=localStorage.getItem('portal-lang');if(s&&STR[s])LANG=s;}catch{}
 const fmt=s=>String(s||'').replaceAll('{brand}',CFG.brandName).replaceAll('{prefix}',CFG.accountPrefix);
 const t=(k,vars={})=>fmt(STR[LANG][k]??STR.en[k]??k).replace(/\{(\w+)\}/g,(m,v)=>vars[v]??m);
@@ -414,7 +414,7 @@ async function boot(){
  const q=params.get('theme');
  try{
   const cq=new URLSearchParams();if(router.mac)cq.set('mac',router.mac);if(params.get('ip'))cq.set('ip',params.get('ip'));if(params.get('nas'))cq.set('nas',params.get('nas'));const d=await call('config'+(cq.toString()?'?'+cq:''));MAINT=d.maintenance||null;CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};applyPreview();plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;cardOn=!!d.paystack;freeMode=d.freeMode||null;engage=d.engage||{ads:[],quiz:null};state='ok';
-  try{if(!localStorage.getItem('portal-lang'))LANG=CFG.defaultLang||LANG;}catch{LANG=CFG.defaultLang||LANG;}
+  {const nav=String(navigator.language||'').slice(0,2).toLowerCase(),pick=CFG.defaultLang||(STR[nav]?nav:'en');try{if(!localStorage.getItem('portal-lang'))LANG=STR[pick]?pick:'en';}catch{LANG=STR[pick]?pick:'en';}}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;
  render();bootDone();showMaint();loginChoice();hotspotExtras();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));

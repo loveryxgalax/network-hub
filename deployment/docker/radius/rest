@@ -21,11 +21,46 @@ rest {
 		require_auth = yes
 		timeout = 3
 	}
+	post-auth {
+		uri = "${..connect_uri}/radius/post-auth?result=accept"
+		method = 'post'
+		body = 'json'
+		auth = 'basic'
+		username = 'freeradius'
+		password = "$ENV{NETWORK_RADIUS_TOKEN}"
+		require_auth = yes
+		timeout = 3
+	}
 	pool {
 		start = 0
 		min = 0
 		max = 8
 		spare = 2
+		uses = 0
+		retry_delay = 5
+		lifetime = 0
+		idle_timeout = 60
+	}
+}
+
+# Reports a REJECT after the router login check (wrong password) so the hub logs the real final decision.
+rest rest_reject {
+	connect_uri = "http://hub:4318"
+	post-auth {
+		uri = "${..connect_uri}/radius/post-auth?result=reject"
+		method = 'post'
+		body = 'json'
+		auth = 'basic'
+		username = 'freeradius'
+		password = "$ENV{NETWORK_RADIUS_TOKEN}"
+		require_auth = yes
+		timeout = 3
+	}
+	pool {
+		start = 0
+		min = 0
+		max = 4
+		spare = 1
 		uses = 0
 		retry_delay = 5
 		lifetime = 0
