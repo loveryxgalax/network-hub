@@ -1176,3 +1176,5 @@ html body table.data-table th,html body table.data-table td{font-size:10px!impor
 #pp-pol{padding:22px 28px!important}#pp-pol .pk-switch{padding-left:2px}
 .card.sites-panel{overflow-x:auto}.card.sites-panel table.data-table{width:100%}
 html body table.data-table td .ra-btn,html body table.data-table td .button.ic-btn{white-space:nowrap}
+.fu-wrap .nb-tiles{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.fu-month{min-height:120px}.fu-month>div{max-width:90px}

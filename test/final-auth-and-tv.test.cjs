@@ -41,3 +41,9 @@ test('Connect this device is a real button that logs in through the router, not 
  assert.doesNotMatch(js,/href="\$\{HOME\}"/);assert.match(js,/id="connect-dev"/);assert.match(js,/connect-account/);assert.match(js,/\/\^https\?:/);
  const srv=fs.readFileSync(path.join(__dirname,'..','server.cjs'),'utf8');assert.match(srv,/var ROUTER=\{mac:\\'\$\(mac\)\\',ip:\\'\$\(ip\)\\',login:\\'\$\(link-login-only\)\\'/);
 });
+test('status page timers tick: time left counts down, uptime counts up',()=>{
+ const st=require('../lib/status.cjs'),html=st.page(st.get({setting:()=>null,list:()=>[]}),'http://x',true),code=html.match(/<script>\(function\(\)([\s\S]*?)<\/script>/)[0].slice(8,-9);
+ const els={tl:{textContent:'5h 48m'},upt:{textContent:'1h 12m'}};let tick;const g={document:{getElementById:i=>els[i]},setInterval:f=>{tick=f;}};
+ new Function('document','setInterval',code)(g.document,g.setInterval);tick();tick();
+ assert.equal(els.tl.textContent,'5h 47m 58s');assert.equal(els.upt.textContent,'1h 12m 2s');
+});
