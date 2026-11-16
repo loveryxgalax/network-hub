@@ -71,3 +71,16 @@ test('8b. retries on the same router and MAC: each final result goes to its own 
  // The accepted device keeps its reservation even though the older attempt was rejected: a second device is still refused.
  assert.equal(radius.authorize(s2,{...base,'Calling-Station-Id':B},T0+1000).status,401);
 });
+
+test('8c. MS-CHAPv2 retries (PPPoE): reordered accept/reject results go to their own attempts',()=>{
+ for(const order of [['reject','accept'],['accept','reject']]){
+  const {st}=setup();const base={'User-Name':'kne-aaa111','Calling-Station-Id':A,'NAS-IP-Address':'10.0.0.1','NAS-Port':'15728640'};
+  const v=x=>({type:'octets',value:[x]});
+  const t1={...base,'MS-CHAP-Challenge':v('0x1111'),'MS-CHAP2-Response':v('0x01aa')},t2={...base,'MS-CHAP-Challenge':v('0x2222'),'MS-CHAP2-Response':v('0x02bb')};
+  radius.authorize(st,t1,T0);radius.authorize(st,t2,T0+400);
+  const res={t1:'reject',t2:'accept'};const seq=order[0]==='reject'?[['t1',t1],['t2',t2]]:[['t2',t2],['t1',t1]];
+  seq.forEach(([n,r],k)=>assert.equal(radius.finalDecision(st,r,res[n],T0+800+k*100),'updated',order+' '+n));
+  const rows=(st.setting('radiusAuthLog')||{items:[]}).items;assert.equal(rows[0].result,'accept','newer MS-CHAP attempt accepted ('+order+')');assert.equal(rows[1].result,'reject');
+  // Router-side wrong password on a single MS-CHAP attempt is still recorded as a reject.
+ }
+});
