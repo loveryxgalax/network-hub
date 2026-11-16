@@ -53,3 +53,21 @@ test('8 and 19. a final decision updates only the attempt on the same router; wr
  const byNas=n=>last().find(e=>e.nas===n);assert.equal(byNas('10.0.0.1').result,'reject');assert.equal(byNas('10.0.0.2').result,'authorized','router B untouched');
  radius.finalDecision(st,{'User-Name':'kne-aaa111','Calling-Station-Id':A,'NAS-IP-Address':'10.0.0.2'},'accept',T0+300);assert.equal(byNas('10.0.0.2').result,'accept');
 });
+
+test('8b. retries on the same router and MAC: each final result goes to its own attempt, whatever order they arrive in',()=>{
+ const {st}=setup();const base={'User-Name':'kne-aaa111','Calling-Station-Id':A,'NAS-IP-Address':'10.0.0.1'};
+ const try1={...base,'CHAP-Challenge':'0x01','CHAP-Password':'0xaa'},try2={...base,'CHAP-Challenge':'0x02','CHAP-Password':'0xbb'};
+ assert.equal(radius.authorize(st,try1,T0).status,200);assert.equal(radius.authorize(st,try2,T0+500).status,200);
+ const rows=()=>(st.setting('radiusAuthLog')||{items:[]}).items.filter(e=>e.username==='kne-aaa111');
+ assert.equal(radius.finalDecision(st,try1,'reject',T0+800),'updated');
+ let r=rows();assert.equal(r.length,2);assert.equal(r[0].result,'authorized','newer attempt untouched by the older reject');assert.equal(r[1].result,'reject');
+ assert.equal(radius.finalDecision(st,try2,'accept',T0+900),'updated','newer acceptance is recorded');
+ r=rows();assert.equal(r[0].result,'accept');assert.equal(r[1].result,'reject');
+ assert.equal(radius.finalDecision(st,try1,'reject',T0+950),'already','duplicate report ignored');
+ // Reversed order: accept for the newer attempt first, then the older reject.
+ const {st:s2}=setup();radius.authorize(s2,try1,T0);radius.authorize(s2,try2,T0+500);
+ radius.finalDecision(s2,try2,'accept',T0+800);radius.finalDecision(s2,try1,'reject',T0+900);
+ const r2=(s2.setting('radiusAuthLog')||{items:[]}).items;assert.equal(r2[0].result,'accept');assert.equal(r2[1].result,'reject');
+ // The accepted device keeps its reservation even though the older attempt was rejected: a second device is still refused.
+ assert.equal(radius.authorize(s2,{...base,'Calling-Station-Id':B},T0+1000).status,401);
+});

@@ -48,11 +48,34 @@ test('12. wallet + promo: discount first, then wallet; full, partial and empty w
   const s1=mk('kne-w20',20);const r1=await portal.start(store,{kind:'account',username:'kne-w20',phone:'0711111111',promo:'HALF50',idempotencyKey:'key-0000001'},O,d.fetchImpl,Date.now(),s1.id);
   assert.equal(r1.amount,30,'KSh100 at 50% = 50, wallet 20 → 30 by M-Pesa');assert.equal(r1.walletUsed,20);assert.equal(d.pushes.at(-1).Amount,30);
   const s0=mk('kne-w00',0);const r0=await portal.start(store,{kind:'account',username:'kne-w00',phone:'0722222222',promo:'HALF50',idempotencyKey:'key-0000002'},O,d.fetchImpl,Date.now(),s0.id);assert.equal(r0.amount,50);
-  const s9=mk('kne-w90',90);const r9=await portal.start(store,{kind:'account',username:'kne-w90',phone:'0733333333',promo:'HALF50',idempotencyKey:'key-0000003'},O,d.fetchImpl,Date.now(),s9.id);assert.equal(r9.amount,1,'wallet covers the discounted 50 except the 1 shilling minimum');assert.equal(r9.walletUsed,49);
+  const s9=mk('kne-w90',90);const r9=await portal.start(store,{kind:'account',username:'kne-w90',phone:'0733333333',promo:'HALF50',idempotencyKey:'key-0000003'},O,d.fetchImpl,Date.now(),s9.id);assert.equal(r9.walletOnly,true,'wallet 90 covers the discounted 50');assert.equal(r9.walletUsed,50);assert.equal(store.get('subscribers',s9.id).balance,40);
  }finally{done();}});
 test('13. a callback amount different from the request is held for review, never credited',async()=>{
  const {store,daily,secret,done}=fixture(),d=daraja();try{
   const st=await portal.start(store,{kind:'hotspot',planId:daily.id,phone:'0712345678'},O,d.fetchImpl);const push=d.pushes[0];d.answers.set(push.id,'0');
   await portal.callback(store,secret,callbackBody(push.id,0,'TJK9ZZZ9ZZ',1000),d.fetchImpl);
   const p=store.list('portalPayments').find(x=>x.id===st.id);assert.equal(p.status,'review');assert.equal(store.list('subscriberPayments').length,0);
+ }finally{done();}});
+
+test('12b. full wallet + promo: KSh100 plan, 50% promo, KSh100 wallet deducts 50 and records one promo use (once, on retry too)',async()=>{
+ const {store,done}=fixture(),d=daraja();try{
+  const plan=store.put('plans',radius.plan({name:'Hundred',service:'pppoe',downloadMbps:5,uploadMbps:5,price:100,durationValue:30,durationUnit:'days'}));const promo=store.put('promoCodes',promos.validate({code:'HALF50',type:'percent',value:50,maxUses:1}));
+  const s=store.put('subscribers',{...radius.subscriber(store,{name:'W',username:'kne-w100',service:'pppoe',planId:plan.id,phone:'0711111111',expiresAt:Date.now()-1000}),balance:100});
+  const inp={kind:'account',username:'kne-w100',phone:'0711111111',promo:'HALF50',idempotencyKey:'key-1000001'};
+  const r=await portal.start(store,inp,O,d.fetchImpl,Date.now(),s.id);assert.equal(r.walletOnly,true);assert.equal(r.walletUsed,50);
+  assert.equal(store.get('subscribers',s.id).balance,50);assert.equal(store.get('promoCodes',promo.id).used,1);assert.equal(d.pushes.length,0);
+  await portal.start(store,inp,O,d.fetchImpl,Date.now(),s.id);assert.equal(store.get('subscribers',s.id).balance,50,'retry is idempotent');assert.equal(store.get('promoCodes',promo.id).used,1);
+  const s2=store.put('subscribers',{...radius.subscriber(store,{name:'X',username:'kne-w101',service:'pppoe',planId:plan.id,phone:'0722222222',expiresAt:Date.now()-1000}),balance:100});
+  await assert.rejects(portal.start(store,{...inp,username:'kne-w101',phone:'0722222222',idempotencyKey:'key-1000002'},O,d.fetchImpl,Date.now(),s2.id),/fully used/);assert.equal(store.get('subscribers',s2.id).balance,100);
+ }finally{done();}});
+test('11b. late promo settlement: a checkout that outlived its hold cannot become a second use of a one-use promo',async()=>{
+ const {store,daily,secret,done}=fixture(),d=daraja();try{
+  const promo=store.put('promoCodes',promos.validate({code:'ONCE50',type:'percent',value:50,maxUses:1}));
+  const t0=Date.now()-11*60000;const a=await portal.start(store,{kind:'hotspot',planId:daily.id,phone:'0712345678',promo:'ONCE50'},O,d.fetchImpl,t0);
+  const b=await portal.start(store,{kind:'hotspot',planId:daily.id,phone:'0722345678',promo:'ONCE50'},O,d.fetchImpl);
+  assert.equal(d.pushes.length,2,'hold expired so a second checkout was allowed to start');
+  for(const [i,rc] of [[0,'TJK1AAAA01'],[1,'TJK1BBBB02']]){const push=d.pushes[i];d.answers.set(push.id,'0');await portal.callback(store,secret,callbackBody(push.id,0,rc,25),d.fetchImpl);}
+  const pa=store.list('portalPayments').find(x=>x.id===a.id),pb=store.list('portalPayments').find(x=>x.id===b.id);
+  assert.equal(pa.status,'paid');assert.equal(pb.status,'review');assert.match(pb.reason,/used up/);
+  assert.equal(store.get('promoCodes',promo.id).used,1);assert.equal(store.list('promoActivations').length,1);
  }finally{done();}});
