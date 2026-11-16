@@ -71,3 +71,9 @@ test('audit (read-only) finds a session the old code lowered, from the packet lo
  const x=one(st),bad={...x,downloadBytes:0,uploadBytes:0};st.db.prepare("UPDATE records SET body=? WHERE kind='radiusSessions' AND id=?").run(JSON.stringify(bad),x.id);
  const before=JSON.stringify(st.list('radiusSessions')),r=audit(st);assert.equal(r.affected.length,1);assert.equal(r.affected[0].download.packetsShow,50e6);assert.equal(JSON.stringify(st.list('radiusSessions')),before);
 });
+test('a used voucher shows in the customer\'s payments and connects',()=>{
+ const {st}=setup(),V=require('../lib/vouchers.cjs'),hm=require('../lib/hotspotme.cjs'),p=st.list('plans')[0];V.generate(st,{planId:p.id,count:1},{name:'Staff'});
+ const code=st.list('vouchers')[0].code,acc=V.redeem(st,code.toLowerCase(),T0);assert.ok(acc);
+ acct(st,'Start',{user:code.toLowerCase(),secs:0},T0+1000);const tok=hm.trust(st,code.toLowerCase(),'5E:CB:3A:BF:9A:3D'),u=hm.usage(st,'5E:CB:3A:BF:9A:3D',T0+2000,tok);
+ assert.equal(u.found,true);assert.equal(u.payments.length,1);assert.match(u.payments[0].ref,/^Voucher /);assert.equal(u.payments[0].amount,1);assert.equal(u.connects.length,1);assert.equal(u.connects[0].plan,'P');
+});
