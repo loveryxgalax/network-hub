@@ -117,7 +117,7 @@ for(const k of Object.keys(THEME_FR))THEME_COPY[k].fr=THEME_FR[k];
 
 
 /* ===================== STATE ===================== */
-let CFG={theme:'midnight',brandName:'Kade Networks',brandColor:'#0032fd',intro:'',defaultLang:'sw',phone:'',whatsapp:'',email:'info@kadenetworks.com',accountPrefix:'KNE',popular:'',
+let CFG={theme:'midnight',brandName:'Kade Networks',brandColor:'#0032fd',intro:'',defaultLang:'auto',phone:'',whatsapp:'',email:'info@kadenetworks.com',accountPrefix:'KNE',popular:'',
  show:{pppoe:true,hotspot:true,findAccount:true,accessAccount:true,onTheGo:true,contact:true}};
 let plans=[],pppoePlans=[],mpesaOn=true,cardOn=false,state='loading',LANG='en',selected=null,polling=null,lastKind='hotspot',csrf='',isAdmin=false;
 try{const s=localStorage.getItem('portal-lang');if(s&&STR[s])LANG=s;}catch{}
@@ -351,7 +351,7 @@ function wireAdmin(){
  $('#admin').addEventListener('click',e=>{const tp=e.target.closest('[data-theme-pick]');if(tp){CFG.theme=tp.dataset.themePick;render();}const cp=e.target.closest('[data-color]');if(cp){CFG.brandColor=cp.dataset.color;render();}});
  const text=(id,key,fallback='')=>{$('#'+id).oninput=e=>{CFG[key]=e.target.value||fallback;render();};};
  text('cfgName','brandName','Kade Networks');text('cfgIntro','intro');text('cfgPhone','phone');text('cfgWhatsapp','whatsapp');text('cfgEmail','email');text('cfgPopular','popular');
- $('#cfgColor').oninput=e=>{CFG.brandColor=e.target.value;render();};$('#cfgLang').onchange=e=>{CFG.defaultLang=e.target.value;LANG=e.target.value;render();};
+ $('#cfgColor').oninput=e=>{CFG.brandColor=e.target.value;render();};$('#cfgLang').onchange=e=>{CFG.defaultLang=e.target.value;LANG=STR[e.target.value]?e.target.value:(STR[String(navigator.language||'').slice(0,2)]?String(navigator.language).slice(0,2):'en');render();};
  for(const [id,key] of [['tPppoe','pppoe'],['tHotspot','hotspot'],['tFind','findAccount'],['tAccess','accessAccount'],['tOtg','onTheGo'],['tContact','contact'],['tSpeed','speed'],['tUsage','usage'],['tMessage','message'],['tChat','chat']])$('#'+id).onchange=e=>{CFG.show[key]=e.target.checked;render();};
  $('#saveCfg').onclick=async()=>{const btn=$('#saveCfg');btn.textContent='Saving…';
   try{const body={theme:CFG.theme,brandName:CFG.brandName,brandColor:CFG.brandColor,intro:CFG.intro,defaultLang:CFG.defaultLang,phone:CFG.phone,whatsapp:CFG.whatsapp,email:CFG.email,accountPrefix:CFG.accountPrefix,popular:CFG.popular,packageLayout:CFG.packageLayout,loadingStyle:CFG.loadingStyle,loadingText:CFG.loadingText,terms:CFG.terms,show:CFG.show};
@@ -360,7 +360,7 @@ function wireAdmin(){
  $('#copyCfg').onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(CFG,null,2));$('#copyCfg').textContent='Copied ✓';}catch{$('#copyCfg').textContent='Copy failed';}setTimeout(()=>$('#copyCfg').textContent='Copy JSON',1500);};
 }
 // Preview inside the netops editor: the editor's unsaved settings win over the saved ones, whichever arrives first.
-let previewCfg=null;const applyPreview=()=>{const c=previewCfg;if(!c)return;CFG={...CFG,...c,show:{...CFG.show,...(c.show||{})}};if(c.defaultLang)LANG=c.defaultLang;};
+let previewCfg=null;const applyPreview=()=>{const c=previewCfg;if(!c)return;CFG={...CFG,...c,show:{...CFG.show,...(c.show||{})}};if(c.defaultLang&&STR[c.defaultLang])LANG=c.defaultLang;};
 window.addEventListener('message',e=>{if(e.origin!==location.origin||!params.has('preview')||e.data?.kade!=='config')return;previewCfg=e.data.config||{};applyPreview();render();});
 async function checkAdmin(){
  if(params.has('preview')){try{parent.postMessage({kade:'ready'},location.origin);}catch{}return;}
@@ -414,7 +414,7 @@ async function boot(){
  const q=params.get('theme');
  try{
   const cq=new URLSearchParams();if(router.mac)cq.set('mac',router.mac);if(params.get('ip'))cq.set('ip',params.get('ip'));if(params.get('nas'))cq.set('nas',params.get('nas'));const d=await call('config'+(cq.toString()?'?'+cq:''));MAINT=d.maintenance||null;CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};applyPreview();plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;cardOn=!!d.paystack;freeMode=d.freeMode||null;engage=d.engage||{ads:[],quiz:null};state='ok';
-  {const nav=String(navigator.language||'').slice(0,2).toLowerCase(),pick=CFG.defaultLang||(STR[nav]?nav:'en');try{if(!localStorage.getItem('portal-lang'))LANG=STR[pick]?pick:'en';}catch{LANG=STR[pick]?pick:'en';}}
+  {const nav=String(navigator.language||'').slice(0,2).toLowerCase(),pick=(CFG.defaultLang&&CFG.defaultLang!=='auto')?CFG.defaultLang:(STR[nav]?nav:'en');try{if(!localStorage.getItem('portal-lang'))LANG=STR[pick]?pick:'en';}catch{LANG=STR[pick]?pick:'en';}}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;
  render();bootDone();showMaint();loginChoice();hotspotExtras();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
