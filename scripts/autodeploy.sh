@@ -27,6 +27,20 @@ log "deploying $(git rev-parse --short HEAD): ${services[*]}"
 if ! docker compose --profile live --profile radius build "${services[@]}" 2>&1 | tail -20; then
   log 'build failed; current containers preserved; will retry'; exit 1
 fi
+# Before switching the app, take a consistent copy of the database inside the data volume and check it opens and
+# passes SQLite's integrity check with the same record count. No verified copy, no deploy (retried next run).
+if [ -n "$(docker compose ps -q hub 2>/dev/null)" ]; then
+  snap="predeploy-$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short "$target").sqlite"
+  if ! docker compose exec -T hub node -e "
+const fs=require('node:fs'),{DatabaseSync}=require('node:sqlite'),dir='/data/predeploy',out=dir+'/'+process.argv[1];
+fs.mkdirSync(dir,{recursive:true});const d=new DatabaseSync('/data/network.sqlite');d.exec(\"VACUUM INTO '\"+out+\"'\");
+const src=d.prepare('SELECT count(*) n FROM records').get().n,c=new DatabaseSync(out,{readOnly:true});
+if(c.prepare('PRAGMA integrity_check').get().integrity_check!=='ok'||c.prepare('SELECT count(*) n FROM records').get().n!==src){fs.rmSync(out,{force:true});console.error('copy failed verification');process.exit(1);}
+for(const f of fs.readdirSync(dir).filter(x=>x.startsWith('predeploy-')).sort().slice(0,-3))fs.rmSync(dir+'/'+f,{force:true});
+console.log('verified '+out+' ('+src+' records)');" "$snap" 2>&1 | tail -3; then
+    log 'pre-deploy database copy failed; current containers preserved; will retry'; exit 1
+  fi
+fi
 if ! docker compose --profile live --profile radius up -d --no-deps --wait --wait-timeout 120 "${services[@]}" 2>&1 | tail -20; then
   log 'start or health check failed; will retry'; exit 1
 fi
