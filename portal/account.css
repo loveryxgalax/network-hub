@@ -109,3 +109,6 @@ body.pp #user,body.pp .ah-user{display:block!important}
 *,*::before,*::after,*::placeholder{text-transform:none!important}
 
 .account-ban{padding:18px 20px;border:1px solid #dc2626;border-radius:14px;background:#fff1f2;color:#881337;margin-bottom:16px}.account-ban h2{margin:0 0 6px}.account-ban p{margin:0;line-height:1.6}.btn[aria-disabled=true]{opacity:.5;pointer-events:none}
+html{font-size:90%}
+.usage3{grid-template-columns:repeat(3,1fr)}.usage3 .stat em{display:block;font-style:normal;font-size:11px;color:#6b7280;margin-top:2px}.usage3 .stat{padding:10px}.usage3 .stat b{font-size:17px}
+.pp-contact>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pp-contact b{margin-left:auto;font-weight:600}.pp-contact em{display:flex;gap:6px;font-style:normal;width:100%;justify-content:flex-end}
