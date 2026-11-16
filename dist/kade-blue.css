@@ -1209,3 +1209,4 @@ html body table.data-table td .ra-btn,html body table.data-table td .button.ic-b
 .kd-sc-wide .kd-sc-ms{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
 .kd-svc{display:inline-block;text-transform:uppercase;font-weight:800;font-size:10px;letter-spacing:.06em;padding:3px 9px;border-radius:999px}.kd-svc.hotspot{background:#e0e7ff;color:#1d3fd6}.kd-svc.pppoe{background:#d1fae5;color:#047857}.kd-svc.static{background:#fef3c7;color:#92400e}
 @media(min-width:761px) and (max-width:1180px){.topbar .search-trigger{flex:0 1 260px!important;min-width:110px!important;width:auto!important}.topbar .breadcrumbs{min-width:0;overflow:hidden}.topbar .kbd,.topbar .search-trigger kbd{display:none}}
+.rtp-three{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))!important}
