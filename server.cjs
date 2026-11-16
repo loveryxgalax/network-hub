@@ -461,9 +461,17 @@ function createApp(options={}){
   if(srRoute&&method==='POST'){role(user,['admin','manager']);const input=await body(req),saved=stockreq.decide(store,srRoute[1],srRoute[2],user,input.note);store.audit(user,`Stock request ${srRoute[2]}: ${saved.quantity} × ${saved.itemName}`,saved.id);return json(res,200,saved);}
   if(route==='/api/stock/receive'&&method==='POST'){role(user,['admin','manager']);const saved=stockreq.receive(store,await body(req),user);store.audit(user,'Received stock',saved.stockId);return json(res,201,saved);}
   if(route==='/api/ledger'&&method==='GET'){access.need(store,user,'ledger.view');const q=k=>url.searchParams.get(k)||undefined,from=q('from')?Date.parse(q('from')+'T00:00:00+03:00'):undefined,to=q('to')?Date.parse(q('to')+'T00:00:00+03:00')+864e5:undefined;
-   const items=ledger.list(store,{subscriberId:q('subscriberId'),type:q('type'),from,to,limit:2000});
-   if(url.searchParams.get('format')==='csv'){const esc=v=>'"'+String(v??'').replace(/"/g,'""')+'"',subs=new Map(store.list('subscribers').map(x=>[x.id,x.username]));res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="ledger.csv"','Cache-Control':'no-store'});return res.end(['seq,time,type,customer,amount_kes,wallet_change_kes,reference,note,actor,hash',...items.map(e=>[e.seq,new Date(e.time).toISOString(),e.type,subs.get(e.subscriberId)||'',(e.amountMinor/100).toFixed(2),(e.walletMinor/100).toFixed(2),e.ref,e.note,e.actor||'',e.hash].map(esc).join(','))].join('\n'));}
-   return json(res,200,{items:items.slice(0,500),totals:ledger.totals(store,from||0,to||Infinity),integrity:ledger.verify(store)});}
+   // One snapshot (one read) feeds the list, the totals and the export, so they always agree and a write that lands
+   // during a long export cannot add, drop or repeat rows.
+   const snap=ledger.snapshot(store),snapSeq=snap.length?snap[snap.length-1].seq:0,items=ledger.list(store,{subscriberId:q('subscriberId'),type:q('type'),from,to,limit:Infinity},snap);
+   if(url.searchParams.get('format')==='csv'){const esc=v=>'"'+String(v??'').replace(/"/g,'""')+'"',subs=new Map(store.list('subscribers').map(x=>[x.id,x.username]));
+    res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="ledger.csv"','Cache-Control':'no-store','X-Ledger-Rows':String(items.length),'X-Ledger-Snapshot-Seq':String(snapSeq)});
+    // Every matching entry, written 1,000 rows at a time (waiting when the client is slow) instead of one huge string.
+    const row=e=>[e.seq,new Date(e.time).toISOString(),e.type,subs.get(e.subscriberId)||'',(e.amountMinor/100).toFixed(2),(e.walletMinor/100).toFixed(2),e.ref,e.note,e.actor||'',e.hash].map(esc).join(',');
+    if(!res.write('seq,time,type,customer,amount_kes,wallet_change_kes,reference,note,actor,hash'))await new Promise(r=>res.once('drain',r));
+    for(let i=0;i<items.length;i+=1000){if(res.destroyed)return;const chunk='\n'+items.slice(i,i+1000).map(row).join('\n');if(!res.write(chunk))await new Promise(r=>res.once('drain',r));}
+    return res.end();}
+   return json(res,200,{items:items.slice(0,500),count:items.length,shown:Math.min(500,items.length),snapshotSeq:snapSeq,totals:ledger.totals(store,from||0,to||Infinity,snap),integrity:ledger.verify(store)});}
   const revRoute=route.match(/^\/api\/payments\/([a-f0-9-]{36})\/reverse$/);
   if(revRoute&&method==='POST'){access.need(store,user,'payments.reverse');const input=await body(req),r=ledger.reverse(store,radius,revRoute[1],{reason:input.reason,confirm:input.confirm,rollbackExpiry:input.rollbackExpiry!==false,user});store.audit(user,'Reversed payment '+r.payment.reference+': '+r.payment.reversalReason,r.payment.subscriberId);try{statics.sync(store,jobs,radius.stateOf,user);}catch{}return json(res,200,r);}
   if(route==='/api/payouts'&&method==='GET'){if(!access.can(store,user,'payouts.request')&&!access.can(store,user,'payouts.approve'))access.need(store,user,'payouts.request');return json(res,200,{items:payouts.list(store),b2c:payouts.b2cPublic(store)});}
