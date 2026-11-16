@@ -47,3 +47,19 @@ test('status page timers tick: time left counts down, uptime counts up',()=>{
  new Function('document','setInterval',code)(g.document,g.setInterval);tick();tick();
  assert.equal(els.tl.textContent,'5h 47m 58s');assert.equal(els.upt.textContent,'1h 12m 2s');
 });
+test('automatic WiFi page updates: only opted-in routers, once per 30 minutes, stops after 3 failures, never a reboot',()=>{
+ const jobs=require('../lib/jobs.cjs'),portal=require('../lib/portal.cjs'),st=mk(),now=Date.now();let hash='v1';jobs.setPages('https://my.example.test',()=>hash);
+ const a=st.put('devices',{name:'LAB-HEX',type:'router'}),b=st.put('devices',{name:'OTHER',type:'router'});for(const r of [a,b]){jobs.enroll(st,r.id);st.setting('pagesHash:'+r.id,'v1');st.put('routerJobs',{routerId:r.id,type:'push-design-auto',status:'succeeded',params:{},createdAt:now-864e5,createdBy:'staff'});}
+ portal.saveRouterPortal(st,a.id,{...portal.routerPortal(st,a.id),autoPages:true});
+ assert.deepEqual(jobs.autoUpdatePages(st,now),[],'pages are current: nothing to do');
+ hash='v2';assert.deepEqual(jobs.autoUpdatePages(st,now),[a.id],'only the opted-in router is queued');
+ const q=st.list('routerJobs').filter(j=>j.routerId===a.id&&j.type==='push-design-auto'&&j.status==='queued');assert.equal(q.length,1);assert.equal(q[0].type,'push-design-auto');assert.equal(q[0].createdBy,'Automatic');assert.equal(st.list('routerJobs').filter(j=>j.routerId===b.id&&j.type==='push-design-auto'&&j.status==='queued').length,0);
+ assert.deepEqual(jobs.autoUpdatePages(st,now+1000),[],'a queued push is not queued twice');
+ for(const j of q)st.put('routerJobs',{...j,status:'failed'},j);assert.deepEqual(jobs.autoUpdatePages(st,now+60000),[],'not again within 30 minutes');
+ assert.deepEqual(jobs.autoUpdatePages(st,now+31*60000),[a.id],'retries after 30 minutes');
+ // Three failed automatic attempts in a row: stop until a push succeeds.
+ for(let i=0;i<3;i++){for(const j of st.list('routerJobs').filter(x=>x.routerId===a.id&&x.type==='push-design-auto'&&x.status==='queued'))st.put('routerJobs',{...j,status:'failed'},j);jobs.autoUpdatePages(st,now+(62+i*31)*60000);}
+ for(const j of st.list('routerJobs').filter(x=>x.routerId===a.id&&x.type==='push-design-auto'&&x.status==='queued'))st.put('routerJobs',{...j,status:'failed'},j);
+ assert.deepEqual(jobs.autoUpdatePages(st,now+400*60000),[],'stopped after repeated failures');
+ assert.ok(!st.list('routerJobs').some(j=>/reboot|upgrade/.test(j.type)));
+});
