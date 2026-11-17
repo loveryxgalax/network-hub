@@ -52,7 +52,7 @@ test('service separation by page, wrong-domain accounts, direct links and router
   const pt=require('../lib/selfservice.cjs').token(st,st.list('subscribers').find(x=>x.username==='user2'));assert.equal((await fetch(o+'/portal/account.html?t='+encodeURIComponent(pt),{headers:{Host:'my.example.test'},redirect:'manual'})).status,200);
   // The router pages: login.html carries the portal and the router's CHAP values; buy.html is plain.
   const login=await (await fetch(o+'/portal/api/router/login.html',{headers:{Host:'my.example.test'}})).text();
-  assert.match(login,/name="portal-mode" content="hotspot"/);assert.match(login,/\$\(chap-challenge\)/);assert.match(login,/src="https:\/\/my\.example\.test\/portal\/portal\.js/);
+  assert.match(login,/name="portal-mode" content="hotspot"/);assert.match(login,/\$\(chap-challenge\)/);assert.match(login,/src="https:\/\/my\.example\.test\/portal\/wifi\.js/);
   assert.match(await (await fetch(o+'/portal/api/router/buy.html',{headers:{Host:'my.example.test'}})).text(),/portal-base" content="https:\/\/my\.example\.test"/);
  }finally{app.server.close();}
 });

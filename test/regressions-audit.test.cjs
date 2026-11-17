@@ -89,3 +89,9 @@ test('6. nightly copy is test-restored; a damaged copy fails; the health status 
 test('7. the hub keeps serving after a background task fails, and the off-site script reports to the hub',()=>{
  const src=fs.readFileSync(path.join(__dirname,'../server.cjs'),'utf8');assert.match(src,/process\.on\('unhandledRejection'/);assert.match(src,/process\.on\('uncaughtException'/);
  assert.match(fs.readFileSync(path.join(__dirname,'../deployment/docker/backup.sh'),'utf8'),/offsite\.json/);assert.ok(fs.existsSync(path.join(__dirname,'../scripts/restore-test.sh')));});
+test('new WiFi portal (ISPman layout): served at /portal/, same endpoints, old portal kept for reference, no auto-retry after a refused login',async()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../portal/index.html'),'utf8'),js=fs.readFileSync(path.join(__dirname,'../portal/wifi.js'),'utf8');
+ assert.match(html,/wifi\.js/);assert.match(html,/id="hotspotPkgs"/);assert.ok(fs.existsSync(path.join(__dirname,'../portal/legacy/index.html')),'previous portal kept');assert.match(fs.readFileSync(path.join(__dirname,'../portal/legacy/index.html'),'utf8'),/portal\.js/);
+ for(const ep of ["'pay'","'login'","'code-login'","'connect-now'","'usage?","'active?","'account'","'redeem-points'","'trial'","'message'"])assert.ok(js.includes(ep),'uses '+ep);
+ assert.match(js,/const failed=!!params\.get\('error'\)/);assert.match(js,/if\(!ADM&&!failed\)timer=setInterval/);
+ assert.doesNotMatch(js,/password:password\b(?![^}]*chap)/,'logins go to the router only as the server\'s CHAP answer');});

@@ -27,7 +27,7 @@ test('3. Session-Timeout never exceeds the time left',()=>{
  assert.equal(auth(st,'kne-aaa111',A,'10.0.0.1',T0+11000).status,401,'expired hotspot account refused');
 });
 test('4. Reset keeps accounting evidence and records the request; the slot is freed only by the router\'s Stop',()=>{
- const {st,s}=setup(),ss=require('../lib/selfservice.cjs');auth(st,'kne-aaa111',A);acct(st,'Start','kne-aaa111',A,'s1',Date.now()-1000);
+ const {st,s}=setup({expiresAt:Date.now()+864e5}),ss=require('../lib/selfservice.cjs');auth(st,'kne-aaa111',A);acct(st,'Start','kne-aaa111',A,'s1',Date.now()-1000);
  const before=JSON.stringify(st.list('radiusSessions'));ss.reset(st,st.get('subscribers',s.id));assert.equal(JSON.stringify(st.list('radiusSessions')),before,'no invented Stop');
  assert.equal(st.setting('resetRequests').items.length,1);assert.equal(auth(st,'kne-aaa111',B,'10.0.0.1',Date.now()).status,401,'still occupied until Stop');
  acct(st,'Stop','kne-aaa111',A,'s1',Date.now());assert.equal(auth(st,'kne-aaa111',B,'10.0.0.1',Date.now()+130000).status,200);
