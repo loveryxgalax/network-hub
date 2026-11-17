@@ -169,6 +169,18 @@ function renderFree(){const f=CFG.freeMode;if(!f||MODE==='pppoe'){$('#free').inn
  $('#free').innerHTML=`<div class="card" style="margin:0 0 12px;text-align:center"><h3>${esc(t('free'))}</h3><p class="muted small">${esc(f.reason||'')} ${esc(t('freeUntil',{t:when(f.until)}))}</p><button type="button" class="btn wide" id="free-go">${esc(t('freeBtn'))}</button></div>`;
  $('#free-go').onclick=async()=>{const b=$('#free-go');b.disabled=true;try{if(!router.login)throw new Error(t('needWifi'));const r=await call('login',{body:{free:true,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge}});toRouter(r);}catch(err){b.disabled=false;alertBox(err.message);}};}
 
+/* ---------- design + package layout (chosen in admin: Captive experience) ---------- */
+const THEMES=['classic','spotlight','split','minimal','midnight','christmas','futuristic','bento','elegant','essential','studio','festive','blueprint','showcase','night','celebrate','daypass','edition','social','together'];
+// "Automatic" layout gives each design the layout it was made with.
+const AUTO_LAYOUT={studio:'list',festive:'list',night:'list',daypass:'list',edition:'list',together:'list',showcase:'list',social:'grid',bento:'grid',blueprint:'grid',celebrate:'grid'};
+function applyLook(){const th=THEMES.includes(params.get('theme'))?params.get('theme'):THEMES.includes(CFG.theme)?CFG.theme:'classic';document.body.dataset.theme=th;
+ const pick=['list','grid','swipe'].includes(params.get('layout'))?params.get('layout'):CFG.packageLayout,lay=['list','grid','swipe'].includes(pick)?pick:AUTO_LAYOUT[th]||'';
+ for(const c of ['lay-list','lay-grid','lay-swipe'])document.body.classList.remove(c);if(lay)document.body.classList.add('lay-'+lay);
+ document.documentElement.style.setProperty('--b',CFG.brandColor||'#0032fd');$('#brand').textContent=CFG.brandName||'';}
+// Admin preview: the Captive experience page sends unsaved settings; show them straight away.
+window.addEventListener('message',e=>{if(e.origin!==location.origin||!params.has('preview')||e.data?.kade!=='config'||!CFG)return;const c=e.data.config||{};
+ CFG={...CFG,...c,show:{...CFG.show,...(c.show||{})}};applyLook();renderPackages();});
+
 /* ---------- start ---------- */
 for(const b of document.querySelectorAll('[data-lang]'))b.onclick=()=>{LANG=b.dataset.lang;try{localStorage.setItem('portal-lang',LANG);}catch{}translate();if(CFG){renderPackages();renderFree();if(!$('#active').hidden){clearInterval(timer);$('#active').hidden=true;showActive();}}};
 async function start(){translate();
@@ -181,8 +193,7 @@ async function start(){translate();
  let chosen='';try{chosen=localStorage.getItem('portal-lang')||'';}catch{}
  if(!chosen){if(W[CFG.defaultLang])LANG=CFG.defaultLang;else if(/^sw/i.test(navigator.language||''))LANG='sw';}
  translate();
- document.documentElement.style.setProperty('--b',CFG.brandColor||'#0032fd');
- $('#brand').textContent=CFG.brandName||'';document.title=(CFG.brandName||'')+' WiFi';
+ applyLook();document.title=(CFG.brandName||'')+' WiFi';
  {const l=$('#logo'),u=CFG.logoUrl||'/img/kade-mark.png';l.src=/^\/(?!\/)/.test(u)?BASE+u:u;l.hidden=false;l.onerror=()=>{l.hidden=true;};}
  if(CFG.phone){const a=$('#call');a.href='tel:'+CFG.phone.replace(/\s/g,'');a.innerHTML=ICON.phone+esc(CFG.phone);a.hidden=false;}
  if(CFG.whatsapp){const a=$('#wa');a.href='https://wa.me/'+intl(CFG.whatsapp);a.className='wa';a.innerHTML=ICON.wa+esc(CFG.whatsapp);a.hidden=false;}
@@ -198,6 +209,7 @@ async function start(){translate();
  if(params.get('expired')==='1'||params.get('account')){if(params.get('account'))$('#find input').value=params.get('account');setTimeout(()=>$('#find input').focus(),300);}
  renderPackages();renderFree();
  $('#boot').classList.add('done');here(home?'Home':'Packages');
- if(!home){await loadMe();$('#usage').hidden=!(CFG.show.myUsage!==false&&(router.mac||me?.found));await showActive();}}
+ if(!home){await loadMe();$('#usage').hidden=!(CFG.show.myUsage!==false&&(router.mac||me?.found));await showActive();}
+ if(params.has('preview')){try{parent.postMessage({kade:'ready'},location.origin);}catch{}}}
 start();
 })();

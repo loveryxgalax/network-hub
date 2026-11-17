@@ -95,3 +95,11 @@ test('new WiFi portal (ISPman layout): served at /portal/, same endpoints, old p
  for(const ep of ["'pay'","'login'","'code-login'","'connect-now'","'usage?","'active?","'account'","'redeem-points'","'trial'","'message'"])assert.ok(js.includes(ep),'uses '+ep);
  assert.match(js,/const failed=!!params\.get\('error'\)/);assert.match(js,/if\(!ADM&&!failed\)timer=setInterval/);
  assert.doesNotMatch(js,/password:password\b(?![^}]*chap)/,'logins go to the router only as the server\'s CHAP answer');});
+test('portal designs: all 20 designs and the package layout (auto/list/grid/swipe) are wired to the saved settings and the admin preview',()=>{
+ const js=fs.readFileSync(path.join(__dirname,'../portal/wifi.js'),'utf8'),css=fs.readFileSync(path.join(__dirname,'../portal/wifi-themes.css'),'utf8'),html=fs.readFileSync(path.join(__dirname,'../portal/index.html'),'utf8');
+ assert.match(html,/wifi-themes\.css/);
+ const themes=JSON.parse(/const THEMES=(\[[^\]]+\])/.exec(js)[1].replace(/'/g,'"'));const landingThemes=JSON.parse(/THEMES=(\[[^\]]+\])/.exec(fs.readFileSync(path.join(__dirname,'../lib/landing.cjs'),'utf8'))[1].replace(/'/g,'"'));
+ assert.deepEqual([...themes].sort(),[...landingThemes].sort(),'every design the admin can pick is known to the portal');
+ for(const t of themes.filter(t=>t!=='classic'))assert.ok(css.includes('[data-theme='+t+']'),'styles for '+t);
+ for(const l of ['list','grid','swipe'])assert.ok(css.includes('body.lay-'+l),'layout '+l);
+ assert.match(js,/kade:'ready'/);assert.match(js,/e\.data\?\.kade!=='config'/);});
