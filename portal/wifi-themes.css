@@ -1,6 +1,6 @@
 /* The previous portal's designs, rebuilt for the new WiFi portal. Styling only: same page, same script.
    Set by <body data-theme="…">. "classic" is the ISPman layout itself (no overrides). */
-body:not([data-theme=classic]){background:var(--bg);color:var(--ink);font-family:var(--font,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)}
+body:not([data-theme=classic]){background:var(--bg);color:var(--ink);font-family:var(--font,"Maven Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)}
 body:not([data-theme=classic]) .top{background:var(--topbg,var(--card));border-bottom:1px solid var(--line);box-shadow:none}
 body:not([data-theme=classic]) .brand b{color:var(--topink,var(--ink));font-family:var(--display,inherit)}
 body:not([data-theme=classic]) .help{color:var(--topmut,var(--mut))}
