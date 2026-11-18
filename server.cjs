@@ -1011,8 +1011,8 @@ function createApp(options={}){
   if(pay&&method==='POST'){if(!c2b.validSecret(store,pay[1]))throw error(404,'Not found');const input=await body(req,16384);
    if(pay[2]==='validation')return json(res,200,c2b.validate(store,input));
    try{c2b.confirm(store,input,Date.now(),{ip:String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||'').replace(/^::ffff:/,'')});}catch(cause){console.warn('Paybill payment not applied: '+cause.message);}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
-  const b2c=route.match(/^\/portal\/api\/b2c\/([a-f0-9]{36})\/(result|timeout)$/);
-  if(b2c&&method==='POST'){if(!payouts.validResultSecret(store,b2c[1]))throw error(404,'Not found');try{payouts.result(store,await body(req,65536),b2c[2]==='timeout');}catch(cause){console.warn('B2C result not applied: '+cause.message);}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
+  const b2c=route.match(/^\/portal\/api\/b2c\/([a-f0-9]{36})\/(result|timeout|status|status-timeout)$/);
+  if(b2c&&method==='POST'){if(!payouts.validResultSecret(store,b2c[1]))throw error(404,'Not found');try{const rb=await body(req,65536);if(b2c[2]==='status')require('./lib/payername.cjs').result(store,rb);else if(b2c[2]!=='status-timeout')payouts.result(store,rb,b2c[2]==='timeout');}catch(cause){console.warn('B2C result not applied: '+cause.message);}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
   if(route==='/portal/api/paystack/webhook'&&method==='POST'){let length=0;const chunks=[];for await(const c of req){length+=c.length;if(length>65536)throw error(413,'Request is too large');chunks.push(c);}const raw=Buffer.concat(chunks);
    if(!paystack.validSignature(store,raw,req.headers['x-paystack-signature']))throw error(401,'Bad signature');let event=null;try{event=JSON.parse(raw.toString());}catch{throw error(400,'Invalid JSON');}
    if(event?.event==='charge.success'){try{await portal.paystackEvent(store,event);}catch(cause){console.warn('Paystack event not applied: '+cause.message);}}return json(res,200,{ok:true});}
@@ -1087,6 +1087,9 @@ function createApp(options={}){
  }):null;
  const pagesTimer=setInterval(()=>{try{if(process.env.NETWORK_PASSIVE!=='1')require('./lib/jobs.cjs').autoUpdatePages(store);}catch{}},120000);pagesTimer.unref();
   const walletTimer=setInterval(()=>{try{portal.expirePending(store);}catch{}},60000);walletTimer.unref();
+  // Real names for hotspot customers created by a payment: paybill payers now, STK payers through Safaricom's status lookup.
+  try{require('./lib/payername.cjs').backfill(store);}catch{}
+  const nameTimer=setInterval(()=>{if(process.env.NETWORK_PASSIVE==='1')return;require('./lib/payername.cjs').lookup(store,publicUrl?.origin||custOrigin).catch(()=>{});},180000);nameTimer.unref();
  // Nightly database copy with a restore test (first check ten minutes after starting, then hourly; it runs once a day).
  const backupTick=()=>{try{if(process.env.NETWORK_PASSIVE!=='1'&&options.collector!==false)require('./lib/dbbackup.cjs').tick(store);}catch(e){console.warn('Nightly database copy failed: '+e.message);}};const backupFirst=setTimeout(backupTick,600000);backupFirst.unref();const backupTimer=setInterval(backupTick,3600000);backupTimer.unref();
  try{radius.attributeAliases(store);}catch{}
