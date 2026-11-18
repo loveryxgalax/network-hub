@@ -567,6 +567,8 @@ function createApp(options={}){
    store.audit(user,`Public IP ${input.action} ${String(input.ip||'').slice(0,40)}`,'pppoe-pool');return json(res,200,{items:r});}
   if(route==='/api/pppoe-pool/conflicts'&&method==='GET'){role(user,['admin','manager','network-technician']);return json(res,200,pppoePool.conflicts(store));}
   if(route==='/api/pppoe-pool/reassign'&&method==='POST'){role(user,['admin']);const input=await body(req);if(input.confirm!=='REASSIGN')throw error(400,'Type REASSIGN to confirm');const r=pppoePool.reassignAll(store);store.audit(user,'Reassigned all PPPoE addresses ('+r.cleared+' customers)','pppoe-pool');return json(res,200,r);}
+  const rlg=route.match(/^\/api\/routers\/([a-f0-9-]{36})\/logs$/);
+  if(rlg&&method==='GET'){role(user,['admin','manager','network-technician','operator','support']);{const sc=access.scope(store,user);if(sc&&!sc.has(rlg[1]))throw error(403,'This router is outside your branch');}const q=k=>url.searchParams.get(k)||'';return json(res,200,require('./lib/routerlogs.cjs').forRouter(store,rlg[1],{q:q('q'),level:q('level'),kind:q('kind')}));}
   const rpf=route.match(/^\/api\/routers\/([a-f0-9-]{36})\/profile$/);
   if(rpf&&method==='GET'){role(user,['admin','manager','network-technician','operator','support']);{const sc=access.scope(store,user);if(sc&&!sc.has(rpf[1]))throw error(403,'This router is outside your branch');}return json(res,200,require('./lib/routerprofile.cjs').profile(store,rpf[1]));}
   if(route==='/api/router-audit'&&method==='GET'){if(user.role==='installer')throw error(403,'Not allowed');return json(res,200,{items:require('./lib/audit-routers.cjs').audit(store)});}
