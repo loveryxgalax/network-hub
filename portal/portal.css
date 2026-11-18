@@ -892,3 +892,12 @@ html[data-mode="hotspot"] #pppoeWrap{display:none!important}
 .chat-sheet textarea,.chat-sheet input{background:#fff;color:#0f172a;border:1px solid #e2e8f0}
 .chat-sheet .chat-links a{color:#0f172a;border-color:#e2e8f0;background:#fff}
 .chat-sheet .chat-x{background:#f1f5f9;color:#64748b}
+
+/* Chat sheet: same proportions as the account page (big message box, full-width Send message) */
+.chat-sheet{padding:26px 22px calc(24px + env(safe-area-inset-bottom))}
+.chat-sheet h3{font-size:24px}.chat-sheet .chat-sub{font-size:16px;margin-bottom:18px}
+.chat-sheet textarea{min-height:150px;font-size:17px;padding:16px;border-radius:14px;margin-bottom:12px}
+.chat-sheet input{font-size:16px;padding:14px 16px;border-radius:14px;margin-bottom:14px}
+.chat-sheet .chat-send{min-height:56px;border-radius:14px;font-size:18px;background:var(--brand,#0032fd);color:#fff;justify-content:center}
+.chat-sheet .chat-x{width:44px;height:44px;top:18px;right:18px;font-size:20px;background:#f8fafc;box-shadow:0 3px 10px rgba(15,23,42,.14)}
+.chat-sheet textarea:focus,.chat-sheet input:focus{outline:2px solid var(--brand,#0032fd);outline-offset:0;border-color:transparent}

@@ -992,9 +992,10 @@ function createApp(options={}){
   // "Leave a message" on the hotspot page (when switched on): becomes an Open support ticket, linked to the account with that phone.
   if(route==='/portal/api/message'&&method==='POST'){limit(req,'message',5,3600000);const input=await body(req,2048),sh=landing.get(store).show;if(!(sh.message||(input.chat===true&&sh.chat!==false)))throw error(404,'Not found');
    const name=String(input.name||'').trim().slice(0,60),text=String(input.message||'').trim().slice(0,600),phone=billing.phone(input.phone);
-   if(!name||/[<>\u0000-\u001f]/.test(name))throw error(400,'Enter your name');if(!phone)throw error(400,'Enter a valid phone number');if(text.length<3)throw error(400,'Write a message');
-   const sub=store.list('subscribers').find(x=>billing.phone(x.phone)===phone);
-   store.put('tickets',{title:'Message from the WiFi page: '+name,category:'Something else',details:text+'\n\nPhone: '+phone,priority:'Normal',status:'Open',customer:sub?.name||name,subscriberId:sub?.id||'',source:'portal'});return json(res,200,{ok:true});}
+   if((!name&&input.chat!==true)||/[<>\u0000-\u001f]/.test(name))throw error(400,'Enter your name');if(!phone)throw error(400,'Enter a valid phone number');if(text.length<3)throw error(400,'Write a message');
+   // The chat sheet asks only for a phone number: the customer's own name is used when that phone has an account.
+   const sub=store.list('subscribers').find(x=>billing.phone(x.phone)===phone),who=name||sub?.name||'WiFi customer';
+   store.put('tickets',{title:'Message from the WiFi page: '+who,category:'Something else',details:text+'\n\nPhone: '+phone,priority:'Normal',status:'Open',customer:sub?.name||who,subscriberId:sub?.id||'',source:'portal'});return json(res,200,{ok:true});}
   // "Advertise here": offered plans, and a business sending its advert (no payment taken here).
   // Branding API for the ISP's own website (key from Captive experience → Branding API). Other sites may call it.
   if(route.startsWith('/portal/api/brand/')){const ba=require('./lib/brandapi.cjs'),cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Authorization','Access-Control-Allow-Methods':'GET, OPTIONS'};
