@@ -447,6 +447,7 @@ function createApp(options={}){
    const pr=route.match(/^\/api\/adsales\/plans\/([a-f0-9-]{36})$/);if(pr){const ex=store.get('adPlans',pr[1]);if(!ex)throw error(404,'Plan not found');if(method==='PATCH'){const p=ads.savePlan(store,{...ex,...await body(req)},ex);store.audit(user,'Updated ad plan '+p.name,p.id);return json(res,200,p);}if(method==='DELETE'){store.remove('adPlans',ex.id);store.audit(user,'Deleted ad plan '+ex.name,ex.id);return json(res,200,{ok:true});}}
    const or=route.match(/^\/api\/adsales\/orders\/([a-f0-9-]{36})\/(paid|artwork|approve|decline|finish)$/);if(or&&method==='POST'){const o=ads.step(store,or[1],or[2],await body(req,8192),user);store.audit(user,'Ad order '+o.ref+': '+or[2],o.id);return json(res,200,o);}
    throw error(404,'Not found');}
+  {const tl=route.match(/^\/api\/routers\/([^/]+)\/remote-link$/);if(tl&&method==='POST'){role(user,['admin']);const r=require('./lib/tunnel.cjs').create(store,tl[1],user.name),dev=store.get('devices',tl[1]);store.audit(user,'Made a 1-hour remote access link for '+dev.name,dev.id);return json(res,201,{url:(publicUrl?.origin||'http://'+req.headers.host)+'/tunnel/'+r.token,expiresAt:r.expiresAt});}}
   {const cr=route.match(/^\/api\/checkouts(?:\/([A-Za-z0-9]{3}))?$/);if(cr){role(user,['admin','manager']);const CO=require('./lib/checkouts.cjs'),payUrl=c=>(custOrigin||publicUrl?.origin||'')+'/portal/pay.html?c='+c;
    if(!cr[1]&&method==='GET')return json(res,200,{items:CO.list(store).map(l=>({...l,url:payUrl(l.code)}))});
    if(!cr[1]&&method==='POST'){const l=CO.create(store,await body(req),user.name);store.audit(user,'Created checkout link '+l.code+' ('+l.description+')',l.id);return json(res,201,{...l,url:payUrl(l.code)});}
@@ -900,6 +901,14 @@ function createApp(options={}){
  const server=http.createServer(async(req,res)=>{
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"+(String(req.url).startsWith('/portal/')?' https:':'')+"; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
   try{const url=new URL(req.url,'http://localhost');
+  // Remote Access links: /tunnel/<token> sets a one-hour cookie, then WebFig's own paths go to that router over WireGuard.
+  if(!(portalUrl&&req.headers.host===portalUrl.host)){const TN=require('./lib/tunnel.cjs'),tm=url.pathname.match(/^\/tunnel\/([A-Za-z0-9_-]{20,64})\/?$/);
+   if(tm&&req.method==='GET'){limit(req,'tunnel-open',30,600000);const l=TN.check(store,tm[1]);res.removeHeader('Content-Security-Policy');
+    if(!l){res.writeHead(410,{'Content-Type':'text/html; charset=utf-8'});return res.end(TN.page('This remote access link has expired','Make a new one on the router\'s page in netops: Remote Access.'));}
+    store.audit({id:'system',name:'Remote Access'},'Remote access link opened for '+l.routerName,l.routerId);
+    const secure=String(req.headers['x-forwarded-proto']||'').includes('https')||!!req.headers['cf-visitor']||publicUrl?.protocol==='https:';
+    res.writeHead(302,{'Set-Cookie':`nt_tunnel=${tm[1]}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.max(1,Math.floor((l.expiresAt-Date.now())/1000))}${secure?'; Secure':''}`,Location:'/webfig/','Cache-Control':'no-store'});return res.end();}
+   if(TN.PATHS.test(url.pathname)){const l=TN.check(store,TN.cookieOf(req));if(!l){res.removeHeader('Content-Security-Policy');res.writeHead(410,{'Content-Type':'text/html; charset=utf-8'});return res.end(TN.page('Remote access has ended','Open a new Remote Access link from the router\'s page in netops.'));}return TN.proxy(l,req,res,url);}}
   if(/^\/(fonts|img)\//.test(url.pathname))res.setHeader('Access-Control-Allow-Origin','*');
   // The customer address serves only customer things: the portal (also at /), its API, short links, images and fonts.
   // The admin app, its API and the live view answer only on the admin address.
