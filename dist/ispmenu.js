@@ -1470,10 +1470,21 @@ pages.routerProfile=async function(){
  const sessTable=(items,empty)=>items.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>USER</th><th>ADDRESS</th><th>MAC ADDRESS</th><th>SINCE</th><th>DATA</th></tr></thead><tbody>${items.slice(0,25).map(x=>`<tr><td><b>${H(x.username)}</b>${x.name?`<small>${H(x.name)}</small>`:''}</td><td>${H(x.ip||'—')}</td><td><code>${H(x.mac||'—')}</code></td><td>${x.since?H(ago(x.since)):'—'}</td><td>${H(bytes((x.down||0)+(x.up||0)))}</td></tr>`).join('')}</tbody></table></div>${items.length>25?`<p class="muted small" style="padding:8px 14px">Showing 25 of ${items.length}. See Hotspot or PPPoE → Online sessions for all.</p>`:''}`:`<p class="muted" style="padding:16px">${empty}</p>`;
  body.innerHTML=`
  <div class="rtp-bar">
-  ${NetworkPermissions.equipment(state.session.user.role)?ib('Connection script','file','data-router-agent="'+d.id+'"','primary'):''}
-  ${lk('Router jobs','clock','router-jobs')}${lk('Health','activity','router-health')}
-  ${ib('Refresh','refresh','id="rtp-refresh"')}
-  <details class="rtp-more"><summary class="button secondary rtp-act">More ▾</summary><div class="rtp-more-menu">${lk('Logs','info','system-logs')}${lk('WireGuard','shield','wireguard')}${lk('Winbox access','shield','wireguard')}${lk('Update WiFi pages','wifi','router-jobs')}</div></details>
+  ${(()=>{const eq=NetworkPermissions.equipment(state.session.user.role),adm=state.session.user.role==='admin';
+   // ISPman-style action bar: every button opens a real netops feature for this router. Router changes are queued as
+   // jobs the router's job runner picks up; risky ones (SSH, reboot) ask for the router name first.
+   const pb=(label,ic,attrs,cls='')=>`<button type="button" class="button primary rtp-pill ${cls}" ${attrs}>${icon(ic,16)}<span>${H(label)}</span></button>`,pa=(label,ic,hash,cls='')=>`<a class="button primary rtp-pill ${cls}" href="#${hash}">${icon(ic,16)}<span>${H(label)}</span></a>`;
+   const mi=(label,ic,attrs,cls='')=>`<button type="button" class="rtp-mi ${cls}" ${attrs}>${icon(ic,16)}<span>${H(label)}</span></button>`,ma=(label,ic,hash,cls='')=>`<a class="rtp-mi ${cls}" href="#${hash}">${icon(ic,16)}<span>${H(label)}</span></a>`;
+   return `<div class="rtp-pills">${adm?pb('Enable SSH','key','data-rtp-job="ssh-enable"'):''}${pb('Hotspot','plus','data-rtp-add="hotspot"')}${pa('Hotspot Server','plus','hs-servers')}${pb('PPPoE','plus','data-rtp-add="pppoe"')}
+   ${pb('TV Connect','monitor','data-rtp-tv')}${pb('Public RADIUS','wifi','data-rtp-radius')}${eq?pb('Script','file','data-router-agent="'+d.id+'"'):''}${adm?pb('Delete','trash','data-rtp-del','rtp-danger'):''}
+   ${pa('Remote Access','shield','wireguard')}${pa('Remote Logging','activity','router-health')}${pa('View Logs','file','system-logs')}
+   <details class="rtp-more"><summary class="button primary rtp-pill">More ${icon('chevron',14)}</summary><div class="rtp-more-menu">
+    ${ma('Configuration Backups','server','config-backups')}${ma('Device Jobs','clock','router-jobs')}${mi('Change View','grid','data-rtp-view')}${adm?ma('Setup Device','settings','router-link'):''}
+    ${mi('Download Hotspot Customers','download','data-rtp-dl="hotspot"')}${mi('Download PPPoE Customers','download','data-rtp-dl="pppoe"')}${mi('Download Static Customers','download','data-rtp-dl="static"')}
+    ${ma('Hotspot Server Script','wifi','hs-servers')}${adm?ma('PPPoE Server Script','server','router-link'):''}
+    ${mi('Back up now','server','data-rtp-job="backup-now"')}${mi('Update WiFi pages','wifi','data-rtp-job="push-design"')}${mi('Flush DNS cache','refresh','data-rtp-job="dns-flush"')}${mi('Refresh this page','refresh','id="rtp-refresh"')}
+    ${adm?mi('Reboot','refresh','data-rtp-job="reboot"','rtp-warn'):''}${adm?ma('Re-Onboard','refresh','router-link','rtp-warn'):''}${adm?ma('Start Manual Onboarding','file','router-link','rtp-warn'):''}
+   </div></details></div>`;})()}
   ${canEdit?ib('Edit','pen','data-edit-kind="devices" data-id="'+d.id+'"'):''}
   ${admin?ib('Forget router','warning','data-delete-kind="devices" data-id="'+d.id+'"','danger'):''}
  </div>
@@ -1520,6 +1531,25 @@ ${admin?'<section class="card" id="rtp-radius"><div class="rtp-head"><h2>Custome
  }).catch(e=>{box.innerHTML='<p class="muted small" style="padding:12px">'+H(e.message)+'</p>';});}
  $('#rtp-check').onclick=async()=>{toast('Checking…');reload();};
  const rf=$('#rtp-refresh');if(rf)rf.onclick=reload;
+ // ISPman-style bar actions.
+ const jobNames={'ssh-enable':'Enable SSH (Winbox/SSH access on port 22)','backup-now':'Take a config backup now','push-design':'Update the WiFi login and status pages','dns-flush':'Flush the DNS cache',reboot:'Reboot the router'};
+ const risky=new Set(['ssh-enable','reboot']);
+ for(const b of body.querySelectorAll('[data-rtp-job]'))b.onclick=()=>{const t=b.dataset.rtpJob;b.closest('details')?.removeAttribute('open');
+  radiusForm(jobNames[t]||t,`Queued for ${d.name}. Its job runner picks it up on its next check-in (about a minute) and the result shows in Router jobs.`+(risky.has(t)?' This changes the router, so type its name to confirm.':''),
+   risky.has(t)?`<label>Type the router name <strong>${H(d.name)}</strong> to confirm<input name="confirm" required autocomplete="off" placeholder="${H(d.name)}"></label>`:'<p class="muted small">Nothing else on the router is changed.</p>',risky.has(t)?'Queue job':'Run now',
+   inp=>api('router-jobs','POST',{routerId:d.id,type:t,params:{},confirm:inp.confirm||''}).then(()=>{toast('Queued. See Router jobs for the result.');}));};
+ for(const b of body.querySelectorAll('[data-rtp-add]'))b.onclick=()=>{const svc=b.dataset.rtpAdd;if(typeof window.subscriberEditor==='function'&&window.radiusView?.data){window.subscriberEditor(null,{service:svc});setTimeout(()=>{const sel=document.querySelector('#editor-form [name=routerId]');if(sel&&[...sel.options].some(o=>o.value===d.id))sel.value=d.id;},80);}else{toast('Opening '+(svc==='pppoe'?'PPPoE':'Hotspot')+' customers: use New customer there.');location.hash=svc==='pppoe'?'cust-pppoe':'cust-hotspot';}};
+ const del=body.querySelector('[data-rtp-del]');if(del)del.onclick=()=>{const f=body.querySelector('[data-delete-kind="devices"]');if(f)f.click();else location.hash='router-link';};
+ const tv=body.querySelector('[data-rtp-tv]');if(tv)tv.onclick=()=>{toast('Open the hotspot customer, then use Add TV account to connect their TV.');location.hash='cust-hotspot';};
+ const pr=body.querySelector('[data-rtp-radius]');if(pr)pr.onclick=()=>{const t=document.getElementById('rtp-radius')||[...body.querySelectorAll('h2,h3')].find(h=>/RADIUS/i.test(h.textContent));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});else toast('RADIUS settings are under Link a MikroTik.');};
+ const cv=body.querySelector('[data-rtp-view]');if(cv)cv.onclick=()=>{const on=!body.classList.contains('rtp-compact');body.classList.toggle('rtp-compact',on);try{localStorage.setItem('rtp-compact',on?'1':'');}catch{}cv.closest('details')?.removeAttribute('open');};
+ try{if(localStorage.getItem('rtp-compact'))body.classList.add('rtp-compact');}catch{}
+ for(const b of body.querySelectorAll('[data-rtp-dl]'))b.onclick=async()=>{const svc=b.dataset.rtpDl;b.closest('details')?.removeAttribute('open');try{const o=await api('radius'),rows=(o.subscribers||[]).filter(x=>x.service===svc&&x.routerId===d.id);
+  if(!rows.length){toast(`No ${svc==='pppoe'?'PPPoE':svc} customers are assigned to ${d.name}.`);return;}
+  const head=['Name','Account','Phone','Package','Status','Expires','Last MAC','Static IP'],cell=v=>{const t=String(v??'');return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;};
+  const out=[head,...rows.map(x=>[x.name,x.username,x.phone,x.planName,x.state||x.status,x.expiresAt?new Date(x.expiresAt).toISOString().slice(0,16).replace('T',' '):'',x.lastMac,x.staticIp])].map(r=>r.map(cell).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+out],{type:'text/csv'}));a.download=`${d.name}-${svc}-customers.csv`;document.body.appendChild(a);a.click();a.remove();}catch(e){toast(e.message);}};
+ document.addEventListener('click',e=>{const m=body.querySelector('.rtp-more[open]');if(m&&!m.contains(e.target))m.removeAttribute('open');},{once:false});
  const sf=$('#rtp-support');if(sf)sf.onsubmit=async e=>{e.preventDefault();try{await api('router-portal/'+d.id,'PUT',{...d.portal,supportPhone:sf.supportPhone.value,supportWhatsapp:sf.supportWhatsapp.value});toast('Support contact saved');}catch(x){toast(x.message);}};
  const iso=$('#rtp-isolate');if(iso)iso.onchange=async()=>{try{await api('router-portal/'+d.id,'PUT',{...d.portal,isolate:iso.checked});d.portal.isolate=iso.checked;toast(iso.checked?'Device isolated':'Isolation off');}catch(x){iso.checked=!iso.checked;toast(x.message);}};
  const aup=$('#rtp-autopages');if(aup)aup.onchange=async()=>{try{await api('router-portal/'+d.id,'PUT',{...d.portal,autoPages:aup.checked});d.portal.autoPages=aup.checked;toast(aup.checked?'WiFi pages will update automatically':'Automatic page updates off');}catch(x){aup.checked=!aup.checked;toast(x.message);}};

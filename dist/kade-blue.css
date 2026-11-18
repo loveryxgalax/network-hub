@@ -1247,3 +1247,18 @@ html body label.pk-switch:has(>input:disabled),html body label.rtp-switch:has(>i
 html body label.pk-switch small{flex-basis:100%;padding-left:54px;color:var(--muted)}
 html body .tpl-switch{position:relative!important;display:inline-block!important;width:42px!important;height:24px!important;flex:0 0 42px!important;padding:0!important}
 html body .tpl-switch input{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;margin:0!important;z-index:1;-webkit-appearance:none!important;appearance:none!important}
+
+/* Router page: ISPman-style action pills and More menu. */
+html body .rtp-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%;padding:4px 0 8px}
+html body .rtp-pill{display:inline-flex!important;align-items:center;gap:8px;border-radius:999px!important;padding:9px 18px!important;font-weight:600;font-size:14px;white-space:nowrap;min-height:0;text-decoration:none}
+html body .rtp-pill.rtp-danger{background:#ef4444!important;border-color:#ef4444!important;color:#fff!important}
+html body .rtp-pills .rtp-more{position:relative}
+html body .rtp-pills .rtp-more>summary{list-style:none;cursor:pointer}html body .rtp-pills .rtp-more>summary::-webkit-details-marker{display:none}
+html body .rtp-pills .rtp-more>summary svg{transform:rotate(90deg);transition:transform .15s}html body .rtp-pills .rtp-more[open]>summary svg{transform:rotate(-90deg)}
+html body .rtp-pills .rtp-more-menu{position:absolute;z-index:40;top:calc(100% + 8px);left:50%;transform:translateX(-50%);min-width:260px;max-width:min(320px,92vw);max-height:min(70vh,560px);overflow:auto;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;box-shadow:0 18px 40px rgba(15,23,42,.18);padding:6px;display:flex;flex-direction:column}
+html body .rtp-mi{display:flex!important;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;border:0;background:none;color:var(--ink,#0f172a);font:inherit;font-size:15px;text-align:left;cursor:pointer;text-decoration:none;width:100%}
+html body .rtp-mi:hover{background:color-mix(in srgb,var(--primary) 8%,transparent)}
+html body .rtp-mi svg{flex:none;color:var(--ink,#0f172a)}
+html body .rtp-mi.rtp-warn,html body .rtp-mi.rtp-warn svg{color:#b45309}
+html body.rtp-compact .rtp-kv,html body .rtp-compact .rtp-kv{display:none}
+@media (max-width:640px){html body .rtp-pill{padding:8px 14px!important;font-size:13.5px}html body .rtp-pills{gap:8px}}
