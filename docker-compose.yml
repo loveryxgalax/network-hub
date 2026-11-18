@@ -11,6 +11,8 @@ services:
       # Other admin addresses that keep working (comma list), e.g. the old one during a move; NETWORK_ALIAS_REDIRECT=1 sends people (not routers or callbacks) to the main address.
       NETWORK_ALIAS_ORIGINS: ${NETWORK_ALIAS_ORIGINS:-}
       NETWORK_ALIAS_REDIRECT: ${NETWORK_ALIAS_REDIRECT:-}
+      # Remote logging: routers with Remote Logging on send syslog here over WireGuard (published on 10.99.0.1 only).
+      NETWORK_SYSLOG_PORT: ${NETWORK_SYSLOG_PORT:-5514}
       # Customer address (captive portal, account pages, payments, short links), e.g. https://my.kadenetworks.com.
       # Set it in .env only after that hostname is live in Cloudflare; empty = customers use the address above.
       NETWORK_PORTAL_ORIGIN: ${NETWORK_PORTAL_ORIGIN:-}
@@ -91,6 +93,18 @@ services:
       MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?set in .env}
     volumes:
       - acs-private:/private
+    networks: [internal]
+
+  # Remote logging relay (with RADIUS): routers send syslog to 10.99.0.1:5514 over WireGuard; this forwards it to the hub.
+  syslog-relay:
+    profiles: [radius]
+    mem_limit: 32m
+    image: alpine/socat:1.7.4.4
+    restart: unless-stopped
+    depends_on: [hub]
+    command: ["-u", "UDP4-RECVFROM:5514,fork,reuseaddr", "UDP4-SENDTO:hub:5514"]
+    ports:
+      - "${RADIUS_BIND:-10.99.0.1}:5514:5514/udp"
     networks: [internal]
 
   # Netops RADIUS (replaces ISPman's). Off until you run: docker compose --profile radius up -d
