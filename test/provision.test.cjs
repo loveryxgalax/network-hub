@@ -73,8 +73,11 @@ test('HTTP: link a MikroTik end to end (bundle once per link, checks, in-service
   // The router picks it up and refuses (e.g. someone added a PPPoE server meanwhile): the job fails with the reason.
   const j=jobs.next(st,id);assert.match(j.script,/STOPPED/);const res=jobs.result(st,id,j.id,{ok:true,output:'STOPPED: nothing was changed. this router already has a PPPoE server'});assert.equal(res.status,'failed');
   s=(await api('provision/'+id)).body;assert.equal(s.job.status,'failed');assert.match(s.job.error,/already has a PPPoE server/);
-  // A router already serving customers is never configured.
+  // A router already serving customers: with live setup allowed (the default) the new service goes beside the old one,
+  // and the script keeps its existing PPPoE/hotspot; with live setup switched off it is refused.
   st.setting('routerHealth:'+id,{...st.setting('routerHealth:'+id),pppoeServers:1});
+  const live=await api('provision/'+id+'/services','POST',spec);assert.equal(live.status,200);assert.doesNotMatch(live.body.script,/already has a PPPoE server/);assert.match(live.body.script,/netops PPPoE profile already exists/);
+  require('../lib/routerauto.cjs').save(st,{liveSetup:false});
   const busy=await api('provision/'+id+'/services','POST',spec);assert.equal(busy.status,409);assert.match(busy.body.error,/already serves customers/);
   // Re-issue for the same router keeps its WireGuard address and says so.
   const again=await api('provision','POST',{routerId:id,radius:'none',wireguard:true});assert.equal(again.status,201);assert.match(again.body.warnings[0],/already has 10\.99\.0\./);
