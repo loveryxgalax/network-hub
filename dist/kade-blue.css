@@ -1296,3 +1296,9 @@ html.nav-midnight .sidebar{--side:#0b1220}
 .ds-seg button[aria-pressed=true]{border-color:var(--primary,#0032fd);box-shadow:0 0 0 2px var(--primary,#0032fd) inset;color:var(--primary,#0032fd)}
 .ds-dlg .ds-foot{display:flex;justify-content:space-between;align-items:center;margin-top:18px;font-size:12.5px;color:var(--muted,#64748b)}
 .ds-gear{display:inline-grid;place-items:center}
+
+/* Package editor: hour slots */
+.pk-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin:8px 0}
+.pk-slot.pk-slot{display:block!important;margin:0!important;cursor:pointer}.pk-slot input{position:absolute;opacity:0;width:1px;height:1px}
+.pk-slot span{display:block;text-align:center;border:1px solid var(--border,#d0d7e2);border-radius:9px;padding:8px 4px;font-size:13px;font-weight:600}
+.pk-slot input:checked+span{background:var(--primary,#0032fd);border-color:var(--primary,#0032fd);color:#fff}.pk-slot input:focus-visible+span{outline:2px solid var(--primary,#0032fd);outline-offset:2px}

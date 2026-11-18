@@ -72,7 +72,7 @@ let CFG=null,plans=[],homePlans=[],me=null,activeInfo=null,timer=null;
 function facts(p,home){const L=[t('unlimited'),t('valid',{d:p.duration})];
  if(CFG.show.speed!==false&&p.downloadMbps)L.push(t('upTo',{n:p.downloadMbps}));
  if(!home&&p.devices>1)L.push(t('devices',{n:p.devices}));
- for(const f of p.features||[])L.push(f);if(p.availability)L.push(p.availability);return L;}
+ for(const f of p.features||[])L.push(f);if(p.buyLimit)L.push(p.buyLimit);if(p.availability)L.push(p.availability);return L;}
 function pkgCard(p,home){const off=p.available===false,cur=activeInfo&&activeInfo.planId===p.id;
  return `<button type="button" class="pkg${off?' off':''}${cur?' cur':''}" data-pkg="${esc(p.id)}" data-home="${home?1:0}" ${off?'disabled':''}><span class="pr">${esc(kes(p.price))}</span>${p.popular?`<span class="pop">★ ${esc(t('popular'))}</span>`:''}<span class="nm">${esc(p.name)}</span><ul>${facts(p,home).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>${cur&&activeInfo.left!=null?`<span class="chip">${esc(t('expires',{t:leftText(activeInfo.left)}))}</span>`:''}</button>`;}
 function renderPackages(){

@@ -149,7 +149,7 @@ const digits=s=>String(s||'').replace(/\D/g,''),intl=s=>{const d=digits(s);retur
 function packageList(list,monthly,hotspot){
  return list.length?list.map(p=>{const sp=CFG.show.speed!==false?t('upTo',{n:p.downloadMbps}):'',meta=(hotspot?[p.duration,sp,p.devices>1?t('devices',{n:p.devices}):t('device')]:[sp,t('unlimited')]).filter(Boolean);
   const pop=p.popular||(CFG.popular&&p.name.toLowerCase()===CFG.popular.toLowerCase()),off=p.available===false;
-  if(p.features?.length)meta.splice(0,meta.length,...p.features.slice(0,3));
+  if(p.features?.length)meta.splice(0,meta.length,...p.features.slice(0,3));if(p.buyLimit)meta.push(p.buyLimit);
   return `<button class="pkg ${pop?'pop':''} ${off?'off':''}" ${off?`disabled title="${esc(p.availability||'')}"`:''} data-badge="${esc(t('popular'))}" data-pkg="${esc(p.id)}" data-kind="${hotspot?'hotspot':'pppoe'}" type="button"><span class="name">${esc(p.name)}</span><span class="meta">${esc(meta.join(' · '))}</span>${off?`<span class="meta">${esc(p.availability||'')}</span>`:''}<span class="price">${kes(p.price)}${monthly?` <small>${esc(p.duration==='30 days'||p.duration==='1 month'?t('per_month'):'/ '+p.duration)}</small>`:''}</span></button>`;}).join(''):`<p class="empty-pkgs">${esc(state==='error'?t('loadFail'):t('noPlans'))}</p>`;}
 function render(){
  const b=document.body;b.dataset.theme=CFG.theme;b.dataset.layout=CFG.packageLayout||'auto';if(params.get('frame')==='phone')b.classList.add('phone-frame');document.documentElement.style.setProperty('--brand',CFG.brandColor);document.documentElement.style.setProperty('--brand-ink',inkFor(CFG.brandColor));document.documentElement.lang=LANG;
