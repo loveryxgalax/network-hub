@@ -477,6 +477,10 @@ body.phone-frame .pkgs{scrollbar-width:none}body.phone-frame .pkgs::-webkit-scro
 body[data-layout=swipe] .pkgs{scrollbar-width:none}body[data-layout=swipe] .pkgs::-webkit-scrollbar{display:none}
 .pkg.off{opacity:.55;cursor:not-allowed}.pkg.off:hover{transform:none}
 .free-banner{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;background:#13895f;color:#fff;font-size:14px}.free-banner .btn{background:#fff;color:#13895f;padding:8px 16px;width:auto}
+.free-banner{--fb:#0032fd;background:var(--fb);text-align:left;padding:12px 16px}.free-banner .btn{color:var(--fb);font-weight:700;border-radius:999px}
+.free-banner .fb-ico{font-size:30px;line-height:1}.free-banner .fb-img{width:56px;height:56px;object-fit:cover;border-radius:12px;background:#fff}
+.free-banner .fb-tx{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:520px}.free-banner .fb-tx b{font-size:16px}.free-banner .fb-tx small{opacity:.85;font-size:12.5px}
+.fb-compensation{--fb:#0f766e}.fb-trial{--fb:#7c3aed}.fb-payments{--fb:#b45309}.fb-christmas{--fb:#b91c1c}.fb-matchday{--fb:#15803d}.fb-holiday{--fb:#0e7490}
 input.acc-pin{width:100%;max-width:180px;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface);color:var(--ink);letter-spacing:.3em;margin:0 0 12px}
 #sheet-qty-label select{width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
 #sheet-trial{margin-top:8px;width:100%}

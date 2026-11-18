@@ -166,7 +166,8 @@ const intl=p=>{const d=String(p||'').replace(/\D/g,'');return d.startsWith('0')?
 
 /* ---------- free mode ---------- */
 function renderFree(){const f=CFG.freeMode;if(!f||MODE==='pppoe'){$('#free').innerHTML='';return;}
- $('#free').innerHTML=`<div class="card" style="margin:0 0 12px;text-align:center"><h3>${esc(t('free'))}</h3><p class="muted small">${esc(f.reason||'')} ${esc(t('freeUntil',{t:when(f.until)}))}</p><button type="button" class="btn wide" id="free-go">${esc(t('freeBtn'))}</button></div>`;
+ const TH={gift:['🎁','A gift for you','Get my gift'],compensation:['🤝','Sorry for the interruption','Connect free'],trial:['✨','Try us free','Start my free trial'],payments:['💳','Payments are down: connect free','Connect free'],christmas:['🎄','Merry Christmas','Get my gift'],matchday:['⚽','Match day is on us','Watch free'],holiday:['🌴','Happy holidays','Connect free'],image:['🎉','Free internet','Connect free']},T=TH[f.theme]||null;
+ $('#free').innerHTML=`<div class="card" style="margin:0 0 12px;text-align:center">${f.theme==='image'&&f.imageUrl?`<img src="${esc(f.imageUrl)}" alt="" style="max-width:100%;max-height:160px;border-radius:12px;margin:0 auto 8px;display:block">`:T?`<div style="font-size:40px;line-height:1.1" aria-hidden="true">${T[0]}</div>`:''}<h3>${esc(T?T[1]:t('free'))}</h3><p class="muted small">${esc(f.reason||'')} ${esc(t('freeUntil',{t:when(f.until)}))}${f.down?` · ${f.down} Mbps down / ${f.up} Mbps up`:''}</p><button type="button" class="btn wide" id="free-go">${esc(T?T[2]:t('freeBtn'))}</button></div>`;
  $('#free-go').onclick=async()=>{const b=$('#free-go');b.disabled=true;try{if(!router.login)throw new Error(t('needWifi'));const r=await call('login',{body:{free:true,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge}});toRouter(r);}catch(err){b.disabled=false;alertBox(err.message);}};}
 
 /* ---------- design + package layout (chosen in admin: Captive experience) ---------- */
