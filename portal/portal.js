@@ -279,8 +279,11 @@ function done(html){busy(false);$('#done-card').innerHTML=html;$('#portal-done')
 function fail(kind,message){busy(false);$('#portal-done').hidden=true;if(kind!=='account'&&selected)openSheet(selected.id,selected.kind);alertBox(message);}
 // A top-level GET to the router's own login page (a form post to its plain-HTTP address would trigger a browser warning).
 // While a sheet is open the page behind it does not scroll (iOS-safe: the body is pinned and put back where it was).
-function lockWhileOpen(el){let y=0,locked=false;const set=()=>{const open=!el.hidden;if(open===locked)return;locked=open;const b=document.body;
- if(open){y=scrollY;b.style.position='fixed';b.style.top=-y+'px';b.style.left='0';b.style.right='0';b.style.width='100%';}else{b.style.position='';b.style.top='';b.style.left='';b.style.right='';b.style.width='';scrollTo(0,y);}};
+// The sheet is also pinned to the visible area, so it sits still above the phone keyboard while someone types.
+function lockWhileOpen(el){let y=0,locked=false;const vv=window.visualViewport,fit=()=>{if(!vv||el.hidden)return;el.style.top=vv.offsetTop+'px';el.style.height=vv.height+'px';el.style.bottom='auto';};
+ if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit);}
+ const set=()=>{const open=!el.hidden;if(open===locked)return;locked=open;const b=document.body;
+ if(open){y=scrollY;b.style.position='fixed';b.style.top=-y+'px';b.style.left='0';b.style.right='0';b.style.width='100%';fit();}else{b.style.position='';b.style.top='';b.style.left='';b.style.right='';b.style.width='';el.style.top=el.style.height=el.style.bottom='';scrollTo(0,y);}};
  new MutationObserver(set).observe(el,{attributes:true,attributeFilter:['hidden']});set();}
 let freeMode=null;
 // Free mode themes, chosen in the admin (same list as there).

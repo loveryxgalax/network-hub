@@ -19,9 +19,13 @@ function toast(m){const t=document.createElement('div');t.className='toast';t.te
 const ago=t=>{const m=Math.max(0,Math.round((Date.now()-t)/60000));return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago';};
 const usageNote=u=>u.source==='router'?(u.online?'● Online now · ':'')+'Measured by your router about every 2 minutes while you are connected.':!u.sessions?'No usage reported yet. It appears once your router sends its first update (every 5 minutes while you are connected).':(u.online?'● Online now · ':'')+'Updated '+ago(u.lastReport)+'. Usage is reported by your router about every 5 minutes.';
 // A sheet with its own Close/Done button hides the corner ×, so there is only one way to close it.
-// While the sheet is open the page behind it does not scroll (iOS-safe: the body is pinned and put back where it was).
-{let y=0,locked=false;const el=document.getElementById('sheet');if(el)new MutationObserver(()=>{const open=!el.hidden;if(open===locked)return;locked=open;const b=document.body;
- if(open){y=scrollY;Object.assign(b.style,{position:'fixed',top:-y+'px',left:'0',right:'0',width:'100%'});}else{Object.assign(b.style,{position:'',top:'',left:'',right:'',width:''});scrollTo(0,y);}}).observe(el,{attributes:true,attributeFilter:['hidden']});}
+// While the sheet is open the page behind it does not scroll (iOS-safe: the body is pinned and put back where it was),
+// and the sheet is pinned to the visible area, so it sits still above the phone keyboard while someone types.
+{let y=0,locked=false;const el=document.getElementById('sheet'),vv=window.visualViewport;
+ const fit=()=>{if(!vv||el.hidden)return;el.style.top=vv.offsetTop+'px';el.style.height=vv.height+'px';el.style.bottom='auto';};
+ if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit);}
+ if(el)new MutationObserver(()=>{const open=!el.hidden;if(open===locked)return;locked=open;const b=document.body;
+ if(open){y=scrollY;Object.assign(b.style,{position:'fixed',top:-y+'px',left:'0',right:'0',width:'100%'});fit();}else{Object.assign(b.style,{position:'',top:'',left:'',right:'',width:''});el.style.top=el.style.height=el.style.bottom='';scrollTo(0,y);}}).observe(el,{attributes:true,attributeFilter:['hidden']});}
 function sheet(html){$('#sheet-body').innerHTML=html;$('#sheet').hidden=false;const x=$('#sheet-x');if(x)x.hidden=!!$('#sheet-body [data-sheet-close]');}
 document.addEventListener('click',e=>{if(e.target.closest('[data-sheet-close]'))closeSheet();});
 function closeSheet(){$('#sheet').hidden=true;$('#sheet-body').innerHTML='';clearTimeout(poll.t);}

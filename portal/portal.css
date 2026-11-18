@@ -878,17 +878,15 @@ html[data-mode="hotspot"] #pppoeWrap{display:none!important}
 /* Chat: a bottom sheet like the account page (dimmed page, white sheet, nothing peeking underneath while it is open) */
 .chat-pop.chat-pop:not([hidden]){position:fixed;inset:0;right:0;bottom:0;width:auto;max-width:none;padding:0;border:0;border-radius:0;background:rgba(15,23,42,.55);box-shadow:0 60vh 0 60vh rgba(15,23,42,.55);display:grid;place-items:end center;z-index:60}
 .chat-sheet{position:relative;width:min(440px,100%);background:var(--bg,#fff);color:var(--ink);border-radius:18px 18px 0 0;padding:22px 18px calc(20px + env(safe-area-inset-bottom));text-align:left;animation:chatUp .2s ease-out}
-.chat-sheet::after{content:'';position:absolute;left:0;right:0;top:100%;height:60vh;background:var(--bg,#fff)}
 @keyframes chatUp{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 .chat-sheet h3{margin:0 40px 6px 0;font-size:20px;font-weight:800;color:var(--ink)}.chat-sheet .chat-sub{margin:0 0 14px;color:var(--muted);font-size:15px;line-height:1.45}
 .chat-sheet .chat-x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:var(--surface,#f1f5f9);box-shadow:0 2px 8px rgba(15,23,42,.12);font-size:22px;color:var(--muted)}
 .chat-sheet textarea{min-height:120px;border-radius:12px;padding:14px;margin-bottom:10px}.chat-sheet input{border-radius:12px;padding:12px 14px}
 .chat-sheet .chat-send{min-height:52px;border-radius:12px;font-size:17px;font-weight:700;margin-top:4px}
 .chat-sheet .chat-links{border-top:0;margin-top:12px;padding-top:0}.chat-sheet .chat-links a{min-height:48px;border-radius:12px}
-@media(min-width:560px){.chat-pop.chat-pop:not([hidden]){place-items:center}.chat-sheet{border-radius:18px}.chat-sheet::after{display:none}}
+@media(min-width:560px){.chat-pop.chat-pop:not([hidden]){place-items:center}.chat-sheet{border-radius:18px}}
 /* The chat sheet is always light (like the account page), whatever the page theme. */
 .chat-sheet{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--surface:#f8fafc;background:#fff;color:#0f172a}
-.chat-sheet::after{background:#fff}
 .chat-sheet textarea,.chat-sheet input{background:#fff;color:#0f172a;border:1px solid #e2e8f0}
 .chat-sheet .chat-links a{color:#0f172a;border-color:#e2e8f0;background:#fff}
 .chat-sheet .chat-x{background:#f1f5f9;color:#64748b}
@@ -901,3 +899,7 @@ html[data-mode="hotspot"] #pppoeWrap{display:none!important}
 .chat-sheet .chat-send{min-height:56px;border-radius:14px;font-size:18px;background:var(--brand,#0032fd);color:#fff;justify-content:center}
 .chat-sheet .chat-x{width:44px;height:44px;top:18px;right:18px;font-size:20px;background:#f8fafc;box-shadow:0 3px 10px rgba(15,23,42,.14)}
 .chat-sheet textarea:focus,.chat-sheet input:focus{outline:2px solid var(--brand,#0032fd);outline-offset:0;border-color:transparent}
+
+/* Chat sheet: never scrolls, the box does not resize, white continues below it (a shadow adds no scroll area). */
+.chat-sheet{overflow:hidden;box-shadow:0 120px 0 0 #fff}.chat-sheet textarea{resize:none}
+@media(min-width:560px){.chat-sheet{box-shadow:0 24px 60px rgba(15,23,42,.3)}}
