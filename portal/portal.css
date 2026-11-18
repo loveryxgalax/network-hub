@@ -1,8 +1,7 @@
-@font-face{font-family:"Maven Pro";font-weight:400;font-display:swap;src:url(/fonts/maven-pro-400.woff2) format("woff2")}
-@font-face{font-family:"Maven Pro";font-weight:500;font-display:swap;src:url(/fonts/maven-pro-500.woff2) format("woff2")}
-@font-face{font-family:"Maven Pro";font-weight:600;font-display:swap;src:url(/fonts/maven-pro-600.woff2) format("woff2")}
-@font-face{font-family:"Maven Pro";font-weight:700;font-display:swap;src:url(/fonts/maven-pro-700.woff2) format("woff2")}
-@font-face{font-family:"Maven Pro";font-weight:800;font-display:swap;src:url(/fonts/maven-pro-800.woff2) format("woff2")}
+@font-face{font-family:"Maven Pro";font-style:normal;font-weight:400 900;font-display:swap;src:url("/fonts/maven-pro-var.woff2?v=2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Maven Pro";font-style:normal;font-weight:400 900;font-display:swap;src:url("/fonts/maven-pro-var-ext.woff2?v=2") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-synthesis:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,input,select,textarea{font:inherit}
 /* ============ BASE TOKENS ============ */
 :root{
   --brand:#1d4ed8;
@@ -175,7 +174,7 @@ body[data-theme=split] .pkg .price{margin:0 0 0 auto;font-size:18px}
 /* =========================================================
    THEME 4 · MINIMAL — typographic, white space, thin rules, packages as a menu
    ========================================================= */
-body[data-theme=minimal]{--bg:#fafaf9;--surface:#fafaf9;--shadow:none;--radius:0;--display:Georgia,'Times New Roman',serif}
+body[data-theme=minimal]{--bg:#fafaf9;--surface:#fafaf9;--shadow:none;--radius:0;--display:'Maven Pro',sans-serif}
 body[data-theme=minimal] .topbar{background:var(--bg)}
 body[data-theme=minimal] .topbar .logo{display:none}
 body[data-theme=minimal] .topbar .help{display:none}
@@ -224,7 +223,7 @@ body[data-theme=midnight] .pkg .price{color:color-mix(in srgb,var(--brand) 55%,#
 /* =========================================================
    THEME 6 · CHRISTMAS — snow on deep festive red, twinkle lights, packages as gifts
    ========================================================= */
-body[data-theme=christmas]{--bg:#6b0f14;--ink:#1f2937;--display:Georgia,'Times New Roman',serif;--gold:#f6c94c}
+body[data-theme=christmas]{--bg:#6b0f14;--ink:#1f2937;--display:'Maven Pro',sans-serif;--gold:#f6c94c}
 body[data-theme=christmas]{background:radial-gradient(circle at 50% 0,#8f1a20,#5a0b10 60%,#3f070b);background-attachment:fixed}
 body[data-theme=christmas] .topbar{background:rgba(0,0,0,.18);border:0;color:#fff}
 body[data-theme=christmas] .topbar .help,body[data-theme=christmas] .topbar .help a{color:#fde68a}
@@ -264,7 +263,7 @@ body[data-theme=christmas] #snow{display:block}
 /* =========================================================
    THEME 7 · FUTURISTIC — neon grid horizon, HUD panels, monospace readouts
    ========================================================= */
-body[data-theme=futuristic]{--bg:#03050c;--surface:rgba(6,12,30,.82);--ink:#d7e4ff;--muted:#7e8fb8;--line:color-mix(in srgb,var(--brand) 35%,transparent);--radius:4px;--shadow:none;--font:ui-monospace,'SF Mono',Menlo,Consolas,monospace;--display:'Maven Pro',system-ui,sans-serif;--brand-soft:color-mix(in srgb,var(--brand) 18%,transparent)}
+body[data-theme=futuristic]{--bg:#03050c;--surface:rgba(6,12,30,.82);--ink:#d7e4ff;--muted:#7e8fb8;--line:color-mix(in srgb,var(--brand) 35%,transparent);--radius:4px;--shadow:none;--font:'Maven Pro',system-ui,sans-serif;--display:'Maven Pro',system-ui,sans-serif;--brand-soft:color-mix(in srgb,var(--brand) 18%,transparent)}
 body[data-theme=futuristic]{background:linear-gradient(180deg,#03050c 0,#060b1d 55%,#03050c);background-attachment:fixed}
 body[data-theme=futuristic]::before{content:"";position:fixed;left:-50%;right:-50%;bottom:0;height:55vh;background-image:linear-gradient(color-mix(in srgb,var(--brand) 55%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--brand) 55%,transparent) 1px,transparent 1px);background-size:44px 44px;transform:perspective(380px) rotateX(62deg);transform-origin:bottom;mask-image:linear-gradient(to top,#000 10%,transparent 85%);-webkit-mask-image:linear-gradient(to top,#000 10%,transparent 85%);pointer-events:none;z-index:0;animation:gridmove 3s linear infinite}
 @keyframes gridmove{to{background-position:0 44px}}
@@ -347,7 +346,7 @@ body[data-theme=bento] .contactCard{display:none}
 /* =========================================================
    THEME 9 · ELEGANT — ivory paper, serif display, gold hairlines, arched card
    ========================================================= */
-body[data-theme=elegant]{--bg:#f7f2e9;--surface:#fffdf8;--ink:#2b2418;--muted:#7a6d58;--line:#e4d8c3;--gold:#b58a3c;--shadow:0 10px 40px rgba(80,60,20,.08);--display:Georgia,'Times New Roman',serif;--brand-soft:#f3ece0}
+body[data-theme=elegant]{--bg:#f7f2e9;--surface:#fffdf8;--ink:#2b2418;--muted:#7a6d58;--line:#e4d8c3;--gold:#b58a3c;--shadow:0 10px 40px rgba(80,60,20,.08);--display:'Maven Pro',sans-serif;--brand-soft:#f3ece0}
 body[data-theme=elegant] .topbar{background:var(--bg);border-color:var(--line)}
 body[data-theme=elegant] .brand-name{font-family:var(--display);font-size:18px}
 body[data-theme=elegant] .logo{border-radius:50%;background:transparent;color:var(--gold);border:1px solid var(--gold);font-family:var(--display)}
@@ -584,7 +583,7 @@ body[data-loading=wifi] .boot-mark{display:block;position:relative;width:56px;he
 #lc-sheet button:hover,#lc-sheet button:focus-visible{border-color:var(--brand,#0a3cff);box-shadow:0 0 0 3px rgba(10,60,255,.15)}
 #lc-sheet b{font-size:16px}#lc-sheet span{font-size:13.5px;color:#55657a}
 
-.share-code{display:grid;gap:2px;margin:10px 0;padding:10px 12px;border:1px dashed currentColor;border-radius:12px;opacity:.95}.share-code b{font-size:20px;letter-spacing:2px;font-family:ui-monospace,Consolas,monospace}.share-code small{opacity:.8}
+.share-code{display:grid;gap:2px;margin:10px 0;padding:10px 12px;border:1px dashed currentColor;border-radius:12px;opacity:.95}.share-code b{font-size:20px;letter-spacing:2px;font-family:"Maven Pro",sans-serif;font-variant-numeric:tabular-nums}.share-code small{opacity:.8}
 
 /* =========================================================
    THEMES 10–20 · Essential, Studio, Festive, Blueprint, Showcase, Night, Celebrate, Day Pass, Edition, Social, Together
@@ -621,7 +620,7 @@ body[data-theme=celebrate]{--bg:#f7f7fd;--surface:#fff;--line:#e0e1f2;--brand:#3
 body[data-theme=celebrate] .eyebrow{background:#fde7a6;color:#5b4308}
 body[data-theme=daypass]{--bg:#f3f6fd;--surface:#fff;--line:#c7d6f5;--brand:#0b3bbd;--brand-ink:#fff;--brand-soft:#e1ebff}
 body[data-theme=daypass] .hero h1{color:var(--brand)}
-body[data-theme=edition]{--bg:#f7f2e9;--surface:#f7f2e9;--ink:#141414;--muted:#6b6459;--line:#cfc7b8;--brand:#111;--brand-ink:#fff;--brand-soft:#ebe4d6;--display:Georgia,'Times New Roman',serif}
+body[data-theme=edition]{--bg:#f7f2e9;--surface:#f7f2e9;--ink:#141414;--muted:#6b6459;--line:#cfc7b8;--brand:#111;--brand-ink:#fff;--brand-soft:#ebe4d6;--display:'Maven Pro',sans-serif}
 body[data-theme=edition] .hero h1{font-size:clamp(38px,10vw,56px);line-height:1.02;font-weight:500}
 body[data-theme=edition] .card{background:transparent;border:0;border-top:1px solid var(--ink);border-radius:0;padding:14px 0}
 body[data-theme=edition] .btn{border-radius:0}

@@ -1,8 +1,7 @@
-@font-face{font-family:"Maven Pro";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/maven-pro-400.woff2") format("woff2")}
-@font-face{font-family:"Maven Pro";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/maven-pro-500.woff2") format("woff2")}
-@font-face{font-family:"Maven Pro";font-style:normal;font-weight:600;font-display:swap;src:url("/fonts/maven-pro-600.woff2") format("woff2")}
-@font-face{font-family:"Maven Pro";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/maven-pro-700.woff2") format("woff2")}
-@font-face{font-family:"Maven Pro";font-style:normal;font-weight:800;font-display:swap;src:url("/fonts/maven-pro-800.woff2") format("woff2")}
+@font-face{font-family:"Maven Pro";font-style:normal;font-weight:400 900;font-display:swap;src:url("/fonts/maven-pro-var.woff2?v=2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Maven Pro";font-style:normal;font-weight:400 900;font-display:swap;src:url("/fonts/maven-pro-var-ext.woff2?v=2") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-synthesis:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,input,select,textarea{font:inherit}
 /* Kade Networks WiFi portal, laid out like the ISPman captive portal: grey canvas, white header with help contacts,
    loyalty bar, voucher / M-Pesa code buttons, two-column package cards, My Usage card, language switch, chat bubble. */
 :root{--b:#0032fd;--b2:#e4e8fd;--bd:#b9c3f5;--ink:#1d2433;--mut:#6b7280;--line:#e5e7eb;--bg:#f1f2f4;--ok:#16a34a;--bad:#dc2626}
@@ -40,7 +39,7 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-l
 .pill:disabled{opacity:.5;cursor:default}
 .welcome{margin:4px 2px 10px}.welcome p{margin:0 0 4px;font-size:15px}
 .info{display:flex;align-items:center;gap:6px;font-size:12.5px!important;color:#4b5563}
-.i{flex:none;width:15px;height:15px;border-radius:50%;background:var(--b);color:#fff;font:700 10px/15px Georgia,serif;text-align:center}
+.i{flex:none;width:15px;height:15px;border-radius:50%;background:var(--b);color:#fff;font:700 10px/15px "Maven Pro",sans-serif;text-align:center}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px;padding-top:10px;border-top:1px solid var(--line)}
 .outline{background:#fff;border:1.5px solid var(--b);color:var(--b);border-radius:999px;padding:9px 10px;font-weight:600;cursor:pointer}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
