@@ -1484,7 +1484,7 @@ pages.routerProfile=async function(){
  const bars=(label,pct)=>pct==null?'':`<div class="rtp-meter"><span>${H(label)}</span><div><i style="width:${Math.min(100,pct)}%;background:${pct>85?'var(--bad,#dc2626)':pct>65?'#d97706':'#16a34a'}"></i></div><b>${pct}%</b></div>`;
  const sessTable=(items,empty)=>items.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>USER</th><th>ADDRESS</th><th>MAC ADDRESS</th><th>SINCE</th><th>DATA</th></tr></thead><tbody>${items.slice(0,25).map(x=>`<tr><td><b>${H(x.username)}</b>${x.name?`<small>${H(x.name)}</small>`:''}</td><td>${H(x.ip||'—')}</td><td><code>${H(x.mac||'—')}</code></td><td>${x.since?H(ago(x.since)):'—'}</td><td>${H(bytes((x.down||0)+(x.up||0)))}</td></tr>`).join('')}</tbody></table></div>${items.length>25?`<p class="muted small" style="padding:8px 14px">Showing 25 of ${items.length}. See Hotspot or PPPoE → Online sessions for all.</p>`:''}`:`<p class="muted" style="padding:16px">${empty}</p>`;
  // Config audit Apply fix: run the job or open the place that fixes each check.
- const AFIX={backup:()=>api('router-jobs','POST',{routerId:d.id,type:'backup-now',params:{}}).then(()=>toast('Backup queued.'),e=>toast(e.message)),runner:()=>{location.hash='router-jobs';},wireguard:()=>{location.hash='wireguard';},checkin:()=>{body.querySelector('[data-router-agent]')?.click();},lists:()=>{body.querySelector('[data-router-agent]')?.click();},radius:()=>{document.getElementById('rtp-radius')?.scrollIntoView({behavior:'smooth'});},static:()=>{location.hash='static';}};
+ const AFIX={fasttrack:()=>body.querySelector('[data-rtp-job="fasttrack-off"]')?.click(),backup:()=>api('router-jobs','POST',{routerId:d.id,type:'backup-now',params:{}}).then(()=>toast('Backup queued.'),e=>toast(e.message)),runner:()=>{location.hash='router-jobs';},wireguard:()=>{location.hash='wireguard';},checkin:()=>{body.querySelector('[data-router-agent]')?.click();},lists:()=>{body.querySelector('[data-router-agent]')?.click();},radius:()=>{document.getElementById('rtp-radius')?.scrollIntoView({behavior:'smooth'});},static:()=>{location.hash='static';}};
  body.innerHTML=`
  <div class="rtp-bar">
   ${(()=>{const eq=NetworkPermissions.equipment(state.session.user.role),adm=state.session.user.role==='admin';
@@ -1500,7 +1500,7 @@ pages.routerProfile=async function(){
     ${mi('Download Hotspot Customers','download','data-rtp-dl="hotspot"')}${mi('Download PPPoE Customers','download','data-rtp-dl="pppoe"')}${mi('Download Static Customers','download','data-rtp-dl="static"')}
     ${ma('Hotspot Server Script','wifi','hs-servers')}${adm?ma('PPPoE Server Script','server','router-link'):''}
     ${mi('Back up now','server','data-rtp-job="backup-now"')}${mi('Update WiFi pages','wifi','data-rtp-job="push-design"')}${mi('Flush DNS cache','refresh','data-rtp-job="dns-flush"')}${mi('Refresh this page','refresh','id="rtp-refresh"')}
-    ${adm?mi('Reset Admin Password','key','data-rtp-pass'):''}${adm?mi('Turn Winbox port on','shield','data-rtp-job="winbox-on"'):''}${adm?mi('Turn Winbox port off','shield','data-rtp-job="winbox-off"'):''}${adm?mi('Schedule Reboot','clock','data-rtp-sched="reboot"'):''}${adm?mi('Schedule Script','clock','data-rtp-sched=""'):''}${adm?mi('Reboot','refresh','data-rtp-job="reboot"','rtp-warn'):''}${adm?ma('Re-Onboard','refresh','router-link','rtp-warn'):''}${adm?ma('Start Manual Onboarding','file','router-link','rtp-warn'):''}
+    ${adm?mi('Reset Admin Password','key','data-rtp-pass'):''}${adm?mi('Turn Winbox port on','shield','data-rtp-job="winbox-on"'):''}${adm?mi('Turn Winbox port off','shield','data-rtp-job="winbox-off"'):''}${adm?mi('Turn FastTrack off','refresh','data-rtp-job="fasttrack-off"'):''}${adm?mi('Schedule Reboot','clock','data-rtp-sched="reboot"'):''}${adm?mi('Schedule Script','clock','data-rtp-sched=""'):''}${adm?mi('Reboot','refresh','data-rtp-job="reboot"','rtp-warn'):''}${adm?ma('Re-Onboard','refresh','router-link','rtp-warn'):''}${adm?ma('Start Manual Onboarding','file','router-link','rtp-warn'):''}
    </div></details></div>`;})()}
   ${canEdit?ib('Edit','pen','data-edit-kind="devices" data-id="'+d.id+'"'):''}
   ${admin?ib('Forget router','warning','data-delete-kind="devices" data-id="'+d.id+'"','danger'):''}
@@ -1552,7 +1552,7 @@ ${admin?'<section class="card" id="rtp-radius"><div class="rtp-head"><h2>Custome
  const rf=$('#rtp-refresh');if(rf)rf.onclick=reload;
  // ISPman-style bar actions.
  const jobNames={'ssh-enable':'Enable SSH (Winbox/SSH access on port 22)','backup-now':'Take a config backup now','push-design':'Update the WiFi login and status pages','dns-flush':'Flush the DNS cache',reboot:'Reboot the router'};
- const risky=new Set(['ssh-enable','reboot','winbox-on','winbox-off']);Object.assign(jobNames,{'winbox-on':'Turn on the Winbox port','winbox-off':'Turn off the Winbox port'});
+ const risky=new Set(['ssh-enable','reboot','winbox-on','winbox-off','fasttrack-off']);Object.assign(jobNames,{'fasttrack-off':'Turn off FastTrack (speed limits then apply to all traffic; the router uses more CPU)','winbox-on':'Turn on the Winbox port','winbox-off':'Turn off the Winbox port'});
  for(const b of body.querySelectorAll('[data-rtp-job]'))b.onclick=()=>{const t=b.dataset.rtpJob;b.closest('details')?.removeAttribute('open');
   radiusForm(jobNames[t]||t,`Queued for ${d.name}. Its job runner picks it up on its next check-in (about a minute) and the result shows in Router jobs.`+(risky.has(t)?' This changes the router, so type its name to confirm.':''),
    risky.has(t)?`<label>Type the router name <strong>${H(d.name)}</strong> to confirm<input name="confirm" required autocomplete="off" placeholder="${H(d.name)}"></label>`:'<p class="muted small">Nothing else on the router is changed.</p>',risky.has(t)?'Queue job':'Run now',
@@ -1733,6 +1733,41 @@ pages.oltSnmp=async function(id){shell('OLT brand set-up','Pick each OLT’s bra
     try{const d=rows('devices').find(x=>x.id===oid);await api('records/devices/'+oid,'PATCH',{version:d.version,snmpMapping:JSON.stringify(m),...(r.brand&&!d.model?{model:r.brand+' OLT'}:{})});await load();toast('Saved. ONUs appear after the next poll (about a minute).');pages.oltSnmp(id);}catch(e){toast(e.message);sv.disabled=false;}};};
   card.querySelector('[data-os-test]').onclick=()=>run(false);card.querySelector('[data-os-find]').onclick=()=>run(true);}
 };
+// Checkout links (ISPman /payments/checkout): public M-Pesa pay pages with a short code, QR code and payments list.
+{const ix=nav.findIndex(n=>n[0]==='pay-received');if(ix>=0&&!nav.some(n=>n[0]==='checkout-links'))nav.splice(ix+1,0,['checkout-links','Checkout links','receipt']);ROUTES['checkout-links']='checkoutLinks';}
+pages.checkoutLinks=async function(){
+ const H=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),money=n=>n==null?'Variable amount':'KSh '+Number(n).toLocaleString('en-KE'),day=t=>t?new Date(t).toLocaleString('en-KE',{dateStyle:'medium',timeStyle:'short'}):'—';
+ const code=new URLSearchParams(location.hash.split('?')[1]||'').get('c')||'';
+ if(code)return detail(code);
+ shell('Checkout links','A small public M-Pesa payment page with its own short code: installation fees, equipment, event WiFi, or a payment to share on WhatsApp or print as a QR code. Payments are confirmed with Safaricom and listed per link; they do not change any customer balance.','<button class="button primary" id="co-new">Create checkout</button>');
+ const body=$('#im-body');let d;try{d=await api('checkouts');}catch(e){body.innerHTML=`<div class="card"><p class="muted" style="padding:20px">${H(e.message)}</p></div>`;return;}
+ if(state.page!=='checkout-links')return;
+ body.innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>CODE</th><th>DESCRIPTION</th><th>AMOUNT</th><th>COLLECTED</th><th>PAYMENTS</th><th>STATUS</th><th>CREATED</th></tr></thead><tbody>${d.items.length?d.items.map(l=>`<tr><td><a href="#checkout-links?c=${H(l.code)}"><b>${H(l.code)}</b></a></td><td>${H(l.description)}</td><td>${money(l.amount)}</td><td>KSh ${Number(l.collected).toLocaleString('en-KE')}</td><td>${l.count}</td><td>${l.active?'<span class="badge online">Active</span>':'<span class="badge offline">Off</span>'}</td><td>${day(l.created)}</td></tr>`).join(''):'<tr><td colspan="7" class="muted" style="padding:20px">No checkout links yet. Create one for an installation fee, equipment or an event.</td></tr>'}</tbody></table></div></div>`;
+ $('#co-new').onclick=()=>radiusForm('Create M-Pesa checkout link','Anyone with the link can pay into it. Make one link per purpose so payments are easy to tell apart.',
+  `<label>Description<input name="description" required maxlength="120" placeholder="Installation fee"></label>
+   <label>Amount (KSh, optional)<input name="amount" inputmode="numeric" placeholder="Leave empty to let the payer type the amount"></label>
+   <label>Callback URL (optional)<input name="callbackUrl" placeholder="https://your-system.example/webhook"><small class="muted">netops posts each confirmed payment here, signed with the link's API secret.</small></label>
+   <label>Custom code (optional)<input name="code" maxlength="3" placeholder="3 letters or digits, e.g. INS" style="text-transform:uppercase"></label>`,'Create checkout link',
+  inp=>api('checkouts','POST',inp).then(l=>{toast('Checkout link created: '+l.url);location.hash='checkout-links?c='+l.code;}));
+ async function detail(c){shell('Checkout '+c,'Loading…','<a class="button secondary" href="#checkout-links">All checkout links</a>');const body=$('#im-body');let l;
+  try{l=await api('checkouts/'+encodeURIComponent(c));}catch(e){body.innerHTML=`<div class="card"><p class="muted" style="padding:20px">${H(e.message)}</p></div>`;return;}
+  if(state.page!=='checkout-links')return;const desc=document.querySelector('#main .page-heading p');if(desc)desc.textContent=l.description+(l.active?'':' · turned off');
+  let qr='';try{qr=window.netopsQRPng?window.netopsQRPng(l.url,8):'';}catch{}
+  body.innerHTML=`<div class="card" style="padding:18px"><div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+   ${qr?`<img src="${qr}" alt="QR code for this payment page" style="width:170px;height:170px;border:1px solid var(--border,#e2e8f0);border-radius:12px">`:''}
+   <div style="flex:1;min-width:240px"><p style="margin:0 0 6px"><b>Payment page</b></p><pre data-no-copy style="white-space:pre-wrap;word-break:break-all;margin:0 0 12px">${H(l.url)}</pre>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button primary" id="co-copy">Copy URL</button>${qr?'<a class="button secondary" id="co-qr" download="checkout-'+H(l.code)+'.png" href="'+qr+'">Download QR</a>':''}
+   ${l.apiSecret?'<button class="button secondary" id="co-secret">Copy API secret</button>':''}<button class="button secondary" id="co-tog">${l.active?'Stop taking payments':'Take payments again'}</button></div>
+   <p class="muted small" style="margin:12px 0 0">Amount: <b>${money(l.amount)}</b> · Callback URL: ${l.callbackUrl?H(l.callbackUrl):'none'}</p></div></div></div>
+   <div class="kd-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:14px 0">
+   <div class="card" style="padding:14px"><small class="muted">Total collections</small><h3 style="margin:4px 0 0">KSh ${Number(l.collected).toLocaleString('en-KE')}</h3></div>
+   <div class="card" style="padding:14px"><small class="muted">Payments</small><h3 style="margin:4px 0 0">${l.count}</h3></div>
+   <div class="card" style="padding:14px"><small class="muted">Different payers</small><h3 style="margin:4px 0 0">${l.payers}</h3></div></div>
+   <div class="card"><div class="table-wrap"><table><thead><tr><th>DATE</th><th>PHONE</th><th>AMOUNT</th><th>RECEIPT</th><th>STATUS</th><th>CALLBACK</th></tr></thead><tbody>${l.payments.length?l.payments.map(p=>`<tr><td>${day(p.paidAt||p.created)}</td><td>${H(p.phone)}</td><td>KSh ${Number(p.amount).toLocaleString('en-KE')}</td><td>${H(p.receipt||'—')}</td><td>${p.status==='paid'?'<span class="badge online">Paid</span>':p.status==='failed'?`<span class="badge offline" title="${H(p.reason||'')}">Failed</span>`:'<span class="badge">Waiting</span>'}</td><td>${p.status!=='paid'||!l.callbackUrl?'—':p.notified?'Delivered':'Not delivered'+(p.notifyStatus?' ('+p.notifyStatus+')':'')}</td></tr>`).join(''):'<tr><td colspan="6" class="muted" style="padding:20px">No payments through this link yet.</td></tr>'}</tbody></table></div></div>`;
+  const copy=(t,m)=>(navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast(m),()=>toast('Copy did not work: select it and copy by hand'));
+  $('#co-copy').onclick=()=>copy(l.url,'Payment page URL copied');const sb=$('#co-secret');if(sb)sb.onclick=()=>copy(l.apiSecret,'API secret copied. Keep it private.');
+  $('#co-tog').onclick=()=>api('checkouts/'+l.code,'PATCH',{active:!l.active}).then(()=>{toast(l.active?'Checkout link turned off: the page no longer takes payments.':'Checkout link turned on.');detail(l.code);},e=>toast(e.message));}
+};
 })();
 
 document.addEventListener('click',e=>{for(const m of document.querySelectorAll('details.ct-menu[open]'))if(!m.contains(e.target)||e.target.closest('.ct-menu-list button,.ct-menu-list a'))m.open=false;});
@@ -1807,6 +1842,8 @@ document.addEventListener('click',e=>{for(const m of document.querySelectorAll('
 document.addEventListener('click',e=>{const b=e.target.closest('[data-inv-print]');if(!b)return;e.preventDefault();const src='/api/invoices/'+b.dataset.invPrint+'/pdf';
  let f=document.getElementById('inv-print-frame');if(f)f.remove();f=document.createElement('iframe');f.id='inv-print-frame';f.style.cssText='position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0';
  f.onload=()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch{window.open(src,'_blank','noopener');}};f.src=src;document.body.appendChild(f);toast('Preparing the invoice for printing…');});
+// Invoices: the design picker saves Classic / Modern / Minimal on the invoice.
+document.addEventListener('change',e=>{const s=e.target.closest('[data-inv-design]');if(!s)return;api('records/invoices').then(d=>{const inv=(d.items||d).find?.(x=>x.id===s.dataset.invDesign);return api('records/invoices/'+s.dataset.invDesign,'PATCH',{design:s.value,version:inv?.version});}).then(()=>toast('Invoice design: '+s.options[s.selectedIndex].text+'. PDF and Print use it.'),err=>toast(err.message));});
 // Map latitude/longitude: every form with these fields gets "Use my current location" (phone GPS / browser location).
 // On a new record with empty fields they fill themselves when location access was already allowed.
 (()=>{const done=new WeakSet();

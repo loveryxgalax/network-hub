@@ -303,7 +303,7 @@ function createApp(options={}){
    throw error(404,'API endpoint not found');
   }
   {const ip=route.match(/^\/api\/invoices\/([a-f0-9-]{36})\/pdf$/);if(ip&&method==='GET'){if(['installer','viewer'].includes(user.role))throw error(403,'Not available to your role');const inv=store.get('invoices',ip[1]);if(!inv)throw error(404,'Invoice not found');
-   const ws=store.setting('workspace')||{},sub=inv.subscriberId?store.get('subscribers',inv.subscriberId):null,pays=store.list('payments').filter(p=>p.invoiceId===inv.id),pdf=require('./lib/pdf.cjs').invoice({...inv,phone:sub?.phone||'',address:sub?.address||''},{ws,payments:pays});
+   const ws=store.setting('workspace')||{},sub=inv.subscriberId?store.get('subscribers',inv.subscriberId):null,pays=store.list('payments').filter(p=>p.invoiceId===inv.id),pdf=require('./lib/pdf.cjs').invoice({...inv,phone:sub?.phone||'',address:sub?.address||''},{ws,payments:pays,design:url.searchParams.get('design')||inv.design});
    const fname=String(inv.name||'invoice').replace(/[^A-Za-z0-9._-]+/g,'-').slice(0,60)+'.pdf';store.audit(user,'Opened invoice PDF '+(inv.name||''),inv.id);
    res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':(url.searchParams.get('download')==='1'?'attachment':'inline')+'; filename="'+fname+'"','Content-Length':pdf.length,'Cache-Control':'no-store'});return res.end(pdf);}}
   const receiptRoute=route.match(/^\/api\/receipt\/([a-f0-9-]{36})$/);
@@ -447,6 +447,11 @@ function createApp(options={}){
    const pr=route.match(/^\/api\/adsales\/plans\/([a-f0-9-]{36})$/);if(pr){const ex=store.get('adPlans',pr[1]);if(!ex)throw error(404,'Plan not found');if(method==='PATCH'){const p=ads.savePlan(store,{...ex,...await body(req)},ex);store.audit(user,'Updated ad plan '+p.name,p.id);return json(res,200,p);}if(method==='DELETE'){store.remove('adPlans',ex.id);store.audit(user,'Deleted ad plan '+ex.name,ex.id);return json(res,200,{ok:true});}}
    const or=route.match(/^\/api\/adsales\/orders\/([a-f0-9-]{36})\/(paid|artwork|approve|decline|finish)$/);if(or&&method==='POST'){const o=ads.step(store,or[1],or[2],await body(req,8192),user);store.audit(user,'Ad order '+o.ref+': '+or[2],o.id);return json(res,200,o);}
    throw error(404,'Not found');}
+  {const cr=route.match(/^\/api\/checkouts(?:\/([A-Za-z0-9]{3}))?$/);if(cr){role(user,['admin','manager']);const CO=require('./lib/checkouts.cjs'),payUrl=c=>(custOrigin||publicUrl?.origin||'')+'/portal/pay.html?c='+c;
+   if(!cr[1]&&method==='GET')return json(res,200,{items:CO.list(store).map(l=>({...l,url:payUrl(l.code)}))});
+   if(!cr[1]&&method==='POST'){const l=CO.create(store,await body(req),user.name);store.audit(user,'Created checkout link '+l.code+' ('+l.description+')',l.id);return json(res,201,{...l,url:payUrl(l.code)});}
+   if(cr[1]&&method==='GET'){const d=CO.detail(store,cr[1]);if(user.role!=='admin')delete d.apiSecret;return json(res,200,{...d,url:payUrl(d.code)});}
+   if(cr[1]&&method==='PATCH'){const l=CO.update(store,cr[1],await body(req));store.audit(user,'Changed checkout link '+l.code+(l.active?'':' (turned off)'),l.id);return json(res,200,{...l,apiSecret:undefined,url:payUrl(l.code)});}}}
   if(route==='/api/brand-api'){role(user,['admin']);const ba=require('./lib/brandapi.cjs');if(method==='GET')return json(res,200,ba.status(store));if(method==='POST'){const r=ba.generate(store);store.audit(user,'Created a branding API key','brand-api');return json(res,201,r);}if(method==='DELETE'){store.audit(user,'Revoked the branding API key','brand-api');return json(res,200,ba.revoke(store));}}
   const rpRoute=route.match(/^\/api\/router-portal\/([a-f0-9-]{36})$/);
   if(rpRoute){const r=store.get('devices',rpRoute[1]);if(!r||r.type!=='router')throw error(404,'Router not found');if(method==='GET')return json(res,200,portal.routerPortal(store,r.id));role(user,['admin','manager']);if(method==='PUT'){const v=portal.saveRouterPortal(store,r.id,await body(req));store.audit(user,'Updated WiFi page settings for '+r.name,r.id);return json(res,200,v);}}
@@ -940,6 +945,11 @@ function createApp(options={}){
   const route=url.pathname,method=req.method,origin=custOrigin||'http://'+req.headers.host;
   // The router's own WiFi pages (plain http, e.g. wifi.kadenetworks.com) call this backend across origins. No cookies.
   {const ro=req.headers.origin||'';if(/^http:\/\/[^/]+$/.test(ro)){res.setHeader('Access-Control-Allow-Origin',ro);res.setHeader('Vary','Origin');res.setHeader('Access-Control-Allow-Headers','Content-Type, X-Portal-Pass');res.setHeader('Access-Control-Allow-Methods','GET, POST');res.setHeader('Access-Control-Max-Age','600');if(method==='OPTIONS'){res.writeHead(204);return res.end();}}}
+  // Checkout links: public pay pages (any address), separate from hotspot and PPPoE.
+  {const co=route.match(/^\/portal\/api\/checkout\/([A-Za-z0-9]{3})(\/pay)?$/),cs=route.match(/^\/portal\/api\/checkout-status\/([a-f0-9-]{36})$/),CO=require('./lib/checkouts.cjs');
+   if(co&&!co[2]&&method==='GET'){limit(req,'checkout-view',120,600000);return json(res,200,CO.publicInfo(store,co[1],store.setting('workspace')||{}));}
+   if(co&&co[2]&&method==='POST'){limit(req,'checkout-pay',10,600000);const input=await body(req,4096);limit(req,'checkout-phone',4,600000,String(input.phone||'').replace(/\D/g,'').slice(-9));return json(res,201,await CO.pay(store,co[1],input,origin));}
+   if(cs&&method==='GET'){limit(req,'checkout-status',240,600000);return json(res,200,await CO.status(store,cs[1],url.searchParams.get('t')));}}
   // Service separation: hotspot workflows only for the router's WiFi pages, PPPoE only for the customer address.
   const PM=require('./lib/portalmode.cjs'),pmode=PM.of(store,req,[portalUrl?.host,publicUrl?.host,req.headers.host]),pkey=route.slice('/portal/api/'.length);
   // Open portal (the default, like ISPman): any page may use any customer endpoint; only connecting a device needs the
