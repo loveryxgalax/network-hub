@@ -6,7 +6,7 @@ test('customer pages on their own address: portal at /, no admin there, links an
  const app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'pd-')),collector:false,publicOrigin:'https://netops.example.test',portalOrigin:'https://my.example.test'});
  await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const port=app.server.address().port,MY='my.example.test',OPS='netops.example.test';
  try{
-  let r=await get(port,MY,'/');assert.equal(r.status,200);assert.match(r.body,/wifi\.js/);assert.match(r.headers['strict-transport-security'],/max-age/);
+  let r=await get(port,MY,'/');assert.equal(r.status,200);assert.match(r.body,/\/portal\/portal\.js/);assert.match(r.headers['strict-transport-security'],/max-age/);
   assert.equal((await get(port,MY,'/api/session')).status,404,'no admin API on the customer address');
   assert.equal((await get(port,MY,'/live')).status,404);
   r=await get(port,MY,'/workspace.js');assert.equal(r.status,302);assert.equal(r.headers.location,'/');
