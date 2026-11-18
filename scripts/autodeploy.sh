@@ -12,6 +12,12 @@ target=$(git rev-parse '@{u}')
 marker=$(git rev-parse --git-path netops-deployed)
 last=''
 if [ -f "$marker" ]; then last=$(cat "$marker"); fi
+# Remote logging: keep the small log relay running (it is separate from RADIUS and is never restarted here).
+# Started only when the server's WireGuard address is up, because the relay listens on it.
+bind=$(grep -E '^RADIUS_BIND=' .env 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' || true); bind=${bind:-10.99.0.1}
+if ip -4 addr 2>/dev/null | grep -q "inet ${bind}/" && [ -z "$(docker compose --profile radius ps -q syslog-relay 2>/dev/null || true)" ]; then
+  if docker compose --profile radius up -d --no-deps syslog-relay >/dev/null 2>&1; then log 'started the remote logging relay'; else log 'remote logging relay did not start'; fi
+fi
 if [ "$last" = "$target" ]; then exit 0; fi
 if [ "$before" != "$target" ]; then
   if ! git merge -q --ff-only '@{u}'; then log 'cannot fast-forward (local changes?)'; exit 1; fi
