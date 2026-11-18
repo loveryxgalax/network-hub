@@ -10,7 +10,12 @@ if config_env() == :prod do
     url: [host: System.get_env("PUBLIC_HOST", "netops.kadenetworks.com"), scheme: "https", port: 443],
     secret_key_base: (System.get_env("SECRET_KEY_BASE") |> then(&(&1 != "" && &1))) || raise("SECRET_KEY_BASE is missing"),
     # Browsers only reach Phoenix through the hub at the public site.
-    check_origin: ["https://" <> System.get_env("PUBLIC_HOST", "netops.kadenetworks.com")]
+    # Also the hosts in EXTRA_HOSTS (comma list), e.g. the old address while moving to a new one.
+    check_origin:
+      Enum.map(
+        [System.get_env("PUBLIC_HOST", "netops.kadenetworks.com") | String.split(System.get_env("EXTRA_HOSTS", ""), ",", trim: true)],
+        &("https://" <> String.trim(&1))
+      )
 
   roles = System.get_env("LIVE_ROLES", "") |> String.split(",", trim: true) |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
 
