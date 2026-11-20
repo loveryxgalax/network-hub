@@ -194,3 +194,10 @@
 .kd2-kpi .kd-kpi-spark{opacity:.3;height:26px}
 .kd2-card>header .kd-tools{margin-left:auto}
 @media(max-width:720px){.kd2 .kd-table th:nth-child(1),.kd2 .kd-table td:nth-child(1),.kd2 .kd-table th:nth-child(3),.kd2 .kd-table td:nth-child(3){display:none}.kd2 .kd-table td,.kd2 .kd-table th{white-space:nowrap;padding:8px 6px!important;font-size:12.5px}.kd2 .kd-table-wrap{overflow-x:auto}}
+
+/* Bar charts: modern look (gridlines, slim rounded bars, quiet hover column) */
+.kc-host svg .kc-grid{stroke:var(--border,#e2e8f0);stroke-width:1;stroke-dasharray:3 5}.kc-host svg .kc-grid.kc-base{stroke-dasharray:none;stroke:color-mix(in srgb,var(--muted,#64748b) 35%,transparent)}
+.kc-host svg .kc-y{font-size:10.5px;fill:var(--muted,#64748b)}
+.kc-host svg .kc-bar-bg{fill:transparent!important;transition:fill .15s}.kc-host svg .kc-bar.on .kc-bar-bg,.kc-host svg .kc-bar:hover .kc-bar-bg{fill:color-mix(in srgb,var(--kd-blue,#0a3cff) 7%,transparent)!important}
+.kc-host svg .kc-bar.on .kc-bar-fg,.kc-host svg .kc-bar:hover .kc-bar-fg{filter:brightness(1.1) drop-shadow(0 4px 8px rgba(10,60,255,.28))}
+.kc-host svg .kc-avg{stroke:#f59e0b;stroke-width:1.2;stroke-dasharray:5 4}.kc-host svg .kc-avg-t{fill:#b45309;font-weight:600}

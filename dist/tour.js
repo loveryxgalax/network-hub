@@ -52,17 +52,23 @@
  function start(){close();i=0;const veil=document.createElement('div'),hole=document.createElement('div'),pop=document.createElement('div');veil.className='nt-veil';hole.className='nt-hole';pop.className='nt-pop';pop.setAttribute('role','dialog');pop.setAttribute('aria-modal','true');
   veil.onclick=()=>{};document.body.append(veil,hole,pop);els={veil,hole,pop};render();window.addEventListener('resize',place);document.addEventListener('keydown',key);}
  // Dashboard settings (like ISPman's): theme, display style and menu style, saved for this person on this browser.
+ // Fonts for the whole dashboard (files served from netops; Maven Pro stays the default).
+ const FONTS=[['Maven Pro','Maven Pro'],['Google Sans','Google Sans'],['Google Sans Flex','Google Sans Flex'],['Inter','Inter'],['Open Sans','Open Sans'],['Bricolage Grotesque','Bricolage Grotesque'],['Poppins','Poppins'],['Roboto','Roboto'],['Nunito','Nunito'],['DM Sans','DM Sans'],['Plus Jakarta Sans','Plus Jakarta Sans'],['Manrope','Manrope'],['Montserrat','Montserrat'],['Rubik','Rubik'],['Work Sans','Work Sans'],['IBM Plex Sans','IBM Plex Sans'],['Lato','Lato'],['Outfit','Outfit'],['Figtree','Figtree'],['system','System font (system-ui)'],['serif','Serif']];
+ function fontApply(f){let st=document.getElementById('ds-font');if(!f||f==='Maven Pro'){if(st)st.remove();return;}
+  if(!document.getElementById('ds-font-faces')&&f!=='system'&&f!=='serif'){const l=document.createElement('link');l.id='ds-font-faces';l.rel='stylesheet';l.href='/fonts-extra.css?v=1';document.head.appendChild(l);}
+  const fam=f==='system'?'system-ui,-apple-system,"Segoe UI",sans-serif':f==='serif'?'Georgia,"Times New Roman",serif':`"${f}",system-ui,sans-serif`;
+  if(!st){st=document.createElement('style');st.id='ds-font';document.head.appendChild(st);}st.textContent=`html body,html body *:not(svg):not(svg *):not(code):not(pre):not(kbd){font-family:${fam}!important}`;}
  const DS={theme:[['light','Light'],['dark','Dark'],['system','System']],display:[['classic','Classic'],['minimal','Minimal'],['compact','Compact']],nav:[['classic','Classic'],['soft','Soft'],['midnight','Midnight']]};
  const dsGet=()=>{try{return JSON.parse(localStorage.getItem('dash-settings:'+who())||'{}');}catch{return {};}};
  function dsApply(){const s=dsGet(),h=document.documentElement;h.classList.remove('ds-minimal','ds-compact','nav-soft','nav-midnight');if(s.display&&s.display!=='classic')h.classList.add('ds-'+s.display);if(s.nav&&s.nav!=='classic')h.classList.add('nav-'+s.nav);
-  if(s.theme==='system')h.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+  if(s.theme==='system')h.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';fontApply(s.font);}
  function dsOpen(){let d=document.getElementById('ds-dlg');if(d)d.remove();d=document.createElement('dialog');d.id='ds-dlg';d.className='ds-dlg';
   const s=dsGet(),cur={theme:s.theme||(document.documentElement.dataset.theme==='dark'?'dark':'light'),display:s.display||'classic',nav:s.nav||'classic'};
   const seg=(k,title,sub)=>`<h4>${title}</h4><p class="ds-sub">${sub}</p><div class="ds-seg">${DS[k].map(([v,l])=>`<button type="button" data-k="${k}" data-v="${v}" aria-pressed="${cur[k]===v}">${l}</button>`).join('')}</div>`;
   d.innerHTML=`<div class="ds-in"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Dashboard settings</h3><button type="button" class="nt-x" data-close aria-label="Close" style="border:0;background:none;font-size:22px;cursor:pointer;color:inherit">×</button></div><p class="ds-sub">Make this dashboard yours.</p>
-   ${seg('theme','APPEARANCE','Theme for this browser')}${seg('display','DISPLAY STYLE','How tiles and cards are drawn')}${seg('nav','NAVIGATION','How the left side menu is drawn')}
-   <div class="ds-foot"><span>Saved on this browser for you. The font is always Maven Pro.</span><button type="button" class="button secondary" data-reset>Reset</button></div></div>`;
-  document.body.appendChild(d);d.showModal();d.onclick=e=>{if(e.target===d||e.target.closest('[data-close]'))d.close();
+   ${seg('theme','APPEARANCE','Theme for this browser')}${seg('display','DISPLAY STYLE','How tiles and cards are drawn')}${seg('nav','NAVIGATION','How the left side menu is drawn')}<h4>FONT</h4><p class="ds-sub">Typeface for the whole dashboard</p><select class="ds-font" data-font aria-label="Font">${FONTS.map(([v,l])=>`<option value="${v}" ${(s.font||'Maven Pro')===v?'selected':''} style="font-family:${v==='system'?'system-ui':v==='serif'?'Georgia':'&quot;'+v+'&quot;'}">${l}</option>`).join('')}</select>
+   <div class="ds-foot"><span>Saved on this browser for you.</span><button type="button" class="button secondary" data-reset>Reset</button></div></div>`;
+  document.body.appendChild(d);d.showModal();d.querySelector('[data-font]').onchange=e=>{const n={...dsGet(),font:e.target.value};try{localStorage.setItem('dash-settings:'+who(),JSON.stringify(n));}catch{}fontApply(n.font);};d.onclick=e=>{if(e.target===d||e.target.closest('[data-close]'))d.close();
    const b=e.target.closest('[data-k]');if(b){const n={...dsGet(),[b.dataset.k]:b.dataset.v};try{localStorage.setItem('dash-settings:'+who(),JSON.stringify(n));}catch{}
     if(b.dataset.k==='theme'&&b.dataset.v!=='system'){document.documentElement.dataset.theme=b.dataset.v;try{localStorage.setItem('network-hub-theme',b.dataset.v);}catch{}}
     dsApply();for(const x of d.querySelectorAll(`[data-k="${b.dataset.k}"]`))x.setAttribute('aria-pressed',x===b);}

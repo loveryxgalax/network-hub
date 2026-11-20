@@ -12,7 +12,7 @@ const RNUM=/amount|price|balance|wallet|paid|cost|points|^qty$|on hand|minimum|^
 const numOf=td=>{const m=/-?\d[\d,]*(\.\d+)?/.exec(td.innerText.replace(/\s/g,''));return m?Number(m[0].replace(/,/g,'')):null;};
 const dateOf=td=>{for(const v of [td.querySelector('[title]')?.title,td.title,td.innerText.split('\n')[0],td.innerText]){const t=Date.parse(String(v||'').trim());if(Number.isFinite(t))return t;}return null;};
 const title=s=>s.toLowerCase().replace(/[a-z0-9-]+/g,w=>ACR[w]||w.charAt(0).toUpperCase()+w.slice(1));
-let size=25;try{size=Number(localStorage.getItem('kd-page-size'))||25;}catch{}
+let size=5;try{size=Number(localStorage.getItem('kd-rows'))||5;}catch{}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cellText=td=>td.innerText.replace(/\s+/g,' ').trim();
 function key(table){return (typeof state!=='undefined'?state.page:'')+'|'+[...table.tHead.rows[0].cells].map(c=>c.textContent.trim()).join(',');}
@@ -40,10 +40,10 @@ function enhance(table){
   const btn=(p,label=p+1)=>`<button type="button" data-p="${p}" class="${p===st.page?'on':''}">${label}</button>`,nums=[];for(let p=0;p<pages;p++)if(p<2||p>=pages-2||Math.abs(p-st.page)<=1)nums.push(p);else if(nums.at(-1)!=='…')nums.push('…');
   foot.innerHTML=`<span class="kt-info">Page ${st.page+1} of ${pages} <b>(showing ${shown.length?from+1:0}–${Math.min(from+size,shown.length)} of ${shown.length}${shown.length!==rows.length?`, filtered from ${rows.length}`:''})</b></span>
    <button type="button" class="kt-csv">${typeof icon==='function'?icon('download',14):''} Export CSV</button>
-   <span class="kt-size">Show <select aria-label="Rows per page">${[5,10,25,50,100].map(n=>`<option ${n===size?'selected':''}>${n}</option>`).join('')}</select> per page</span>
+   <span class="kt-size">Show <select aria-label="Rows per page">${[5,10,15,20,25,50,100].map(n=>`<option ${n===size?'selected':''}>${n}</option>`).join('')}</select> per page</span>
    <span class="kt-pages">${st.page>0?btn(st.page-1,'‹'):''}${nums.map(p=>p==='…'?'<span>…</span>':btn(p)).join('')}${st.page<pages-1?btn(st.page+1,'›'):''}</span>`;
   for(const b of foot.querySelectorAll('[data-p]'))b.onclick=()=>{st.page=Number(b.dataset.p);paint();wrap.scrollIntoView({block:'nearest'});};
-  foot.querySelector('select').onchange=e=>{size=Number(e.target.value);try{localStorage.setItem('kd-page-size',size);}catch{}st.page=0;paint();};
+  foot.querySelector('select').onchange=e=>{size=Number(e.target.value);try{localStorage.setItem('kd-rows',size);}catch{}st.page=0;paint();};
   foot.querySelector('.kt-csv').onclick=()=>{const cols=heads.map(h=>h.i),q=v=>'"'+String(v).replace(/"/g,'""')+'"';const csv=[heads.map(h=>q(h.name)).join(','),...shown.map(r=>cols.map(c=>q(r.cells[c]?cellText(r.cells[c]):'')).join(','))].join('\r\n');
    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));a.download=((document.querySelector('#main h1')?.textContent||'export').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-'))+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};}
  paint();}

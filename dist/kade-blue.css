@@ -56,7 +56,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)!important;bo
 .table-wrap{border-radius:var(--radius)}
 
 /* Buttons: pills — filled blue for primary, blue outline for secondary */
-.button{border-radius:999px!important;font-weight:600}
+.button{border-radius:8px!important;font-weight:500}
 .button.primary{background:var(--primary)!important;border-color:var(--primary)!important;color:#fff!important}
 .button.primary:hover{filter:brightness(1.08)}
 .button.secondary{background:var(--card)!important;color:var(--primary)!important;border:1px solid var(--primary)!important}
@@ -1302,3 +1302,75 @@ html.nav-midnight .sidebar{--side:#0b1220}
 .pk-slot.pk-slot{display:block!important;margin:0!important;cursor:pointer}.pk-slot input{position:absolute;opacity:0;width:1px;height:1px}
 .pk-slot span{display:block;text-align:center;border:1px solid var(--border,#d0d7e2);border-radius:9px;padding:8px 4px;font-size:13px;font-weight:600}
 .pk-slot input:checked+span{background:var(--primary,#0032fd);border-color:var(--primary,#0032fd);color:#fff}.pk-slot input:focus-visible+span{outline:2px solid var(--primary,#0032fd);outline-offset:2px}
+
+/* ---- Owner's document (Nov 20) ---- */
+/* Tables: the first and last column keep a proper margin from the card edge (every data table). */
+.data-table th:first-child,.data-table td:first-child{padding-left:20px!important}
+.data-table th:last-child,.data-table td:last-child{padding-right:20px!important}
+/* Cards whose table runs edge to edge: the text, tiles and notices above or below it get the same margin. */
+.card.sites-panel>:not(.table-wrap):not(.card-header):not(.table-toolbar):not(table):not(.kt-foot):not(.im-pager){margin-left:20px;margin-right:20px}
+.card.sites-panel>p:first-child,.card.sites-panel>.tile-row:first-child{margin-top:18px}
+.card.sites-panel>p:last-child,.card.sites-panel>.tile-row:last-child{margin-bottom:18px}
+.notice{border-radius:var(--radius);border:none;background:var(--card);box-shadow:var(--shadow);padding:14px 20px}
+/* Ban permanently: stays red on hover (it is both a secondary and a danger button). */
+.button.secondary.danger{background:#fff!important;color:#dc2626!important;border-color:#fca5a5!important}
+.button.secondary.danger:hover,.button.secondary.danger:focus-visible{background:#dc2626!important;color:#fff!important;border-color:#dc2626!important;filter:none}
+/* The owner's devtools tweaks */
+footer{color:black;font-size:11px;padding:8px 32px 23px}
+footer span{padding:0 8px;opacity:1}
+.check-label.check-label.check-label:has(>input){font-size:13px;font-weight:400;color:var(--ink)}
+form .check-label{white-space:normal;line-height:1.35;margin:-5px 0}
+.radius-form label,.form-grid label,.rp-filters label,.table-toolbar label{color:var(--primary);font-weight:400}
+.set-card h2{margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600}
+.page-heading h1{color:var(--primary)!important;font-weight:700;font-size:16px}
+.rh-chip b{display:block;font-size:13px;margin-top:3px;font-weight:500}
+
+/* Invoices: the PDF/print icons, the design picker and edit/delete stay on one line; a small picker. */
+.inv-acts{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:6px}
+.inv-acts>*{margin:0!important;flex:none}.inv-acts .row-actions{display:inline-flex!important;flex-wrap:nowrap;gap:6px;margin:0!important}
+.inv-acts select.inv-design{width:auto!important;min-width:0!important;max-width:96px;height:30px;padding:2px 22px 2px 8px!important;font-size:12px!important;border-radius:8px}
+
+.kd-cu[data-n="5"] tbody tr:nth-child(n+6),.kd-cu[data-n="10"] tbody tr:nth-child(n+11),.kd-cu[data-n="15"] tbody tr:nth-child(n+16),.kd-cu[data-n="20"] tbody tr:nth-child(n+21),.kd-cu[data-n="50"] tbody tr:nth-child(n+51){display:none}
+.kd-cu-ctl{display:inline-flex;align-items:center;gap:8px;margin-left:auto}.kd-cu-n{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--muted)!important;margin:0!important}
+.kd-cu-n select{width:auto!important;padding:4px 24px 4px 8px!important;font-size:12.5px!important;height:32px}
+
+.ct-pager .ct-per{display:inline-flex!important;align-items:center;gap:6px;margin:0 auto 0 0!important;font-size:13px;color:var(--muted)!important}.ct-pager .ct-per select{width:auto!important;padding:4px 24px 4px 8px!important;height:34px}
+
+.ispman-bulk{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 10px}.ispman-bulk .button{margin-left:auto}
+.ispman-customer-list article{position:relative}.ispman-customer-list article>.ispman-cb{position:absolute;top:14px;right:14px;width:18px;height:18px}
+
+/* Checkboxes everywhere: design #31 from getcssscan.com (grey box, green when ticked, white tick), square corners. */
+html body input[type=checkbox]:not(:is(.tpl-switch,.switch,.toggle,.rtp-switch,.pk-switch,.ex-step)>input){width:20px!important;height:20px!important;min-width:20px;border-radius:4px!important;border:0!important;background-color:#ccc!important;background-image:none!important;background-repeat:no-repeat!important;background-position:center!important;background-size:14px!important;transition:background-color .3s ease,box-shadow .3s ease!important;cursor:pointer}
+html body input[type=checkbox]:not(:is(.tpl-switch,.switch,.toggle,.rtp-switch,.pk-switch,.ex-step)>input):hover:not(:disabled){background-color:#bdbdbd!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='5 12.5 10 17.5 19 7.5'/%3E%3C/svg%3E")!important;box-shadow:none!important}
+html body input[type=checkbox]:not(:is(.tpl-switch,.switch,.toggle,.rtp-switch,.pk-switch,.ex-step)>input):checked{background-color:#6cbe45!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='5 12.5 10 17.5 19 7.5'/%3E%3C/svg%3E")!important;border:0!important}
+html body input[type=checkbox]:not(:is(.tpl-switch,.switch,.toggle,.rtp-switch,.pk-switch,.ex-step)>input):indeterminate{background-color:#6cbe45!important;background-image:linear-gradient(#fff,#fff)!important;background-size:10px 2.5px!important}
+html body input[type=checkbox]:not(:is(.tpl-switch,.switch,.toggle,.rtp-switch,.pk-switch,.ex-step)>input):focus-visible{outline:2px solid #6cbe45!important;outline-offset:2px;box-shadow:none!important}
+html body input[type=checkbox]:not(:is(.tpl-switch,.switch,.toggle,.rtp-switch,.pk-switch,.ex-step)>input):disabled{opacity:.5;cursor:not-allowed}
+
+/* Toggles everywhere: design #3 from getcssscan.com (grey bar, white knob; purple when on), square instead of round. */
+html body label.pk-switch>input+span,html body label.rtp-switch>input+i,html body .tpl-switch span,html body .prl-tog>span,html body .tg-sw{width:40px!important;height:20px!important;flex:0 0 40px!important;border-radius:0!important;background:linear-gradient(#9A9999,#9A9999) center/34px 14px no-repeat!important;transition:background .2s ease!important}
+html body .tpl-switch{width:40px;height:20px}
+html body label.pk-switch>input+span::after,html body label.rtp-switch>input+i::after,html body .tpl-switch span::after,html body .prl-tog>span::after,html body .tg-sw i{top:0!important;left:0!important;width:20px!important;height:20px!important;border-radius:4px!important;background:#fff!important;box-shadow:0 3px 8px rgba(154,153,153,.5)!important;transition:transform .2s cubic-bezier(.8,.4,.3,1.25),background .15s ease!important}
+html body label.pk-switch>input:checked+span,html body label.rtp-switch>input:checked+i,html body .tpl-switch input:checked+span,html body .prl-tog>input:checked+span,html body .tg-sw.on{background:linear-gradient(#947ADA,#947ADA) center/34px 14px no-repeat!important}
+html body label.pk-switch>input:checked+span::after,html body label.rtp-switch>input:checked+i::after,html body .tpl-switch input:checked+span::after,html body .prl-tog>input:checked+span::after,html body .tg-sw.on i{background:#4F2EDC!important;transform:translateX(20px)!important;left:0!important;box-shadow:0 3px 8px rgba(79,46,220,.2)!important}
+
+.ds-dlg .ds-font{width:100%;padding:10px 12px;border:1px solid var(--border,#d0d7e2);border-radius:10px;background:var(--card,#fff);color:inherit;font-size:15px}
+
+/* Customer data usage card: chart, stat cards and a compact export bar */
+.pfu-bars{margin:6px 0 12px}
+.pfu-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:4px 0 10px}
+.pfu-stat{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border,#e2e8f0);border-radius:12px;background:var(--card,#fff)}
+.pfu-stat small{display:block;color:var(--muted,#64748b);font-size:12px}.pfu-stat b{font-size:17px;font-weight:700;color:var(--ink,#0f172a)}
+.pfu-ic{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:16px}
+.pfu-ic.down{background:#e0e7ff;color:#3730a3}.pfu-ic.up{background:#dcfce7;color:#15803d}.pfu-ic.ses{background:#fef3c7;color:#b45309;font-size:11px}
+.pfu-dl2{display:inline-flex;align-items:center;border:1px solid var(--border,#d0d7e2);border-radius:10px;overflow:hidden;margin-top:4px}
+.pfu-dl2 span{padding:6px 10px;font-size:12px;color:var(--muted,#64748b);border-right:1px solid var(--border,#d0d7e2)}
+.pfu-dl2 button{border:0;background:var(--card,#fff);color:var(--primary,#0032fd);font:600 12.5px inherit;padding:6px 12px;cursor:pointer;border-right:1px solid var(--border,#e2e8f0)}.pfu-dl2 button:last-child{border-right:0}
+.pfu-dl2 button:hover{background:color-mix(in srgb,var(--primary,#0032fd) 8%,transparent)}
+/* System logs: tick box, icon, message and time/actions on one row (the tick box was pushing time and buttons to a new line). */
+.sl-row{grid-template-columns:auto auto minmax(0,1fr) auto!important;align-items:center!important;gap:14px!important}
+.sl-row>.sl-pick{margin:0!important;align-self:center}.sl-row .sl-ic{width:36px;height:36px;border-radius:10px}
+.sl-row .sl-side{align-self:center}.sl-row .sl-acts .ra-btn,.sl-row .sl-acts .button{height:34px;min-width:34px}
+@media(max-width:720px){.sl-row{grid-template-columns:auto auto minmax(0,1fr)!important}.sl-row .sl-side{grid-column:1/-1!important}}
+/* Router warning & error events: the topic line (e.g. system,critical,info) as small tags. */
+.ev-topics{display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:3px}.ev-topics span{font-size:10.5px;padding:1px 6px;border-radius:5px;background:#f1f5f9;color:#475569;font-weight:600}

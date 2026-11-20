@@ -204,6 +204,7 @@ function createApp(options={}){
    attempts.delete(key);attempts.delete(ukey);logAccess(user.email,user,'success','Signed in');signinAlert(user,ip,ua);return json(res,200,session(res,user,secure));
   }
   const user=auth(req);if(!user)throw error(401,'Sign in to continue');if(mutating.has(method)&&req.headers['x-csrf-token']!==user.csrf)throw error(403,'Session verification failed. Reload the page.');
+  if(route==='/api/ispman/delete'&&method==='POST'){role(user,['admin']);const r=require('./lib/ispman.cjs').remove(store,(await body(req,400000)).keys);store.audit(user,'Removed '+r.removed+' record(s) from the ISPman overview','ispman');return json(res,200,r);}
   if(route==='/api/ispman'&&method==='GET'){role(user,['admin']);return json(res,200,require('./lib/ispman.cjs').overview(store,Object.fromEntries(url.searchParams)));}
   if((route==='/api/ispman/preview'||route==='/api/ispman/import')&&method==='POST'){
    role(user,['admin']);const mirror=require('./lib/ispman.cjs'),input=await body(req,6*1024*1024);
