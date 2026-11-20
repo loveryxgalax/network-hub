@@ -1374,3 +1374,16 @@ html body label.pk-switch>input:checked+span::after,html body label.rtp-switch>i
 @media(max-width:720px){.sl-row{grid-template-columns:auto auto minmax(0,1fr)!important}.sl-row .sl-side{grid-column:1/-1!important}}
 /* Router warning & error events: the topic line (e.g. system,critical,info) as small tags. */
 .ev-topics{display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:3px}.ev-topics span{font-size:10.5px;padding:1px 6px;border-radius:5px;background:#f1f5f9;color:#475569;font-weight:600}
+
+/* Laptops (13-16" MacBook and similar, 1200-1728 px wide): everything at 88% so pages and tables fit. */
+@media (min-width:1200px) and (max-width:1728px){html{font-size:80%}body{zoom:.88}}
+/* Routers list: the audit cell and the actions stay on one line and compact. */
+.audit-cell{display:inline-flex!important;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap}
+.audit-cell .audit-btn{height:30px!important;padding:0 10px!important;font-size:12.5px!important;gap:4px}
+td .row-actions,td .ra{flex-wrap:nowrap!important;white-space:nowrap}
+td .row-actions .button{height:32px;padding:0 10px!important;font-size:12.5px}
+/* Default dashboard font: Google Sans (Dashboard settings can pick another, including Maven Pro). */
+html body,html body *:not(#_):not(svg):not(svg *):not(code):not(pre):not(kbd){font-family:"Google Sans","Maven Pro",system-ui,sans-serif!important}
+/* Routers list: the Monitor button keeps its label inside it (no text spilling over the delete button). */
+html body .row-actions .ra-btn.ra-primary[data-device]{width:auto!important;min-width:0!important;padding:0 11px!important;display:inline-flex!important;align-items:center;gap:5px;white-space:nowrap;overflow:visible}
+html body .row-actions .ra-btn.ra-primary[data-device] span{display:inline!important;position:static!important;width:auto!important;height:auto!important;clip:auto!important;font-size:12.5px;font-weight:600}
