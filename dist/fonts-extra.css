@@ -1,0 +1,29 @@
+/* Optional dashboard fonts (Dashboard settings → Font), served from netops itself. Latin characters. */
+@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/BricolageGrotesque-400-800.woff2") format("woff2")}
+@font-face{font-family:'DM Sans';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/DMSans-400-800.woff2") format("woff2")}
+@font-face{font-family:'Figtree';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Figtree-400-800.woff2") format("woff2")}
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/extra/GoogleSans-400.woff2") format("woff2")}
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/extra/GoogleSans-500.woff2") format("woff2")}
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:600;font-display:swap;src:url("/fonts/extra/GoogleSans-600.woff2") format("woff2")}
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/extra/GoogleSans-700.woff2") format("woff2")}
+@font-face{font-family:'Google Sans Flex';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/GoogleSansFlex-400-800.woff2") format("woff2")}
+@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/extra/IBMPlexSans-400.woff2") format("woff2")}
+@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/extra/IBMPlexSans-500.woff2") format("woff2")}
+@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:600;font-display:swap;src:url("/fonts/extra/IBMPlexSans-600.woff2") format("woff2")}
+@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/extra/IBMPlexSans-700.woff2") format("woff2")}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Inter-400-800.woff2") format("woff2")}
+@font-face{font-family:'Lato';font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/extra/Lato-400.woff2") format("woff2")}
+@font-face{font-family:'Lato';font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/extra/Lato-700.woff2") format("woff2")}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Manrope-400-800.woff2") format("woff2")}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Montserrat-400-800.woff2") format("woff2")}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Nunito-400-800.woff2") format("woff2")}
+@font-face{font-family:'Open Sans';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/OpenSans-400-800.woff2") format("woff2")}
+@font-face{font-family:'Outfit';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Outfit-400-800.woff2") format("woff2")}
+@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/PlusJakartaSans-400-800.woff2") format("woff2")}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/extra/Poppins-400.woff2") format("woff2")}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/extra/Poppins-500.woff2") format("woff2")}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:600;font-display:swap;src:url("/fonts/extra/Poppins-600.woff2") format("woff2")}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/extra/Poppins-700.woff2") format("woff2")}
+@font-face{font-family:'Roboto';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Roboto-400-800.woff2") format("woff2")}
+@font-face{font-family:'Rubik';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Rubik-400-800.woff2") format("woff2")}
+@font-face{font-family:'Work Sans';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/WorkSans-400-800.woff2") format("woff2")}
