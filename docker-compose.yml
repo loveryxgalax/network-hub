@@ -6,8 +6,8 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      # Main admin address. Moving to cloud.kadenetworks.com: docs/MOVE-TO-CLOUD.md (set both values in .env).
-      NETWORK_PUBLIC_ORIGIN: ${NETWORK_PUBLIC_ORIGIN:-https://netops.kadenetworks.com}
+      # Main admin address (cloud.kadenetworks.com). The old netops address can stay in NETWORK_ALIAS_ORIGINS for routers and Safaricom until they are moved.
+      NETWORK_PUBLIC_ORIGIN: ${NETWORK_PUBLIC_ORIGIN:-https://cloud.kadenetworks.com}
       # Other admin addresses that keep working (comma list), e.g. the old one during a move; NETWORK_ALIAS_REDIRECT=1 sends people (not routers or callbacks) to the main address.
       NETWORK_ALIAS_ORIGINS: ${NETWORK_ALIAS_ORIGINS:-}
       NETWORK_ALIAS_REDIRECT: ${NETWORK_ALIAS_REDIRECT:-}
@@ -56,7 +56,7 @@ services:
       NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
       SECRET_KEY_BASE: ${LIVE_SECRET_KEY_BASE:-}
       LIVE_API_URL: http://hub:4319/internal/v1
-      PUBLIC_HOST: ${LIVE_PUBLIC_HOST:-netops.kadenetworks.com}
+      PUBLIC_HOST: ${LIVE_PUBLIC_HOST:-cloud.kadenetworks.com}
       EXTRA_HOSTS: ${LIVE_EXTRA_HOSTS:-}
       LIVE_ROLES: ${NETWORK_LIVE_ROLES:-}
     depends_on: [hub]

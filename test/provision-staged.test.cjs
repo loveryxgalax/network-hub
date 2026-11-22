@@ -18,7 +18,7 @@ test('small-router mode: one part per pass, separate download and import, slower
   assert.equal((await pass('wireguard')).status,409,'a second WireGuard pass does not reissue silently');
   assert.ok((await pass('wireguard',{newWireguardKey:true})).status===201);
   const m=await pass('monitoring');assert.deepEqual(m.body.parts,['Monitoring (read-only)']);const agentSecret=st.secret('agent:'+rid);assert.ok(agentSecret);
-  const rr=await pass('radius');assert.equal(rr.status,201);assert.match(rr.body.parts[0],/^netops RADIUS/);
+  const rr=await pass('radius');assert.equal(rr.status,201);assert.match(rr.body.parts[0],/^Kade Cloud RADIUS/);
   assert.deepEqual(st.secret('agent:'+rid),agentSecret,'a part that is not monitoring leaves the monitoring credential alone');
   const d=await pass('discovery');assert.match(d.body.parts[0],/every 10 minutes/);
   const dev=fs.existsSync(dir);assert.ok(dev);

@@ -49,7 +49,7 @@ test('HTTP: link a MikroTik end to end (bundle once per link, checks, in-service
   st.setting('wgServer',{publicKey:'A'.repeat(43)+'=',endpoint:'203.0.113.10',port:51820});
   const r=await api('provision','POST',{name:'HEX Ikutha',radius:'all',runner:true});assert.equal(r.status,201,JSON.stringify(r.body));
   assert.match(r.body.oneLiner,/^\/tool fetch url="https:\/\/netops\.example\.test\/api\/provision\/bundle\/[a-f0-9-]{36}" http-header-field="Authorization:Bearer [A-Za-z0-9_-]{43}" check-certificate=yes/);
-  assert.deepEqual(r.body.parts.map(p=>p.split(' ')[0]),['Router','WireGuard','netops','Monitoring','Customer','Job']);
+  assert.deepEqual(r.body.parts.map(p=>p.split(' ')[0]),['Router','WireGuard','Kade','Monitoring','Customer','Job']);
   assert.equal((await api('provision','POST',{name:'hex ikutha'})).status,409,'same name');
   const [,bid,tok]=/bundle\/([a-f0-9-]{36})" http-header-field="Authorization:Bearer ([A-Za-z0-9_-]{43})"/.exec(r.body.oneLiner);
   const bundle=await fetch(origin+'/api/provision/bundle/'+bid,{headers:{Authorization:'Bearer '+tok,Host:'netops.example.test'}});assert.equal(bundle.status,200);const text=await bundle.text();
@@ -76,12 +76,12 @@ test('HTTP: link a MikroTik end to end (bundle once per link, checks, in-service
   // A router already serving customers: with live setup allowed (the default) the new service goes beside the old one,
   // and the script keeps its existing PPPoE/hotspot; with live setup switched off it is refused.
   st.setting('routerHealth:'+id,{...st.setting('routerHealth:'+id),pppoeServers:1});
-  const live=await api('provision/'+id+'/services','POST',spec);assert.equal(live.status,200);assert.doesNotMatch(live.body.script,/already has a PPPoE server/);assert.match(live.body.script,/netops PPPoE profile already exists/);
+  const live=await api('provision/'+id+'/services','POST',spec);assert.equal(live.status,200);assert.doesNotMatch(live.body.script,/already has a PPPoE server/);assert.match(live.body.script,/Kade Cloud PPPoE profile already exists/);
   require('../lib/routerauto.cjs').save(st,{liveSetup:false});
   const busy=await api('provision/'+id+'/services','POST',spec);assert.equal(busy.status,409);assert.match(busy.body.error,/already serves customers/);
   // Re-issue for the same router keeps its WireGuard address and says so.
   const again=await api('provision','POST',{routerId:id,radius:'none',wireguard:true});assert.equal(again.status,201);assert.match(again.body.warnings[0],/already has 10\.99\.0\./);
-  const fresh=await api('provision','POST',{routerId:id,radius:'none',wireguard:true,newWireguardKey:true});assert.equal(fresh.status,201);assert.equal(fresh.body.warnings.length,0);assert.ok(fresh.body.parts.some(p=>/WireGuard tunnel to netops \(10\.99\.0\.2\)/.test(p)),'new key, same address');assert.equal(st.list('wgPeers').filter(p=>p.routerId===id).length,1);
+  const fresh=await api('provision','POST',{routerId:id,radius:'none',wireguard:true,newWireguardKey:true});assert.equal(fresh.status,201);assert.equal(fresh.body.warnings.length,0);assert.ok(fresh.body.parts.some(p=>/WireGuard tunnel to Kade Cloud \(10\.99\.0\.2\)/.test(p)),'new key, same address');assert.equal(st.list('wgPeers').filter(p=>p.routerId===id).length,1);
  }finally{await app.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('forget a router: preview, typed name, removes only that router\'s data; payments stay; customers optional',async()=>{

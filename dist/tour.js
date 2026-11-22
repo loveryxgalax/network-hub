@@ -52,7 +52,7 @@
  function start(){close();i=0;const veil=document.createElement('div'),hole=document.createElement('div'),pop=document.createElement('div');veil.className='nt-veil';hole.className='nt-hole';pop.className='nt-pop';pop.setAttribute('role','dialog');pop.setAttribute('aria-modal','true');
   veil.onclick=()=>{};document.body.append(veil,hole,pop);els={veil,hole,pop};render();window.addEventListener('resize',place);document.addEventListener('keydown',key);}
  // Dashboard settings (like ISPman's): theme, display style and menu style, saved for this person on this browser.
- // Fonts for the whole dashboard (files served from netops; Maven Pro stays the default).
+ // Fonts for the whole dashboard (files served from Kade Cloud; Maven Pro stays the default).
  const FONTS=[['Google Sans','Google Sans (default)'],['Maven Pro','Maven Pro'],['Google Sans Flex','Google Sans Flex'],['Inter','Inter'],['Open Sans','Open Sans'],['Bricolage Grotesque','Bricolage Grotesque'],['Poppins','Poppins'],['Roboto','Roboto'],['Nunito','Nunito'],['DM Sans','DM Sans'],['Plus Jakarta Sans','Plus Jakarta Sans'],['Manrope','Manrope'],['Montserrat','Montserrat'],['Rubik','Rubik'],['Work Sans','Work Sans'],['IBM Plex Sans','IBM Plex Sans'],['Lato','Lato'],['Outfit','Outfit'],['Figtree','Figtree'],['system','System font (system-ui)'],['serif','Serif']];
  function fontApply(f){let st=document.getElementById('ds-font');if(!f||f==='Google Sans'){if(st)st.remove();return;}
   if(!document.getElementById('ds-font-faces')&&f!=='system'&&f!=='serif'){const l=document.createElement('link');l.id='ds-font-faces';l.rel='stylesheet';l.href='/fonts-extra.css?v=1';document.head.appendChild(l);}

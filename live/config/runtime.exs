@@ -7,13 +7,13 @@ if config_env() == :prod do
   config :netops_live, NetopsLiveWeb.Endpoint,
     server: true,
     http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT", "4000"))],
-    url: [host: System.get_env("PUBLIC_HOST", "netops.kadenetworks.com"), scheme: "https", port: 443],
+    url: [host: System.get_env("PUBLIC_HOST", "cloud.kadenetworks.com"), scheme: "https", port: 443],
     secret_key_base: (System.get_env("SECRET_KEY_BASE") |> then(&(&1 != "" && &1))) || raise("SECRET_KEY_BASE is missing"),
     # Browsers only reach Phoenix through the hub at the public site.
     # Also the hosts in EXTRA_HOSTS (comma list), e.g. the old address while moving to a new one.
     check_origin:
       Enum.map(
-        [System.get_env("PUBLIC_HOST", "netops.kadenetworks.com") | String.split(System.get_env("EXTRA_HOSTS", ""), ",", trim: true)],
+        [System.get_env("PUBLIC_HOST", "cloud.kadenetworks.com") | String.split(System.get_env("EXTRA_HOSTS", ""), ",", trim: true)],
         &("https://" <> String.trim(&1))
       )
 

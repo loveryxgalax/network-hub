@@ -34,7 +34,7 @@ function connectRequest(store,sp,req){
 function createApp(options={}){
  const store=new Store(options.dataDir||process.env.NETWORK_DATA_DIR||path.join(__dirname,'data'));
  require('./lib/outbox.cjs').watch(store);
- // Relabel open RADIUS-timeout alerts on routers not linked to netops (their own RADIUS, e.g. ISPman).
+ // Relabel open RADIUS-timeout alerts on routers not linked to Kade Cloud (their own RADIUS, e.g. ISPman).
  try{const cu=require('./lib/customers.cjs');for(const a of store.list('alerts'))if(a.logKey==='radius-unreachable'&&a.status!=='Resolved'){const r=store.get('devices',a.deviceId);if(!r)continue;const k=cu.radiusLabel(store,r,{key:'radius-unreachable',title:a.title,severity:'critical'});if(k.title!==a.title||k.severity!==a.severity)store.put('alerts',{...a,title:k.title,severity:k.severity},a);}}catch{}
  for(const operation of store.list('acsTasks').filter(t=>t.status==='Sending'))store.put('acsTasks',{...operation,status:'Uncertain',error:'The server restarted before the ACS receipt was saved. Check the ACS and device before reconciling.'},operation);
  // Passive (a rehearsal copy on a new server): everything works for checking, but no automatic SMS/email to
@@ -43,11 +43,11 @@ function createApp(options={}){
  function signinAlert(user,ip,ua){try{const key='knownSignins:'+user.id,known=store.setting(key)||{items:[]},sig=crypto.createHash('sha256').update(ip+'|'+ua).digest('hex').slice(0,24);
   if(known.items.includes(sig))return;const first=!known.items.length;store.setting(key,{items:[sig,...known.items].slice(0,30)});
   if(first||!store.setting('signinAlerts:'+user.id)||passive)return;
-  emailLib.send(store,user.email,'New sign-in to netops','Your netops account ('+user.email+') just signed in from a new browser or address.\n\nAddress: '+ip+'\nBrowser: '+ua+'\nTime: '+new Date().toISOString()+'\n\nIf this was not you, change your password under My account and sign out other devices.','security').catch(()=>{});}catch{}}
+  emailLib.send(store,user.email,'New sign-in to netops','Your Kade Cloud account ('+user.email+') just signed in from a new browser or address.\n\nAddress: '+ip+'\nBrowser: '+ua+'\nTime: '+new Date().toISOString()+'\n\nIf this was not you, change your password under My account and sign out other devices.','security').catch(()=>{});}catch{}}
  const passive=options.passive??process.env.NETWORK_PASSIVE==='1';if(passive)console.log('Passive mode: automatic messages, deactivation and router changes are off.');
  const publicOrigin=options.publicOrigin??process.env.NETWORK_PUBLIC_ORIGIN;
  const publicUrl=publicOrigin?new URL(publicOrigin):null;
- // Extra addresses for the same admin site while moving to a new one (e.g. the old netops.kadenetworks.com after
+ // Extra addresses for the same admin site while moving to a new one (e.g. the old cloud.kadenetworks.com after
  // NETWORK_PUBLIC_ORIGIN becomes https://cloud.kadenetworks.com). Everything keeps working on them (routers, callbacks,
  // webhooks, sign-in); with NETWORK_ALIAS_REDIRECT=1 a person opening a page there is sent to the main address.
  const aliasHosts=new Set(String(options.aliasOrigins??process.env.NETWORK_ALIAS_ORIGINS??'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>{const u=new URL(s);if(u.protocol!=='https:'||u.pathname!=='/'||u.search||u.username)throw new Error('NETWORK_ALIAS_ORIGINS must be HTTPS origins');return u.host;}));
@@ -259,7 +259,7 @@ function createApp(options={}){
   if(route==='/api/portal/preview-token'&&method==='POST'){role(user,['admin','manager','operator']);const input=await body(req,1024),t=require('./lib/hotspotme.cjs').previewToken(store,input.mac);if(!t)throw error(400,'No device address');return json(res,200,{token:t});}
   if(route==='/api/portal/status'){if(method==='GET')return json(res,200,{config:statusPage.get(store),designs:statusPage.DESIGNS,fresh:statusPage.FRESH});role(user,['admin']);if(method==='PUT'){const saved=statusPage.save(store,await body(req));store.audit(user,'Updated hotspot status page','portal');return json(res,200,saved);}}
   if(route==='/api/portal/status.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);const q=url.searchParams,preview=q.get('preview')==='1';let cfg=statusPage.get(store);if(preview){try{cfg=statusPage.validate({...cfg,...JSON.parse(q.get('cfg')||'{}')});}catch{}}
-   const head={'Content-Type':'text/html; charset=utf-8'};if(!preview)head['Content-Disposition']='attachment; filename="status.html"';res.writeHead(200,head);return res.end(statusPage.page(cfg,custOrigin||'https://netops.kadenetworks.com',preview,q.get('frame')==='phone'));}
+   const head={'Content-Type':'text/html; charset=utf-8'};if(!preview)head['Content-Disposition']='attachment; filename="status.html"';res.writeHead(200,head);return res.end(statusPage.page(cfg,custOrigin||'https://cloud.kadenetworks.com',preview,q.get('frame')==='phone'));}
   if(route==='/api/portal/landing'){
    if(method==='GET')return json(res,200,{config:landing.get(store),themes:landing.THEMES});
    role(user,['admin']);if(method==='PUT'){const saved=landing.save(store,await body(req));store.audit(user,'Updated landing page design',saved.theme);return json(res,200,saved);}
@@ -277,7 +277,7 @@ function createApp(options={}){
   if(assignRoute&&method==='POST'){role(user,['admin','manager']);const r=c2b.assign(store,assignRoute[1],(await body(req)).subscriberId);store.audit(user,'Assigned paybill payment',assignRoute[1]);return json(res,200,r);}
   const recheckRoute=route.match(/^\/api\/mpesa\/payments\/([a-f0-9]{32})\/recheck$/);
   if(recheckRoute&&method==='POST'){role(user,['admin']);const r=await portal.recheck(store,recheckRoute[1]);store.audit(user,'Rechecked portal payment',recheckRoute[1]);return json(res,200,r);}
-  if(route==='/api/portal/hotspot-login.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="login.html"'});return res.end(portal.hotspotLoginPage(custOrigin||'https://netops.kadenetworks.com'));}
+  if(route==='/api/portal/hotspot-login.html'&&method==='GET'){role(user,['admin','operator','manager','network-technician']);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="login.html"'});return res.end(portal.hotspotLoginPage(custOrigin||'https://cloud.kadenetworks.com'));}
    if(route==='/api/sms-templates'){if(method==='GET'){if(user.role==='installer')throw error(403,'Not available to field installers');return json(res,200,{items:billing.library(store)});}role(user,['admin','manager']);if(method==='POST'){const t=billing.saveLibrary(store,await body(req));store.audit(user,'Saved SMS template '+t.name,t.id);return json(res,201,t);}}
    // Quick on/off switches (SMS template, advert): flip `active` only; everything else stays as saved.
    {const tg=route.match(/^\/api\/(sms-templates|engage\/ads)\/([a-f0-9-]{36})\/toggle$/);if(tg&&method==='POST'){role(user,['admin','manager']);
@@ -300,7 +300,7 @@ function createApp(options={}){
    if(route==='/api/billing/settings'&&method==='PUT'){const saved=billing.updateSettings(store,await body(req));store.audit(user,'Updated SMS reminders','billing');return json(res,200,saved);}
    if(route==='/api/billing/sms'&&method==='PUT'){const saved=billing.setSmsConfig(store,await body(req));store.audit(user,'Updated SMS provider','billing');return json(res,200,saved);}
    if(route==='/api/billing/sms/send'&&method==='POST'){access.need(store,user,'messages.send');const input=await body(req),sub=store.get('subscribers',String(input.subscriberId||''));if(!sub)throw error(404,'Subscriber not found');const text=String(input.message||'').trim();if(!text||text.length>459)throw error(400,'The message must be 1–459 characters');if(!billing.phone(sub.phone))throw error(400,'This customer has no valid phone number');const r=await billing.sendSms(store,sub.phone,billing.fill(text,billing.values(store,sub)),'manual');store.audit(user,'Sent SMS to customer',sub.id);return json(res,200,r);}
-   if(route==='/api/billing/sms/test'&&method==='POST'){const input=await body(req);const result=await billing.sendSms(store,input.to,String(input.message||'Test message from Kade Networks netops.').slice(0,459),'test');store.audit(user,'Sent test SMS','billing');return json(res,200,result);}
+   if(route==='/api/billing/sms/test'&&method==='POST'){const input=await body(req);const result=await billing.sendSms(store,input.to,String(input.message||'Test message from Kade Networks Kade Cloud.').slice(0,459),'test');store.audit(user,'Sent test SMS','billing');return json(res,200,result);}
    throw error(404,'API endpoint not found');
   }
   {const ip=route.match(/^\/api\/invoices\/([a-f0-9-]{36})\/pdf$/);if(ip&&method==='GET'){if(['installer','viewer'].includes(user.role))throw error(403,'Not available to your role');const inv=store.get('invoices',ip[1]);if(!inv)throw error(404,'Invoice not found');
@@ -347,7 +347,7 @@ function createApp(options={}){
   if(explainRoute&&method==='GET'){const s=store.get('subscribers',explainRoute[1]);if(!s)throw error(404,'Subscriber not found');const p=store.get('plans',s.planId);if(!p)throw error(404,'No package');const f=require('./lib/packages.cjs').fupState(store,s,p,radius.planMs(p));const sess=store.sessionsOf(s.username).sort((a,b)=>b.updatedAt-a.updatedAt)[0],rid=sess?store.list('devices').find(d=>d.type==='router'&&d.name.toLowerCase()===String(sess.nasName||'').toLowerCase())?.id||'':'';
    const e=speedRules.resolve(store,{subscriber:s,plan:p,routerId:rid,service:s.service,baseDown:f.downMbps,baseUp:f.upMbps});return json(res,200,{...e,fup:f.active?{reasons:f.reasons,percent:f.percent}:null,note:'Configured speed. The router applies it at the customer\'s next login.'});}
   if(route==='/api/router-jobs'&&method==='GET'){role(user,['admin','manager','network-technician','operator']);const o=jobs.overview(store),sc=access.scope(store,user);if(sc){o.routers=o.routers.filter(r=>sc.has(r.id));o.jobs=o.jobs.filter(j=>sc.has(j.routerId));}return json(res,200,o);}
-  // Move a router onto netops RADIUS (admin, typed router name). Refused while customers online on it have no netops account,
+  // Move a router onto Kade Cloud RADIUS (admin, typed router name). Refused while customers online on it have no Kade Cloud account,
   // unless the admin says to go ahead anyway: those customers could not log in after the move.
   const rmRoute=route.match(/^\/api\/routers\/([a-f0-9-]{36})\/radius-move$/);
   if(rmRoute){role(user,['admin']);const r=store.get('devices',rmRoute[1]);if(!r||r.type!=='router')throw error(404,'Router not found');
@@ -359,17 +359,17 @@ function createApp(options={}){
    if(method==='GET')return json(res,200,info);
    if(method==='POST'){const input=await body(req),mode=input.mode==='test'?'test':'all';
     if(!info.runner)throw error(409,`${r.name} does not have the job runner installed yet.`);
-    if(!wg)throw error(409,`${r.name} has no WireGuard tunnel to netops. Install the WireGuard part first (Link a MikroTik).`);
-    if(mode==='all'&&!rep&&input.force!==true)throw error(409,'Customer discovery is not on for this router, so netops cannot check which customers would be affected. Turn discovery on first, or tick "go ahead anyway".');
-    if(mode==='all'&&missing.length&&input.force!==true)throw error(409,`${missing.length} customer(s) online on ${r.name} have no account in netops and could not log in after the move: ${missing.slice(0,15).map(m=>m.username).join(', ')}${missing.length>15?'…':''}. Import them first, or tick "go ahead anyway".`);
+    if(!wg)throw error(409,`${r.name} has no WireGuard tunnel to Kade Cloud. Install the WireGuard part first (Link a MikroTik).`);
+    if(mode==='all'&&!rep&&input.force!==true)throw error(409,'Customer discovery is not on for this router, so Kade Cloud cannot check which customers would be affected. Turn discovery on first, or tick "go ahead anyway".');
+    if(mode==='all'&&missing.length&&input.force!==true)throw error(409,`${missing.length} customer(s) online on ${r.name} have no account in Kade Cloud and could not log in after the move: ${missing.slice(0,15).map(m=>m.username).join(', ')}${missing.length>15?'…':''}. Import them first, or tick "go ahead anyway".`);
     const j=jobs.create(store,{routerId:r.id,type:'radius-move',params:{src:wg.address.split('/')[0],mode,realm:mode==='test'?info.realm:''},confirm:input.confirm,user});
-    store.audit(user,`Queued move to netops RADIUS (${mode}) on ${r.name}`,j.id);return json(res,201,jobs.redact(j));}}
-  if(route==='/api/router-jobs'&&method==='POST'){access.need(store,user,'router.jobs');const input=await body(req);{const sc=access.scope(store,user);if(sc&&!sc.has(input.routerId))throw error(403,'That router is not one of yours');}if(jobs.TYPES[input.type]?.risky)role(user,['admin']);if(input.type==='radius-move')throw error(400,'Use Move to netops RADIUS on the router page, which checks the customers first');if(input.type==='push-design-auto')Object.assign(input,{params:{origin:custOrigin,host:custHost}});
+    store.audit(user,`Queued move to Kade Cloud RADIUS (${mode}) on ${r.name}`,j.id);return json(res,201,jobs.redact(j));}}
+  if(route==='/api/router-jobs'&&method==='POST'){access.need(store,user,'router.jobs');const input=await body(req);{const sc=access.scope(store,user);if(sc&&!sc.has(input.routerId))throw error(403,'That router is not one of yours');}if(jobs.TYPES[input.type]?.risky)role(user,['admin']);if(input.type==='radius-move')throw error(400,'Use Move to Kade Cloud RADIUS on the router page, which checks the customers first');if(input.type==='push-design-auto')Object.assign(input,{params:{origin:custOrigin,host:custHost}});
    const params={...(input.params||{})};if(input.type==='push-design')Object.assign(params,{origin:custOrigin,host:custHost,folder:params.folder||'hotspot'});
    const j=jobs.create(store,{routerId:input.routerId,type:input.type,params,confirm:input.confirm,user,runAt:input.runAt??null});store.audit(user,'Queued router job: '+j.label+' on '+j.routerName,j.id);return json(res,201,jobs.redact(j));}
   // Link a MikroTik (admins): create the router and its one-line link command, follow its first reports, and on a new
   // router set up PPPoE/Hotspot through the job runner after the admin types the router's name.
-  // Forget a router and everything netops stored about it (database only; nothing is sent to the router).
+  // Forget a router and everything Kade Cloud stored about it (database only; nothing is sent to the router).
   const clRoute=route.match(/^\/api\/cleanup(?:\/([a-z-]+))?$/);
   if(clRoute){role(user,['admin']);const cl=require('./lib/cleanup.cjs');
    if(!clRoute[1]&&method==='GET')return json(res,200,{categories:cl.overview(store,user)});
@@ -380,7 +380,7 @@ function createApp(options={}){
    if(input.apply!==true)return json(res,200,pg.plan(store,forgetRoute[1],{customers:input.customers===true}));
    const done=pg.run(store,forgetRoute[1],{customers:input.customers===true,confirm:input.confirm},user);agentAccepted.delete(done.router.id);agentAccepted.delete('discovery:'+done.router.id);return json(res,200,{ok:true,summary:done.summary});}
   if(route==='/api/provision/options'&&method==='GET'){role(user,['admin']);const srv=wireguard.server(store);return json(res,200,{publicOrigin:publicUrl?.origin||null,wireguard:!!srv.publicKey,radiusSecret:!!radiusSecret,realm:radius.settings(store).realm||''});}
-  if(route==='/api/provision'&&method==='POST'){role(user,['admin']);if(!publicUrl)throw error(409,'Set NETWORK_PUBLIC_ORIGIN to the HTTPS address of netops first');const pv=require('./lib/provision.cjs'),input=await body(req);
+  if(route==='/api/provision'&&method==='POST'){role(user,['admin']);if(!publicUrl)throw error(409,'Set NETWORK_PUBLIC_ORIGIN to the HTTPS address of Kade Cloud first');const pv=require('./lib/provision.cjs'),input=await body(req);
    const existing=input.routerId?store.get('devices',String(input.routerId)):null;if(input.routerId&&existing?.type!=='router')throw error(404,'Router not found');
    const name=existing?existing.name:String(input.name||'').trim();if(!pv.NAME.test(name))throw error(400,'Router name: letters, numbers, spaces, dot or dash (up to 40), starting with a letter or number');
    if(!existing&&store.list('devices').some(d=>d.type==='router'&&d.name.toLowerCase()===name.toLowerCase()))throw error(409,'A router with this name already exists. Pick it from the list to make a new link script for it.');
@@ -395,15 +395,15 @@ function createApp(options={}){
    store.transaction(()=>{
     const valid=validate('devices',{...(existing||{}),name,type:'router',driver:'routeros-script',endpoint:''},existing,store);device=store.put('devices',{...valid,status:'pending',lastCheck:existing?.lastCheck??null,lastSeen:existing?.lastSeen??null,lastError:'',metrics:existing?.metrics||{}},existing);
     if(has('identity'))parts.push({title:'Router name (identity)',script:pv.identityScript(name)});
-    let wgAddress=store.list('wgPeers').find(p=>p.routerId===device.id&&p.kind==='router')?.address||'';if(stages&&has('radius')&&!wantWg&&!wgAddress)throw error(409,'Install the WireGuard part first: netops RADIUS needs the tunnel.');
+    let wgAddress=store.list('wgPeers').find(p=>p.routerId===device.id&&p.kind==='router')?.address||'';if(stages&&has('radius')&&!wantWg&&!wgAddress)throw error(409,'Install the WireGuard part first: Kade Cloud RADIUS needs the tunnel.');
     if(wantWg){let had=store.list('wgPeers').find(p=>p.routerId===device.id&&p.kind==='router');
      // A reset router lost its tunnel: replace the peer (new key, same address when free) instead of keeping the old one.
      if(had&&input.newWireguardKey===true){store.remove('wgPeers',had.id);had=null;}
-     if(had){wgAddress=had.address;warnings.push(`WireGuard: ${name} already has ${had.address}; the tunnel on the router is left as it is.`);}else{const w=wireguard.addRouter(store,{routerId:device.id,name});wgAddress=w.peer.address;parts.push({title:'WireGuard tunnel to netops ('+wgAddress+')',script:w.script.split('\n').filter(l=>!l.startsWith('# For netops RADIUS')).join('\n')});}}
-    if(has('radius')&&mode!=='none')parts.push({title:'netops RADIUS'+(mode==='test'?' (test logins only)':''),script:pv.radiusScript({secret:radiusSecret,address:'10.99.0.1',srcAddress:wgAddress,realm:mode==='test'?(radius.settings(store).realm||'kade'):''})});
+     if(had){wgAddress=had.address;warnings.push(`WireGuard: ${name} already has ${had.address}; the tunnel on the router is left as it is.`);}else{const w=wireguard.addRouter(store,{routerId:device.id,name});wgAddress=w.peer.address;parts.push({title:'WireGuard tunnel to Kade Cloud ('+wgAddress+')',script:w.script.split('\n').filter(l=>!l.startsWith('# For Kade Cloud RADIUS')).join('\n')});}}
+    if(has('radius')&&mode!=='none')parts.push({title:'Kade Cloud RADIUS'+(mode==='test'?' (test logins only)':''),script:pv.radiusScript({secret:radiusSecret,address:'10.99.0.1',srcAddress:wgAddress,realm:mode==='test'?(radius.settings(store).realm||'kade'):''})});
     if(has('monitoring')){const at=crypto.randomBytes(32).toString('base64url');store.db.prepare('DELETE FROM secrets WHERE device_id IN (?,?)').run(device.id,'agent:'+device.id);store.secret('agent:'+device.id,{tokenHash:routerAgent.hash(at),issuedAt:Date.now()});parts.push({title:'Monitoring (read-only)',script:routerAgent.generate(publicUrl.origin,device.id,at)});}
     if(has('discovery')){const dt=crypto.randomBytes(32).toString('base64url');store.secret('discovery:'+device.id,{tokenHash:routerAgent.hash(dt),issuedAt:Date.now()});parts.push({title:'Customer discovery and health (read-only)'+(lite?' every 10 minutes':''),script:customers.generate(publicUrl.origin,device.id,dt,{interval:lite?'10m':'2m'})});}
-    if(has('runner')){const e=jobs.enroll(store,device.id);parts.push({title:'Job runner (only runs jobs you confirm in netops)',script:jobs.runnerScript(publicUrl.origin,device.id,e.token)});if(mode==='all')try{jobs.queuePages(store,device.id,Date.now(),45*60000);}catch{}}
+    if(has('runner')){const e=jobs.enroll(store,device.id);parts.push({title:'Job runner (only runs jobs you confirm in Kade Cloud)',script:jobs.runnerScript(publicUrl.origin,device.id,e.token)});if(mode==='all')try{jobs.queuePages(store,device.id,Date.now(),45*60000);}catch{}}
    });
    if(!parts.length)throw error(409,'Nothing to install in this pass: '+(warnings[0]||'the selected part is not needed')+(has('wireguard')?' If the router was reset, tick "give it a new WireGuard key".':''));
    if(has('monitoring'))agentAccepted.delete(device.id);if(has('discovery'))agentAccepted.delete('discovery:'+device.id);
@@ -417,7 +417,7 @@ function createApp(options={}){
      checks:{monitoring:router.lastSeen||null,discovery:store.setting('customerDiscovery:'+router.id)?.lastReport||null,health:state.healthAt,runner:store.secret('jobs:'+router.id)?(store.setting('jobsPoll:'+router.id)?.time||0):null,wireguard:peer?{address:peer.address,handshake:wgs?.handshake||null}:null},
      state,job:job&&{id:job.id,status:job.status,output:job.output,error:job.error,createdAt:job.createdAt,finishedAt:job.finishedAt||null}});}
    if(provRoute[2]==='services'&&method==='POST'){const input=await body(req,8192);
-    if(!state.known)throw error(409,'Waiting for the router\'s first full report (about 2 minutes after the link script) so netops can check its ports.');
+    if(!state.known)throw error(409,'Waiting for the router\'s first full report (about 2 minutes after the link script) so Kade Cloud can check its ports.');
     const live=state.inService;if(live&&!require('./lib/routerauto.cjs').settings(store).liveSetup)throw error(409,'This router already serves customers (PPPoE server, hotspot or sessions found). Live setup is switched off in Router automation.');
     const spec={...pv.validateServices(input,{portalHost:custHost,state}),live},bodyScript=pv.servicesBody(spec,custOrigin);
     if(input.apply!==true)return json(res,200,{summary:pv.summary(spec),script:pv.pasteScript(bodyScript,router.name)});
@@ -477,7 +477,7 @@ function createApp(options={}){
    throw error(404,'Not found');}
   if(route==='/api/email'&&method==='GET'){role(user,['admin','manager']);return json(res,200,{config:emailLib.publicConfig(store),providers:emailLib.PROVIDERS,log:emailLib.log(store).slice(0,200),escalation:escalation.settings(store)});}
   if(route==='/api/email'&&method==='PUT'){role(user,['admin']);const saved=emailLib.setConfig(store,await body(req));store.audit(user,'Updated email settings','email');return json(res,200,saved);}
-  if(route==='/api/email/test'&&method==='POST'){role(user,['admin']);const input=await body(req),r=await emailLib.send(store,input.to,'Test email from netops','If you can read this, email from Kade Networks netops works.','test');if(!r.ok)throw error(502,'Not sent: '+r.error);return json(res,200,r);}
+  if(route==='/api/email/test'&&method==='POST'){role(user,['admin']);const input=await body(req),r=await emailLib.send(store,input.to,'Test email from netops','If you can read this, email from Kade Networks Kade Cloud works.','test');if(!r.ok)throw error(502,'Not sent: '+r.error);return json(res,200,r);}
   if(route==='/api/alert-escalation'&&method==='PUT'){role(user,['admin']);const saved=escalation.save(store,await body(req));store.audit(user,'Updated alert escalation','alerts');return json(res,200,saved);}
   if(route==='/api/shortlinks'&&method==='POST'){role(user,['admin','manager','operator','support']);const input=await body(req),o=custOrigin||('http://'+req.headers.host);const r=require('./lib/shortlink.cjs').create(store,input.url,{origin:o,by:user.name});store.audit(user,'Shortened a link',r.code);return json(res,201,r);}
   if(route==='/api/media'){role(user,['admin','manager']);const media=require('./lib/media.cjs');if(method==='GET')return json(res,200,{items:media.list(store)});if(method==='POST'){const m=media.save(store,await body(req,4500000),user);store.audit(user,'Uploaded image '+m.name,m.file);return json(res,201,m);}}
@@ -712,7 +712,7 @@ function createApp(options={}){
     if(subRoute[2]==='points'&&method==='POST'){const saved=billing.redeemPoints(store,existing.id,(await body(req)).points);store.audit(user,'Redeemed loyalty points',existing.id);return json(res,200,saved);}
     // Static IP: send this customer's router entries again now (the "Connect now" button).
     if(subRoute[2]==='reapply'&&method==='POST'){role(user,['admin','manager','operator']);if(existing.service!=='static')throw error(400,'Only static IP customers have router entries to re-send');if(!existing.routerId||!existing.staticIp)throw error(409,'Choose the router and address first (Edit)');
-     if(!store.secret('jobs:'+existing.routerId))throw error(409,'This router does not have the job runner yet (MikroTik → Router jobs), so netops cannot change it.');
+     if(!store.secret('jobs:'+existing.routerId))throw error(409,'This router does not have the job runner yet (MikroTik → Router jobs), so Kade Cloud cannot change it.');
      store.put('subscribers',{...existing,staticApplied:''},existing);const queued=statics.sync(store,jobs,radius.stateOf,user);store.audit(user,'Re-sent static IP to the router',existing.id);
      return json(res,200,{queued:queued.includes(existing.id),message:queued.includes(existing.id)?`Sent to the router: ${radius.stateOf(existing)==='active'?'connect':'keep blocked (package not active)'}. The result shows under Router jobs and System logs.`:'Nothing was sent; check Static IP → Settings for this router.'});}
     if(subRoute[2]==='ban'&&method==='POST'){role(user,['admin','manager']);const input=await body(req),r=require('./lib/restrictions.cjs').ban(store,existing.id,{reason:input.reason,unban:input.unban===true,user});return json(res,200,{...r,message:input.unban===true?'Ban lifted'+(r.unblocked.length?` and ${r.unblocked.length} device(s) unblocked`:'')+'. Activate the account if they should connect again.':'Account banned permanently'+(r.blocked.length?` and ${r.blocked.length} device(s) blocked`:'')+'.'});}
@@ -792,7 +792,7 @@ function createApp(options={}){
    }
    if(route==='/api/acs/links'&&method==='GET'){const links=store.setting('acsLinks')||{},subs=new Map(store.list('subscribers').map(x=>[x.id,x]));return json(res,200,Object.fromEntries(Object.entries(links).filter(([,l])=>subs.has(l.subscriberId)).map(([k,l])=>[k,{...l,name:subs.get(l.subscriberId).name,username:subs.get(l.subscriberId).username}])));}
    const enrollMatch=route.match(/^\/api\/acs\/devices\/([^/]+)\/enroll$/);
-   // Customer CPE enrolment: link the CPE to a netops customer and, for PPPoE customers, write their login into it.
+   // Customer CPE enrolment: link the CPE to a Kade Cloud customer and, for PPPoE customers, write their login into it.
    if(enrollMatch&&method==='POST'){if(!permissions.equipment(user.role))throw error(403,'Your role cannot change CPEs');let deviceId;try{deviceId=decodeURIComponent(enrollMatch[1]);}catch{throw error(400,'Invalid device ID');}
     const input=await body(req),sub=store.get('subscribers',String(input.subscriberId||''));if(!sub)throw error(404,'Customer not found');{const sc=access.scope(store,user);if(sc&&!access.allowed(sc,sub,compensation.routerOf(store)))throw error(403,'This customer is on a router you do not manage');}
     const links=store.setting('acsLinks')||{};for(const [k,l] of Object.entries(links))if(l.subscriberId===sub.id&&k!==deviceId)delete links[k];links[deviceId]={subscriberId:sub.id,linkedAt:Date.now(),by:user.email};store.setting('acsLinks',links);store.audit(user,'Linked CPE '+deviceId+' to '+sub.username,sub.id);
@@ -910,11 +910,11 @@ function createApp(options={}){
   // Remote Access links: /tunnel/<token> sets a one-hour cookie, then WebFig's own paths go to that router over WireGuard.
   if(!(portalUrl&&req.headers.host===portalUrl.host)){const TN=require('./lib/tunnel.cjs'),tm=url.pathname.match(/^\/tunnel\/([A-Za-z0-9_-]{20,64})\/?$/);
    if(tm&&req.method==='GET'){limit(req,'tunnel-open',30,600000);const l=TN.check(store,tm[1]);res.removeHeader('Content-Security-Policy');
-    if(!l){res.writeHead(410,{'Content-Type':'text/html; charset=utf-8'});return res.end(TN.page('This remote access link has expired','Make a new one on the router\'s page in netops: Remote Access.'));}
+    if(!l){res.writeHead(410,{'Content-Type':'text/html; charset=utf-8'});return res.end(TN.page('This remote access link has expired','Make a new one on the router\'s page in Kade Cloud: Remote Access.'));}
     store.audit({id:'system',name:'Remote Access'},'Remote access link opened for '+l.routerName,l.routerId);
     const secure=String(req.headers['x-forwarded-proto']||'').includes('https')||!!req.headers['cf-visitor']||publicUrl?.protocol==='https:';
     res.writeHead(302,{'Set-Cookie':`nt_tunnel=${tm[1]}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.max(1,Math.floor((l.expiresAt-Date.now())/1000))}${secure?'; Secure':''}`,Location:'/webfig/','Cache-Control':'no-store'});return res.end();}
-   if(TN.PATHS.test(url.pathname)){const l=TN.check(store,TN.cookieOf(req));if(!l){res.removeHeader('Content-Security-Policy');res.writeHead(410,{'Content-Type':'text/html; charset=utf-8'});return res.end(TN.page('Remote access has ended','Open a new Remote Access link from the router\'s page in netops.'));}return TN.proxy(l,req,res,url);}}
+   if(TN.PATHS.test(url.pathname)){const l=TN.check(store,TN.cookieOf(req));if(!l){res.removeHeader('Content-Security-Policy');res.writeHead(410,{'Content-Type':'text/html; charset=utf-8'});return res.end(TN.page('Remote access has ended','Open a new Remote Access link from the router\'s page in Kade Cloud.'));}return TN.proxy(l,req,res,url);}}
   if(/^\/(fonts|img)\//.test(url.pathname))res.setHeader('Access-Control-Allow-Origin','*');
   // The customer address serves only customer things: the portal (also at /), its API, short links, images and fonts.
   // The admin app, its API and the live view answer only on the admin address.
@@ -1063,21 +1063,21 @@ function createApp(options={}){
   if(cb&&method==='POST'){try{await portal.callback(store,cb[1],await body(req,65536));}catch(cause){if(cause.status!==404)console.warn('M-Pesa callback not applied: '+cause.message);else throw cause;}return json(res,200,{ResultCode:0,ResultDesc:'Accepted'});}
   throw error(404,'Not found');
  }
- // Phoenix live view (Phase 1). netops checks the sign-in, then passes /live pages and their websocket to the
+ // Phoenix live view (Phase 1). Kade Cloud checks the sign-in, then passes /live pages and their websocket to the
  // Phoenix service on the private network, with the signed-in user and a shared token Phoenix requires.
  // Phoenix reads data from the internal live feed below; it has no database and changes nothing.
  const liveToken=options.liveToken??process.env.NETWORK_LIVE_TOKEN,liveUrl=options.liveUrl??process.env.NETWORK_LIVE_URL;
  const liveTarget=liveUrl?new URL(liveUrl):null,liveSockets=new Set();
  // Who may open the live view: everyone but field installers, or only the roles in NETWORK_LIVE_ROLES (e.g. "admin").
  const liveRoles=String(options.liveRoles??process.env.NETWORK_LIVE_ROLES??'').split(',').map(r=>r.trim()).filter(Boolean),liveAllowed=user=>user.role!=='installer'&&(!liveRoles.length||liveRoles.includes(user.role));
- // Phoenix re-checks the sign-in with this id (an HMAC of the stored session hash), so signing out of netops ends the live view too.
+ // Phoenix re-checks the sign-in with this id (an HMAC of the stored session hash), so signing out of Kade Cloud ends the live view too.
  const liveSid=user=>crypto.createHmac('sha256',liveToken).update(String(user.token)).digest('hex');
  const liveOrigin=req=>{const o=req.headers.origin;if(!o)return false;const ok=new Set([publicUrl?.origin,'https://'+req.headers.host,'http://'+req.headers.host].filter(Boolean));return ok.has(o);};
  const liveHeaders=(req,user)=>{const h={...req.headers};delete h['x-netops-user'];delete h['x-netops-proxy'];delete h['x-netops-session'];h.host=liveTarget.host;h['x-netops-user']=Buffer.from(JSON.stringify({id:user.id,name:user.name,email:user.email,role:user.role})).toString('base64url');h['x-netops-proxy']=liveToken;h['x-netops-session']=liveSid(user);h['x-forwarded-proto']='https';return h;};
  function liveProxy(req,res,url){
   const user=auth(req);if(!user){res.writeHead(302,{Location:'/#dashboard'});return res.end();}
   if(!liveAllowed(user)){res.writeHead(403,{'Content-Type':'text/plain'});return res.end(user.role==='installer'?'The live view is not available to field installers.':'The live view is limited to some roles on this server. Ask an admin.');}
-  if(!liveTarget||!liveToken){res.writeHead(503,{'Content-Type':'text/html; charset=utf-8'});return res.end('<!doctype html><meta charset="utf-8"><title>Live view</title><body style="font-family:Maven Pro;padding:40px"><h1>Live view is not running</h1><p>The Phoenix live service is not set up on this server yet (NETWORK_LIVE_URL and NETWORK_LIVE_TOKEN). The rest of netops works as usual.</p><p><a href="/">Back to netops</a></p></body>');}
+  if(!liveTarget||!liveToken){res.writeHead(503,{'Content-Type':'text/html; charset=utf-8'});return res.end('<!doctype html><meta charset="utf-8"><title>Live view</title><body style="font-family:Maven Pro;padding:40px"><h1>Live view is not running</h1><p>The Phoenix live service is not set up on this server yet (NETWORK_LIVE_URL and NETWORK_LIVE_TOKEN). The rest of Kade Cloud works as usual.</p><p><a href="/">Back to Kade Cloud</a></p></body>');}
   const up=http.request({host:liveTarget.hostname,port:liveTarget.port||80,method:req.method,path:url.pathname+url.search,headers:liveHeaders(req,user)},r=>{res.removeHeader('Content-Security-Policy');res.writeHead(r.statusCode,r.headers);r.pipe(res);});
   up.on('error',()=>{if(!res.headersSent){res.writeHead(502,{'Content-Type':'text/plain'});res.end('The live view is not answering. Try again in a minute.');}else res.destroy();});
   req.pipe(up);
@@ -1102,7 +1102,7 @@ function createApp(options={}){
    // action exactly as for the dashboard, writes and audits. Phoenix itself never writes anything.
    if(where==='/internal/v1/actions'&&req.method==='POST'){const input=await body(req,4096),sid=String(input.sid||'');if(!/^[a-f0-9]{64}$/.test(sid))throw error(401,'Sign in again');
     let who=null;for(const r of store.db.prepare('SELECT s.token,u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.expires>? AND u.active=1').all(Date.now())){if(crypto.timingSafeEqual(crypto.createHmac('sha256',liveToken).update(String(r.token)).digest(),Buffer.from(sid,'hex'))){who=r;break;}}
-    if(!who||!liveAllowed(who))throw error(401,'Your netops sign-in has ended. Sign in again.');
+    if(!who||!liveAllowed(who))throw error(401,'Your Kade Cloud sign-in has ended. Sign in again.');
     const m=/^alert\.(acknowledge|resolve|reopen)$/.exec(String(input.action||''));if(!m)throw error(400,'Unknown action');
     const saved=alertAction(who,input.id,m[1]);return json(res,200,{ok:true,alert:{id:saved.id,title:saved.title,status:saved.status},by:who.email});}
    if(req.method!=='GET')throw error(405,'Method not allowed');

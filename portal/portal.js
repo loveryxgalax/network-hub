@@ -1,6 +1,6 @@
 'use strict';
 // Hotspot landing page: nine switchable designs, your real packages, M-Pesa checkout, account lookup, and an admin
-// design panel (?admin=1, shown only when you are signed into netops as admin). The router passes mac, ip, login,
+// design panel (?admin=1, shown only when you are signed into Kade Cloud as admin). The router passes mac, ip, login,
 // dst, chapId, chapChallenge, error in the address; after a payment the customer is logged in through the router.
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const params=new URLSearchParams(location.search);
@@ -12,7 +12,7 @@ if(MODE)document.documentElement.dataset.mode=MODE;
 const abs=u=>typeof u==='string'&&u.startsWith('/')&&!u.startsWith('//')?BASE+u:u;
 const ADM=!!params.get('viewas');
 const router={login:params.get('login')||'',dst:params.get('dst')||'',chapId:params.get('chapId')||'',chapChallenge:params.get('chapChallenge')||'',mac:params.get('mac')||''};
-// Live "on the portal now" count for the netops dashboard: the view shown, pinged every 10 s while the page is visible.
+// Live "on the portal now" count for the Kade Cloud dashboard: the view shown, pinged every 10 s while the page is visible.
 const presence={page:'Packages',service:'hotspot',tab:Math.random().toString(36).slice(2,10),timer:null};
 function here(page,service){if(page)presence.page=page;if(service)presence.service=service;if(params.get('admin')||params.get('frame')||ADM)return;
  fetch(BASE+'/portal/api/presence',{method:'POST',headers:{'Content-Type':'application/json',...(PASS?{'X-Portal-Pass':PASS}:{})},body:JSON.stringify({page:presence.page,service:presence.service,mac:router.mac,nas:params.get('nas')||'',tab:presence.tab}),keepalive:true}).catch(()=>{});
@@ -239,7 +239,7 @@ function renderAccount(a){here('Account');
   if(a.service==='hotspot'&&a.status==='active')html+=router.login?`<div id="acc-connect"><button class="btn" type="button" id="acc-go"><span>${esc(t('connect'))}</span> ${ICON.arrow}</button><div class="msg" id="acc-go-msg"></div></div><form id="login-form" autocomplete="off" hidden><label class="fl">${esc(pw().label)}<input name="password" type="password" required autocomplete="current-password"></label><p class="muted small">${esc(pw().help)}</p><button class="btn" type="submit"><span>${esc(t('connect'))}</span> ${ICON.arrow}</button></form>`:`<p class="muted small acc-wifi-note">${esc(pw().wifi)}</p>`;
   if(a.price&&mpesaOn)html+=`<form id="renew-form"><label class="fl">${esc(t('mpesaLabel'))}<input name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required></label><label class="fl">${esc(t('promo'))}<input name="promo" autocomplete="off" maxlength="24" autocapitalize="characters"></label><button class="btn ${a.service==='hotspot'&&a.status==='active'?'ghost':''}" type="submit"><span>${esc(t('renew',{a:kes(a.price)}))}</span> ${ICON.arrow}</button></form>`;
  }
- // PPPoE customers can ask for another package (ISPman's "interested in another package"); staff see it in netops.
+ // PPPoE customers can ask for another package (ISPman's "interested in another package"); staff see it in Kade Cloud.
  if(a.service==='pppoe'&&a.status!=='suspended'&&pppoePlans.length>1)html+=`<form id="want-form" class="want-form"><label class="fl">${esc(t('wantPlan'))}<select name="planId">${pppoePlans.filter(p=>p.name!==a.plan).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${kes(p.price)}</option>`).join('')}</select></label><button class="btn ghost" type="submit">${esc(t('wantBtn'))}</button></form>`;
  box.innerHTML=html+'</div>';
  const ag=$('#acc-go');if(ag)ag.onclick=async()=>{ag.disabled=true;$('#acc-go-msg').textContent='';try{const r=await call('connect-account',{method:'POST',body:JSON.stringify({account:a.account,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});
@@ -370,7 +370,7 @@ function wireAdmin(){
    const data=await r.json().catch(()=>({}));btn.textContent=r.ok?'Saved ✓':(data.error||'Save failed');}catch{btn.textContent='Save failed';}setTimeout(()=>btn.textContent='Save',2200);};
  $('#copyCfg').onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(CFG,null,2));$('#copyCfg').textContent='Copied ✓';}catch{$('#copyCfg').textContent='Copy failed';}setTimeout(()=>$('#copyCfg').textContent='Copy JSON',1500);};
 }
-// Preview inside the netops editor: the editor's unsaved settings win over the saved ones, whichever arrives first.
+// Preview inside the Kade Cloud editor: the editor's unsaved settings win over the saved ones, whichever arrives first.
 let previewCfg=null;const applyPreview=()=>{const c=previewCfg;if(!c)return;CFG={...CFG,...c,show:{...CFG.show,...(c.show||{})}};if(c.defaultLang&&STR[c.defaultLang])LANG=c.defaultLang;};
 window.addEventListener('message',e=>{if(e.origin!==location.origin||!params.has('preview')||e.data?.kade!=='config')return;previewCfg=e.data.config||{};applyPreview();render();});
 async function checkAdmin(){
@@ -403,7 +403,7 @@ function openAdvertise(){let d=$('#adv-dialog');if(!d){d=document.createElement(
  $('#adv-form').onsubmit=async e=>{e.preventDefault();const f=e.target,b=f.querySelector('[type=submit]');b.disabled=true;$('#adv-msg').textContent='';
   try{const r=await call('adorders',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(f)))});f.innerHTML=`<h2>${esc(t('advThanks'))}</h2><p>${esc(t('advNext',{ref:r.ref,price:kes(r.price)}))}${adContact?' '+esc(t('advCall',{phone:adContact})):''}</p><div class="adv-actions"><button type="button" class="btn" id="adv-done">OK</button></div>`;$('#adv-done').onclick=()=>d.close();}
   catch(err){b.disabled=false;$('#adv-msg').textContent=err.message;}};}
-// Scheduled maintenance notice (set in netops → Settings → Scheduled maintenance).
+// Scheduled maintenance notice (set in Kade Cloud → Settings → Scheduled maintenance).
 let MAINT=null;
 // "Login or purchase" landing: customers who already paid go straight to their account instead of hunting past prices.
 function loginChoice(){if(!CFG.show?.loginChoice||params.get('account')||params.get('expired')||params.get('ps')||document.getElementById('lc-sheet'))return;try{if(sessionStorage.getItem('lc-done'))return;}catch{}
@@ -430,7 +430,7 @@ async function boot(){
  if(q&&THEMES[q])CFG.theme=q;
  render();bootDone();showMaint();loginChoice();hotspotExtras();if(params.get('expired')==='1')setTimeout(()=>{const f=$('#acc');if(f){f.scrollIntoView({block:'center'});f.focus();}},300);if(params.get('ps')&&params.get('pt')){busy(true);$('#wait-title').textContent=t('payCard');$('#wait-text').textContent=t('cardChecking');poll(params.get('ps'),params.get('pt'),Date.now());}const err=params.get('error');if(err)alertBox(err);else if(state==='ok'&&!mpesaOn)alertBox(t('noMpesa'));
  detectSession();checkAdmin();here();loadAdPlans();
- // Self-service link from netops (?account=USERNAME): open that account straight away.
+ // Self-service link from Kade Cloud (?account=USERNAME): open that account straight away.
  const deep=(params.get('account')||'').trim().slice(0,64);if(deep&&CFG.show.accessAccount!==false){$('#acc').value=deep;setTimeout(()=>{$('#acc').scrollIntoView({block:'center'});$('#accForm').requestSubmit();},200);}
 }
 
