@@ -44,7 +44,7 @@ main{padding-top:28px}
 .page-heading .eyebrow{color:var(--teal);letter-spacing:1.6px;font-weight:700}
 .page-heading p{color:var(--muted);max-width:760px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-.card-header{border-bottom:1px solid var(--border)}
+.card-header{}
 .notice{border-radius:var(--radius);border:1px solid var(--border);background:var(--card);box-shadow:var(--shadow)}
 .notice.warning{border-color:#f0c97a;background:color-mix(in srgb,#f0b75a 10%,var(--card))}
 
@@ -88,7 +88,7 @@ dialog.modal::backdrop{background:#0b1a24a6;backdrop-filter:blur(2px)}
 
 /* Sites & traffic */
 .sites-toolbar{margin-bottom:18px}
-.segmented{display:inline-flex;padding:3px;border:1px solid var(--border);border-radius:11px;background:var(--card)}
+.segmented{padding:3px;border-radius:11px;background:var(--card)}
 .segmented button{padding:7px 14px;border-radius:8px;font-weight:600;color:var(--muted)}
 .segmented button.active{background:var(--teal);color:#fff}
 .sites-cards{margin-bottom:18px}
