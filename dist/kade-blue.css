@@ -1375,8 +1375,8 @@ html body label.pk-switch>input:checked+span::after,html body label.rtp-switch>i
 /* Router warning & error events: the topic line (e.g. system,critical,info) as small tags. */
 .ev-topics{display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:3px}.ev-topics span{font-size:10.5px;padding:1px 6px;border-radius:5px;background:#f1f5f9;color:#475569;font-weight:600}
 
-/* Laptops (13-16" MacBook and similar, 1200-1728 px wide): everything at 88% so pages and tables fit. */
-@media (min-width:1200px) and (max-width:1728px){html{font-size:80%}body{zoom:.88}}
+/* Laptops and tablets (14" MacBook Pro and smaller, 761-1728 px wide): the whole page at 80%, like browser zoom 80%. Phones keep their own layout. */
+@media (min-width:761px) and (max-width:1728px){html{zoom:.8}}
 /* Routers list: the audit cell and the actions stay on one line and compact. */
 .audit-cell{display:inline-flex!important;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap}
 .audit-cell .audit-btn{height:30px!important;padding:0 10px!important;font-size:12.5px!important;gap:4px}
