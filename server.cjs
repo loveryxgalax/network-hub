@@ -946,7 +946,10 @@ function createApp(options={}){
      res.writeHead(302,{Location:'http://'+host+(renew?'/buy.html'+url.search:'/login'),'Cache-Control':'no-store'});return res.end();}
     head='<meta name="portal-mode" content="hotspot"><meta name="portal-pass" content="'+PM.pass(store,url.searchParams.get('nas'))+'">';}
    return serveFile(req,res,portalPage(url.searchParams.get('preview')==='1'&&['new','previous'].includes(url.searchParams.get('design'))?url.searchParams.get('design'):undefined),type,t=>portalIndex(t,head));}if(!['GET','HEAD'].includes(req.method))throw error(405,'Method not allowed');let requested;try{requested=decodeURIComponent(url.pathname);}catch{throw error(400,'Invalid URL');}const file=path.resolve(root,'.'+(requested==='/'?'/index.html':requested));if(!file.startsWith(root+path.sep))throw error(403,'Invalid path');if(!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.txt':'text/plain; charset=utf-8'};return serveFile(req,res,file,types[path.extname(file)]||'application/octet-stream');
-  }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'Server could not complete this request'});if(!cause.status)console.error(cause.name+': server operation failed'+(process.env.NETWORK_DEBUG_ERRORS?' '+cause.stack:''));}
+  }catch(cause){
+   // RouterOS /tool fetch rejects a 401 without this header ('should contain www-authenticate') and hides the reason.
+   if(cause.status===401&&!res.headersSent)res.setHeader('WWW-Authenticate','Bearer realm="Kade Cloud"');
+   json(res,cause.status||500,{error:cause.status?cause.message:'Server could not complete this request'});if(!cause.status)console.error(cause.name+': server operation failed'+(process.env.NETWORK_DEBUG_ERRORS?' '+cause.stack:''));}
  });
  // Public captive portal (no login). Limits per client address keep the M-Pesa prompt and code checks from abuse.
  const portalRoot=path.join(__dirname,'portal'),portalHits=new Map();
