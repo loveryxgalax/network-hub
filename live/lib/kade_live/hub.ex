@@ -1,6 +1,6 @@
 defmodule KadeLive.Hub do
   @moduledoc """
-  The only way Phoenix talks to netops: GET requests to the hub's internal v1 API (private network, shared token).
+  The only way Phoenix talks to Kade Cloud: GET requests to the hub's internal v1 API (private network, shared token).
   Phoenix has no database and never writes; Node stays the only writer.
   """
 

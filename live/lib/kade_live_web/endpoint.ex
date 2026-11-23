@@ -1,7 +1,7 @@
 defmodule KadeLiveWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :kade_live
 
-  @session_options [store: :cookie, key: "_kade_live", path: "/live", signing_salt: "netops-live", same_site: "Lax", secure: true]
+  @session_options [store: :cookie, key: "_kade_live", path: "/live", signing_salt: "kade-live", same_site: "Lax", secure: true]
 
   # Browsers reach this only through the hub, which checks the Kade Cloud sign-in first; the websocket path is
   # /live/live because everything here sits under /live on the public site.

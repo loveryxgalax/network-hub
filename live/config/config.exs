@@ -6,7 +6,7 @@ config :kade_live, KadeLiveWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [formats: [html: KadeLiveWeb.ErrorHTML], layout: false],
   pubsub_server: KadeLive.PubSub,
-  live_view: [signing_salt: "netops-live-view"]
+  live_view: [signing_salt: "kade-live-view"]
 
 config :phoenix, :json_library, Jason
 config :logger, :console, format: "$time $metadata[$level] $message\n"
