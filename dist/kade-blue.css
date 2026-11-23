@@ -1413,3 +1413,18 @@ html body .row-actions .ra-btn.ra-primary[data-device] span{display:inline!impor
 .sms-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
 .sms-stats>div{border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px 16px;background:var(--card,#fff)}
 .sms-stats small{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted,#64748b)}.sms-stats b{display:block;font-size:26px;font-weight:700;color:var(--primary,#0032fd);margin:4px 0}.sms-stats span{font-size:12.5px;color:var(--muted,#64748b)}
+
+/* Trends: Online users per service (ISPman style) */
+.tro-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px;padding:0 20px 20px}
+.tro-panel{border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px 16px;background:var(--card,#fff);min-width:0}
+.tro-panel h3{display:flex;align-items:center;gap:6px;margin:0 0 10px;font-size:14px;font-weight:700}.tro-panel h3 svg{color:var(--primary,#0032fd)}
+.tro-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}.tro-stats>div{border:1px solid var(--border,#eef2f7);border-radius:10px;padding:10px 12px}
+.tro-stats small{display:block;font-size:12px;color:var(--muted,#64748b)}.tro-stats b{display:block;font-size:20px;font-weight:700;margin:2px 0}.tro-stats span{font-size:11.5px;color:var(--muted,#64748b)}
+.tro-sub{margin:14px 0 4px;font-size:12.5px;color:var(--muted,#64748b)}.tro-chart{min-height:120px}
+@media(max-width:600px){.tro-grid{grid-template-columns:1fr;padding:0 12px 12px}.tro-stats b{font-size:17px}}
+
+/* Router page cards: text and notes line up with the title and the details (no text at the card edge), and short
+   facts sit side by side instead of one long column. */
+html body .card:has(>.rtp-head)>p,html body .card:has(>.rtp-head)>details,html body .card:has(>.rtp-head)>small{margin:12px 16px 0!important;padding:0!important;white-space:normal;overflow-wrap:anywhere;max-width:none}
+html body .card:has(>.rtp-head)>p:last-child{margin-bottom:14px!important}
+html body .rtp-info.one{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
