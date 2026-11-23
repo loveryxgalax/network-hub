@@ -3,7 +3,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createApp}=require('../server.cjs'),radius=require('../lib/radius.cjs'),jobs=require('../lib/jobs.cjs');
 test('strict mode (open portal switched off): service separation by page, wrong-domain accounts, direct links and router redirects',async()=>{
- const app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'sep-')),collector:false,publicOrigin:'https://netops.example.test',portalOrigin:'https://my.example.test'});
+ const app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'sep-')),collector:false,publicOrigin:'https://kade.example.test',portalOrigin:'https://my.example.test'});
  await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const o='http://127.0.0.1:'+app.server.address().port,st=app.store;
  {const lc=require('../lib/landing.cjs');lc.save(st,{...lc.get(st),show:{...lc.get(st).show,openPortal:false}});}
  try{const MY={Host:'my.example.test',Origin:'https://my.example.test'},WIFI={Host:'my.example.test',Origin:'http://wifi.example.test'};

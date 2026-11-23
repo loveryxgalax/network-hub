@@ -19,7 +19,7 @@ test('Compose overlay: opt-in profile, publishes only 80/443, keeps certificate 
 function withAcs(fn){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'acs-'));fs.writeFileSync(path.join(dir,'cpes.json'),JSON.stringify({devices:{}}));process.env.NETWORK_ACS_PRIVATE_DIR=dir;try{return fn(dir);}finally{delete process.env.NETWORK_ACS_PRIVATE_DIR;}}
 test('per-device ACS address: a pinned Cambium keeps the dedicated URL through re-registration; clearing returns to the global one',()=>{withAcs(dir=>{
  const {Store}=require('../lib/store.cjs'),radius=require('../lib/radius.cjs'),cpe=require('../lib/cpelink.cjs');
- const st=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'pin-')));radius.updateSettings(st,{acsPublicUrl:'https://netops.example.test/cwmp/'});
+ const st=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'pin-')));radius.updateSettings(st,{acsPublicUrl:'https://kade.example.test/cwmp/'});
  const plan=st.put('plans',radius.plan({name:'P',service:'pppoe',downloadMbps:5,uploadMbps:5,price:10,durationValue:1,durationUnit:'days'}));
  const s=st.put('subscribers',radius.subscriber(st,{name:'Lab',username:'user1',service:'pppoe',planId:plan.id}));
  const read=()=>JSON.parse(fs.readFileSync(path.join(dir,'cpes.json'),'utf8')).devices.WFWM0BKTD6CV;
@@ -31,7 +31,7 @@ test('per-device ACS address: a pinned Cambium keeps the dedicated URL through r
  assert.equal(read().acsUrl,'https://acs.example.test/cwmp/','re-registration keeps the pin');assert.equal(again.acs.url,'https://acs.example.test/cwmp/','installers are shown the pinned address');
  assert.equal(read().password,pass,'credentials untouched by pinning');
  cpe.pinAcsUrl(st,'WFWM0BKTD6CV','');assert.equal(read().acsUrl,radius.settings(st).acsPublicUrl);assert.equal(read().acsUrlPinned,undefined);});});
-test('unmatched new CPE: netops asks it (read-only) for its PPPoE login and WAN address, once an hour, on its own data model',async()=>{
+test('unmatched new CPE: Kade Cloud asks it (read-only) for its PPPoE login and WAN address, once an hour, on its own data model',async()=>{
  const http=require('node:http'),acs=require('../lib/acs.cjs'),{Store}=require('../lib/store.cjs'),st=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'ask-')));
  const calls=[];const nbi=http.createServer((req,res)=>{let b='';req.on('data',c=>b+=c);req.on('end',()=>{calls.push({method:req.method,url:req.url,body:JSON.parse(b||'{}')});res.writeHead(202,{'Content-Type':'application/json'});res.end('{"_id":"t1"}');});});
  await new Promise(r=>nbi.listen(0,'127.0.0.1',r));

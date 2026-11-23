@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Network Hub is an independent Node.js and SQLite network-operations dashboard. It monitors MikroTik routers, PPPoE and Hotspot customers, fibre inventory, OLT/ONU records, SNMP devices, and TR-069 devices through a private GenieACS deployment. The production site is `https://netops.kadenetworks.com` through a locally managed Cloudflare Tunnel.
+Network Hub is an independent Node.js and SQLite network-operations dashboard. It monitors MikroTik routers, PPPoE and Hotspot customers, fibre inventory, OLT/ONU records, SNMP devices, and TR-069 devices through a private GenieACS deployment. The production site is `https://cloud.kadenetworks.com` through a locally managed Cloudflare Tunnel.
 
 This project was reconstructed from observed workflows. It does not use Texin or ISPMan source code, APIs, credentials, or licensed assets.
 
@@ -48,7 +48,7 @@ The app listens on `http://127.0.0.1:4317`. Opening `dist/index.html` directly d
 ## Current operational status — 2026-10-20
 
 - The local dashboard and Cloudflare Tunnel supervisor are online.
-- The public PPPoE and router-alert page is live at `https://netops.kadenetworks.com/#subscriber-monitoring`.
+- The public PPPoE and router-alert page is live at `https://cloud.kadenetworks.com/#subscriber-monitoring`.
 - hEX S customer/event monitoring v2 is installed and reporting. Router warning/error collection is verified with real hEX log events.
 - RB951/RBX customer discovery is reporting, but it still uses the earlier discovery payload until its script is replaced.
 - CCR router-level monitoring remains separate and online, but its customer-discovery/PPPoE report is stale. Its remote WinBox relay disconnected after the discovery credential was rotated, so the new script still needs installation when access returns.
@@ -87,5 +87,5 @@ Never print, commit, or paste secrets from those files. The live database and `d
 - Run the focused test file for a small change; run the full suite before a release or deployment package.
 
 
-## WireGuard peers (managed in netops)
-Peers live in the netops database; `deployment/wireguard/sync-peers.sh` (run on the host, usually by its systemd timer) applies them to `wg0`, keeps the `NETOPS-WG` forwarding chain (staff laptops → routers' management ports only) and reports handshakes. It never sends the interface line of `wg show dump` (private key) into the container. Do not run it or change wg0 on the live server without the user's go-ahead.
+## WireGuard peers (managed in Kade Cloud)
+Peers live in the Kade Cloud database; `deployment/wireguard/sync-peers.sh` (run on the host, usually by its systemd timer) applies them to `wg0`, keeps the `NETOPS-WG` forwarding chain (staff laptops → routers' management ports only) and reports handshakes. It never sends the interface line of `wg show dump` (private key) into the container. Do not run it or change wg0 on the live server without the user's go-ahead.

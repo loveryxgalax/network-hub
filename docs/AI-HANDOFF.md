@@ -1,4 +1,4 @@
-# AI handoff: continue Kade Networks netops with any coding assistant
+# AI handoff: continue Kade Cloud with any coding assistant
 
 Use this whenever one assistant (Claude, ChatGPT/Codex, etc.) runs out of limits and another picks up. It is kept in the repo so it is always current. **Whoever finishes a session updates section 9 (state) and section 10 (log) before stopping.**
 
@@ -6,7 +6,7 @@ Use this whenever one assistant (Claude, ChatGPT/Codex, etc.) runs out of limits
 
 ## 0. Paste this to the new assistant first
 
-> You are continuing development of **Kade Networks netops**, an ISP operations dashboard. The code is in the GitHub repo `loveryxgalax/network-hub`, branch **`claude/always-online-hosting`**.
+> You are continuing development of **Kade Cloud**, an ISP operations dashboard. The code is in the GitHub repo `loveryxgalax/network-hub`, branch **`claude/always-online-hosting`**.
 >
 > Before writing any code:
 > 1. Read `docs/AI-HANDOFF.md` fully, then `CLAUDE.md`.
@@ -23,13 +23,13 @@ If the assistant cannot reach GitHub, download the branch as a ZIP from GitHub (
 
 ## 1. What the product is
 
-netops (`https://netops.kadenetworks.com`) is the owner's own replacement for ISPman. It runs a small ISP in Kenya: hotspot (vouchers, M-Pesa, captive portal) and PPPoE home customers on MikroTik routers, plus fibre (OLT/ONU) and TR-069 (GenieACS) for customer routers.
+Kade Cloud (`https://cloud.kadenetworks.com`) is the owner's own replacement for ISPman. It runs a small ISP in Kenya: hotspot (vouchers, M-Pesa, captive portal) and PPPoE home customers on MikroTik routers, plus fibre (OLT/ONU) and TR-069 (GenieACS) for customer routers.
 
 - **Admin UI:** `dist/` (single-page app, plain JS, no framework, no build step).
 - **Customer portal:** `portal/` (captive portal, payments, self-service account).
 - **Server:** `server.cjs` plus `lib/*.cjs`. Node CommonJS, built-in `node:sqlite`, very few dependencies.
 - **Live NOC view:** `live/`, a separate Elixir/Phoenix app. Rarely touched.
-- **Status today:** ISPman is still the production platform. netops runs alongside it, watching. Customers move to netops router by router (`docs/LEAVING-ISPMAN.md`).
+- **Status today:** ISPman is still the production platform. Kade Cloud runs alongside it, watching. Customers move to Kade Cloud router by router (`docs/LEAVING-ISPMAN.md`).
 
 ---
 
@@ -229,14 +229,14 @@ CI on the PR re-runs the tests. If it goes red, fix it immediately: the branch d
 
 | Doc | What it covers |
 |---|---|
-| `docs/LEAVING-ISPMAN.md` | moving routers from ISPman to netops in stages |
+| `docs/LEAVING-ISPMAN.md` | moving routers from ISPman to Kade Cloud in stages |
 | `docs/KYANDULA-OBSERVER-SETUP.md` | browser-assistant steps to connect the RB951 read-only |
 | `docs/FIBRE-ONT-TR069.md` | Huawei HG8546M / GPON ONT onboarding |
 | `docs/CAMBIUM-TR069-HTTPS.md` | the dedicated HTTPS ACS endpoint for the Cambium |
 | `docs/LINK-MIKROTIK.md` | the Link a MikroTik wizard |
 | `docs/MIKROTIK-SCRIPT.md` | the read-only monitoring script |
 | `docs/CUSTOMER-DISCOVERY.md` | session/lease/ARP reporting |
-| `docs/RADIUS.md` | netops RADIUS |
+| `docs/RADIUS.md` | Kade Cloud RADIUS |
 | `docs/LAB-SETUP.md` | lab design (LAB-HEX, Cambium, laptops) |
 | `docs/DEPLOYMENT.md`, `docs/AUTO-DEPLOY.md` | server and auto-deploy |
 
@@ -248,7 +248,7 @@ As of **2026-11-15**:
 
 - **Tests:** 294 passing locally on branch `claude/netops-five-fixes` (the browser test needs Playwright and is skipped in CI).
 - **Deployed 2026-11-15:** the five fixes in `docs/FIXES-2026-11-15.md` plus the WiFi-pages indicator, merged into `claude/always-online-hosting`.
-- **WiFi pages:** Router jobs shows per router whether the login/status/Disconnect pages are current; "Update WiFi pages" queues the page push (only offered on routers that already run netops pages).
+- **WiFi pages:** Router jobs shows per router whether the login/status/Disconnect pages are current; "Update WiFi pages" queues the page push (only offered on routers that already run Kade Cloud pages).
 
 ### Recently finished
 
@@ -257,7 +257,7 @@ As of **2026-11-15**:
 - **Profile refresh:** `window.refreshProfile(id)` after profile actions (same customer only); stale profile loads are dropped; `radiusForm` blocks double submit.
 
 - **Self-service account page — recent payments & weekly usage:** `portal/account.html` (hotspot and PPPoE both) now shows a "This week" 7-day usage bar chart and a masked "Recent payments" list (reusing the existing M-Pesa reference masking pattern from `lib/hotspotme.cjs`). Backed by two new fields on `lib/selfservice.cjs`'s `view()` — `recentPayments` and `weeklyUsageMB` — and by exporting the previously-private `dailyUse()` helper from `lib/insights.cjs`. New test in `test/selfservice.test.cjs`. No pricing/business settings changed; loyalty points remain disabled pending an owner decision on point economics (unchanged from before this session).
-- **netops.kadenetworks.com domain split (infra, not code):** customer-facing traffic now goes through `my.kadenetworks.com` (Cloudflare Tunnel route to the `hub` service) and the LAB-HEX hotspot captive portal now points at `wifi.kadenetworks.com` (public A record to its hotspot-address, `dns-name` updated on the `netops-hs` hotspot profile). Server `.env` on the production host got `NETWORK_PORTAL_ORIGIN=https://my.kadenetworks.com`, container restarted. Verified end-to-end with real authenticated hotspot and PPPoE customer sessions on LAB-HEX only; no other production router was touched. Cloudflare Access in front of the admin `netops` host, and rolling the domain change out to the other production routers, are both still deferred to the owner's own timing (see section 2 — those routers are off limits without explicit new instruction). This ships alongside another session's own `my.kadenetworks.com` server-side domain split (`NETWORK_PORTAL_ORIGIN` host separation in `server.cjs`/`lib/portal.cjs`, see below) — the two are complementary (Cloudflare/DNS/router side here, server routing side there).
+- **cloud.kadenetworks.com domain split (infra, not code):** customer-facing traffic now goes through `my.kadenetworks.com` (Cloudflare Tunnel route to the `hub` service) and the LAB-HEX hotspot captive portal now points at `wifi.kadenetworks.com` (public A record to its hotspot-address, `dns-name` updated on the `netops-hs` hotspot profile). Server `.env` on the production host got `NETWORK_PORTAL_ORIGIN=https://my.kadenetworks.com`, container restarted. Verified end-to-end with real authenticated hotspot and PPPoE customer sessions on LAB-HEX only; no other production router was touched. Cloudflare Access in front of the admin `Kade Cloud` host, and rolling the domain change out to the other production routers, are both still deferred to the owner's own timing (see section 2 — those routers are off limits without explicit new instruction). This ships alongside another session's own `my.kadenetworks.com` server-side domain split (`NETWORK_PORTAL_ORIGIN` host separation in `server.cjs`/`lib/portal.cjs`, see below) — the two are complementary (Cloudflare/DNS/router side here, server routing side there).
 
 - **Latest display preference:** site-wide `text-transform: none` preserves original casing (supersedes lowercase/capitalize). Profile table text and controls are 11px on phone and desktop. Desktop dashboard has a three-card row for revenue by service/package and voucher revenue by location, followed by a two-card row for top sites/live traffic.
 
@@ -276,7 +276,7 @@ As of **2026-11-15**:
 - **ISPman export formats:** supports actual November 2026 customer headings, separate currency/available/current balance fields, wallet-only Hotspot identities, blank unpurchased packages, source last-device/last-seen/active-connect/status. Preview validation found 120 PPPoE and 3,652 identifiable Hotspot rows; two Hotspot rows lack identifiers and are retained locally as exceptions. Exports omit expiry. Live import is in progress.
 
 - **ISPman overview:** owner-only, separate customer snapshot and CSV preview/import; duplicate and conflicting identity checks, source balance/expiry text, informational account matches, source timestamps. No operational subscribers, credentials, wallets, payments or routers are changed. See `docs/ISPMAN-OVERVIEW.md`. Validated at 390px and 1366px with synthetic records. No live ISPman data imported during implementation.
-- **Ikutha observer check:** existing `HEX` entry online and discovery Reporting; no scripts installed. 0 PPP / 19 Hotspot agreed between netops and WinBox. Existing `network-hub-event-test` and New York timezone left unchanged with owner approval. Secure fetch finished with HTTP 200. Configuration export was not run; no pre-check RADIUS baseline.
+- **Ikutha observer check:** existing `HEX` entry online and discovery Reporting; no scripts installed. 0 PPP / 19 Hotspot agreed between Kade Cloud and WinBox. Existing `network-hub-event-test` and New York timezone left unchanged with owner approval. Secure fetch finished with HTTP 200. Configuration export was not run; no pre-check RADIUS baseline.
 
 - Sidebar scrolls as one piece, with no sticky parts; the sidebar menu search is fast. Trends axis labels fixed; tidy discovery cards; one-line mobile top bar.
 - **Search everything:** `/api/search` plus a new dialog, covering customers, live sessions, devices/ONUs, payments, vouchers, packages, tickets, jobs, alerts, onboarding, stock, sites and menu pages.
@@ -304,10 +304,10 @@ As of **2026-11-15**:
 
 ## 10. Session log (newest first; one line per session)
 
-- 2026-11-15: five confirmed issues fixed (history Online, Online now scope, hotspot server count, job password exposure, profile refresh after Extend); router Disconnect page was MikroTik's default because the netops logout.html was never pushed: added WiFi-pages out-of-date indicator and Update button; owner made deploys automatic; deployed.
+- 2026-11-15: five confirmed issues fixed (history Online, Online now scope, hotspot server count, job password exposure, profile refresh after Extend); router Disconnect page was MikroTik's default because the Kade Cloud logout.html was never pushed: added WiFi-pages out-of-date indicator and Update button; owner made deploys automatic; deployed.
 - 2026-11-13 (later): borrowed portal and profile features added, then reverted at the owner's request (commit 4044d52).
-- 2026-11-13: merged with another session's `my.kadenetworks.com`/ban/wallet-checkout work; split `netops.kadenetworks.com` into `my.kadenetworks.com` (customer traffic, Cloudflare Tunnel + server env var) and `wifi.kadenetworks.com` (LAB-HEX hotspot captive portal only), verified with real authenticated sessions, LAB-HEX only; added masked "Recent payments" and a 7-day "This week" usage chart to the customer self-service page (`lib/selfservice.cjs`, `portal/account.js/.css/.html`), exported `dailyUse()` from `lib/insights.cjs`, new test added. 288 tests pass after merge. No pricing/loyalty settings changed, no other production router touched.
-- 2026-11-12: customer address split: `NETWORK_PORTAL_ORIGIN` (e.g. https://my.kadenetworks.com) serves only the portal (also at /), portal API, short links, img/fonts; admin/API/live 404 there; customer links, router pages, payment returns, upsell/insight messages use it; netops still serves the portal for old links; push-design jobs add the customer host to the walled garden; HSTS. Steps for the owner in `docs/CUSTOMER-DOMAINS.md` (Cloudflare tunnel hostname, .env, LAB-HEX first, router dns-name wifi.kadenetworks.com). Also: one-tap hotspot Connect, router logout page, CSP-safe Close buttons.
+- 2026-11-13: merged with another session's `my.kadenetworks.com`/ban/wallet-checkout work; split `cloud.kadenetworks.com` into `my.kadenetworks.com` (customer traffic, Cloudflare Tunnel + server env var) and `wifi.kadenetworks.com` (LAB-HEX hotspot captive portal only), verified with real authenticated sessions, LAB-HEX only; added masked "Recent payments" and a 7-day "This week" usage chart to the customer self-service page (`lib/selfservice.cjs`, `portal/account.js/.css/.html`), exported `dailyUse()` from `lib/insights.cjs`, new test added. 288 tests pass after merge. No pricing/loyalty settings changed, no other production router touched.
+- 2026-11-12: customer address split: `NETWORK_PORTAL_ORIGIN` (e.g. https://my.kadenetworks.com) serves only the portal (also at /), portal API, short links, img/fonts; admin/API/live 404 there; customer links, router pages, payment returns, upsell/insight messages use it; Kade Cloud still serves the portal for old links; push-design jobs add the customer host to the walled garden; HSTS. Steps for the owner in `docs/CUSTOMER-DOMAINS.md` (Cloudflare tunnel hostname, .env, LAB-HEX first, router dns-name wifi.kadenetworks.com). Also: one-tap hotspot Connect, router logout page, CSP-safe Close buttons.
 - 2026-11-12: restored original casing with text-transform none, set compact customer tables to 11px, and arranged dashboard rows as three revenue cards then two traffic cards; 284 tests and phone/desktop layout checks pass.
 
 - 2026-11-12: applied lowercase display site-wide, compacted customer tables and prevented card overflow, clarified unreported device details and contact rows, and used session last-seen fallback; 284 tests pass; 390px/1366px checks show no table or page overflow.

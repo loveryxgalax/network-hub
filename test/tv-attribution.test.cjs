@@ -21,9 +21,9 @@ test('TV MAC login (any casing) is the owner\'s session everywhere; login name a
  // Active sessions and accounting log show the customer, not Unknown.
  const act=hs.sessions(st,new URLSearchParams('service=hotspot'),now).items;assert.equal(act.length,4);assert.ok(act.filter(x=>x.customer?.username==='lab-tv').length===3);assert.ok(!act.some(x=>!x.customer));
  assert.ok(hs.acctSessions(st,new URLSearchParams('service=hotspot'),now).items.every(x=>x.customer));
- // Dashboard: 4 connections, 2 customers, none "not in NetOps".
+ // Dashboard: 4 connections, 2 customers, none "not in Kade Cloud".
  const s=online.summary(st,now);assert.equal(s.total,4);assert.equal(s.customers,2);assert.equal(s.byStatus.unmatched,0);
- const ov=require('../lib/overview.cjs').build(st,'24h',now);assert.equal(ov.hotspot.notInNetops,0);assert.equal(ov.hotspot.online,2);
+ const ov=require('../lib/overview.cjs').build(st,'24h',now);assert.equal(ov.hotspot.notInKade,0);assert.equal(ov.hotspot.online,2);
  // Profile: online, with the TV's usage; owner's own last device not overwritten by the TV.
  const prof=require('../lib/revenue.cjs').profile(st,tv.id,now);assert.equal(prof.online,true);assert.equal(prof.sessions.reduce((a,x)=>a+x.downloadBytes,0),48*MB);
  assert.equal(st.get('subscribers',tv.id).lastMac,'AA:00:00:00:00:01');assert.ok(st.get('subscribers',tv.id).lastSeen>=now-10*MIN);

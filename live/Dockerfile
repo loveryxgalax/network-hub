@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 open
 ENV LANG=en_US.UTF-8 MIX_ENV=prod PHX_SERVER=true
 WORKDIR /app
 RUN useradd --system --home /app live
-COPY --from=build --chown=live /app/_build/prod/rel/netops_live ./
+COPY --from=build --chown=live /app/_build/prod/rel/kade_live ./
 USER live
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD curl -fsS http://127.0.0.1:4000/healthz || exit 1
-CMD ["/app/bin/netops_live", "start"]
+CMD ["/app/bin/kade_live", "start"]

@@ -1,10 +1,10 @@
 # Home ISP lab: hEX + 2 Cambium PPPoE clients + Archer AP, from zero
 
-This is the complete, in-order runbook for testing netops (PPPoE, Hotspot, TR-069, billing and the automations) on a
+This is the complete, in-order runbook for testing Kade Cloud (PPPoE, Hotspot, TR-069, billing and the automations) on a
 home lab. It is written so a person **or a browser/computer-use agent** can follow it step by step. Every screen and
-button name below is the real one in netops (https://netops.kadenetworks.com).
+button name below is the real one in Kade Cloud (https://cloud.kadenetworks.com).
 
-**Owner:** the person who owns the netops account. **Agent:** ChatGPT / Claude doing the clicks.
+**Owner:** the person who owns the Kade Cloud account. **Agent:** ChatGPT / Claude doing the clicks.
 
 ---
 
@@ -16,7 +16,7 @@ button name below is the real one in netops (https://netops.kadenetworks.com).
 3. Never paste a password, API key, RADIUS secret or one-line link script into a chat, ticket or document.
    The one-line link script contains a private token: paste it **only** into the MikroTik terminal.
 4. If a check fails, use the troubleshooting table at the end (§11) before trying anything else. Do not invent
-   RouterOS commands; netops generates the ones that are needed.
+   RouterOS commands; Kade Cloud generates the ones that are needed.
 5. Write down every value you create (usernames, passwords, serial numbers) in a private note for the owner.
 
 ---
@@ -26,11 +26,11 @@ button name below is the real one in netops (https://netops.kadenetworks.com).
 | Device | Role in the lab |
 |---|---|
 | Xfinity gateway | Internet source. Leave it as it is (bridge mode is **not** needed). |
-| **MikroTik hEX E50UG** (5× gigabit, 512 MB, no Wi-Fi) | The "ISP router": PPPoE server, Hotspot, DHCP, NAT, firewall. Linked to netops. |
+| **MikroTik hEX E50UG** (5× gigabit, 512 MB, no Wi-Fi) | The "ISP router": PPPoE server, Hotspot, DHCP, NAT, firewall. Linked to Kade Cloud. |
 | TP-Link TL-SG105 (unmanaged switch) | The "customer street": every customer device plugs in here. |
 | Cambium cnPilot R195W #1 and #2 | Two **PPPoE home customers** (user1, user2). Managed by TR-069. |
-| TP-Link Archer A54 in **Access Point** mode | A **hotspot** Wi-Fi: phones that join it get the netops login page. |
-| Laptop #3 | Admin laptop: WinBox + netops in a browser. |
+| TP-Link Archer A54 in **Access Point** mode | A **hotspot** Wi-Fi: phones that join it get the Kade Cloud login page. |
+| Laptop #3 | Admin laptop: WinBox + Kade Cloud in a browser. |
 | Your own phone | Receives the test SMS and acts as a hotspot customer. |
 
 The hEX replaces the hAP lite. Because it has 512 MB, use the **full** link (not the "Small router" mode).
@@ -61,29 +61,29 @@ Internet ─ Xfinity ─ ether1 [hEX] ether2 ─ switch ─┬─ Cambium #1 (PP
                            Admin laptop
 ```
 
-Networks netops will create (they do not clash with Xfinity's 10.0.0.0/24):
+Networks Kade Cloud will create (they do not clash with Xfinity's 10.0.0.0/24):
 
 | Network | Used for |
 |---|---|
 | 192.168.88.0/24 (router 192.168.88.1) | Admin laptop on ether3–5 (the hEX factory network, kept) |
 | 10.5.0.0/22 (gateway 10.5.0.1) | Hotspot customers (phones behind the Archer) |
 | 10.20.0.0/22 (gateway 10.20.0.1) | PPPoE customers (the Cambiums) |
-| 10.99.0.x | WireGuard tunnel from the hEX to netops (RADIUS and remote access) |
+| 10.99.0.x | WireGuard tunnel from the hEX to Kade Cloud (RADIUS and remote access) |
 
 ---
 
-## 3. Check netops is ready (owner or agent, in the browser)
+## 3. Check Kade Cloud is ready (owner or agent, in the browser)
 
-Log in to https://netops.kadenetworks.com as an **administrator**.
+Log in to https://cloud.kadenetworks.com as an **administrator**.
 
 | Check | Where | Expected |
 |---|---|---|
 | WireGuard server | Sidebar → **WireGuard & Winbox access** | Server shows a public key and endpoint. If not, set it up there first. |
-| RADIUS secret | Sidebar → **Link a MikroTik** | The option "netops RADIUS for all logins (new router)" is **not greyed out**. If greyed out, RADIUS_SECRET or WireGuard is missing on the server: stop and tell the owner. |
+| RADIUS secret | Sidebar → **Link a MikroTik** | The option "Kade Cloud RADIUS for all logins (new router)" is **not greyed out**. If greyed out, RADIUS_SECRET or WireGuard is missing on the server: stop and tell the owner. |
 | SMS | Sidebar → **SMS** → Settings | Provider set up. Send a test SMS to the owner's phone. |
 | M-Pesa (optional) | Sidebar → **M-Pesa & portal** | Keys saved (sandbox is fine for a lab). Not required: vouchers work without it. |
-| ACS (TR-069) | Sidebar → **Router auto-enrol (TR-069)** | The ACS address is filled in (it is `https://netops.kadenetworks.com/cwmp/`). |
-| Old lab router | Sidebar → **Routers** | If the old hAP lite is listed and will not be used again, open it → **Forget router** (removes only netops data). |
+| ACS (TR-069) | Sidebar → **Router auto-enrol (TR-069)** | The ACS address is filled in (it is `https://cloud.kadenetworks.com/cwmp/`). |
+| Old lab router | Sidebar → **Routers** | If the old hAP lite is listed and will not be used again, open it → **Forget router** (removes only Kade Cloud data). |
 
 ---
 
@@ -92,7 +92,7 @@ Log in to https://netops.kadenetworks.com as an **administrator**.
 1. Plug in cables 1 and 3 only (ether1 to Xfinity, ether3 to the laptop) and power the hEX.
 2. Open **WinBox** on the laptop → *Neighbors* tab → connect to the hEX (MAC or 192.168.88.1), user `admin`, password
    from the sticker (or empty on older units).
-3. If WinBox asks about the **default configuration**, keep it (**do not** remove it). netops relies on it for the
+3. If WinBox asks about the **default configuration**, keep it (**do not** remove it). Kade Cloud relies on it for the
    internet port (DHCP client on ether1), NAT and the admin network.
 4. **System → Password**: set a strong admin password and give it to the owner.
 5. **System → Packages → Check For Updates** → channel **stable** → **Download & Install** (the router reboots).
@@ -103,29 +103,29 @@ Log in to https://netops.kadenetworks.com as an **administrator**.
 
 ---
 
-## 5. Link the hEX to netops
+## 5. Link the hEX to Kade Cloud
 
 In netops: Sidebar → **Link a MikroTik**.
 
-1. **Router identity:** `LAB-HEX` (letters, numbers, dot, dash; netops RADIUS recognises the router by this name).
+1. **Router identity:** `LAB-HEX` (letters, numbers, dot, dash; Kade Cloud RADIUS recognises the router by this name).
 2. Leave **"Small router (32 MB RAM…)" unticked** (the hEX has 512 MB).
-3. **RADIUS:** choose **"netops RADIUS for all logins (new router)"**.
-4. Tick: **Set this name on the router**, **WireGuard tunnel to netops**, **Job runner**.
-5. Create the script. netops shows **one line**. Copy it.
+3. **RADIUS:** choose **"Kade Cloud RADIUS for all logins (new router)"**.
+4. Tick: **Set this name on the router**, **WireGuard tunnel to Kade Cloud**, **Job runner**.
+5. Create the script. Kade Cloud shows **one line**. Copy it.
 6. In WinBox → **New Terminal** → paste the line → Enter.
-   * If the router says **"not allowed by device-mode"**: follow the box on the same netops page (paste the shown
+   * If the router says **"not allowed by device-mode"**: follow the box on the same Kade Cloud page (paste the shown
      command, then press the reset button briefly or power-cycle within 5 minutes; settings stay), then paste the
      line again.
-7. Back in netops the page shows **"Waiting for the router"**, then the router as settled/online. This takes
+7. Back in Kade Cloud the page shows **"Waiting for the router"**, then the router as settled/online. This takes
    1–3 minutes. In **Routers**, `LAB-HEX` should be **Online**.
 
 Checks:
 * Sidebar → **Router jobs**: `LAB-HEX` shows the job runner as installed.
-* Sidebar → **Routers** → `LAB-HEX` profile: device info filled in, "Connected to netops".
+* Sidebar → **Routers** → `LAB-HEX` profile: device info filled in, "Connected to Kade Cloud".
 
 ---
 
-## 6. Let netops set up PPPoE and Hotspot on the hEX
+## 6. Let Kade Cloud set up PPPoE and Hotspot on the hEX
 
 Still on **Link a MikroTik** (continue with `LAB-HEX`), the next step is the services form:
 
@@ -142,21 +142,21 @@ Still on **Link a MikroTik** (continue with `LAB-HEX`), the next step is the ser
 | Internet for customers through the uplink (NAT) | **ticked** |
 
 1. Press **Preview setup** and read **What will be set up**: the netops-bridge with ether2, a hotspot on 10.5.0.0/22
-   with the netops login page, PPPoE on 10.20.0.0/22, RADIUS with accounting, NAT.
+   with the Kade Cloud login page, PPPoE on 10.20.0.0/22, RADIUS with accounting, NAT.
 2. Type the router name `LAB-HEX` to confirm (agent: ask the owner first) and apply.
 3. Wait about a minute. **Router jobs** shows *Set up PPPoE / Hotspot (new router)* → **succeeded**.
    If it says **STOPPED: …**, the router already had a PPPoE server/hotspot or the port was busy: read the message,
    fix that one thing, run again.
 4. Now plug in **cable 2** (hEX ether2 → switch).
 
-What netops also does by itself after this (nothing to click):
+What Kade Cloud also does by itself after this (nothing to click):
 * turns on **LLDP neighbour discovery** on the router (about 30 minutes after the job runner was installed);
-* puts the **netops Wi-Fi login and status pages** on the router and allows netops before login;
+* puts the **Kade Cloud Wi-Fi login and status pages** on the router and allows Kade Cloud before login;
 * starts reporting customers, traffic and health every 2 minutes.
 
 ---
 
-## 7. Create packages and test customers in netops
+## 7. Create packages and test customers in Kade Cloud
 
 Hotspot and PPPoE are completely separate in netops: use the **PPPOE** menu for PPPoE and the **HOTSPOT** menu for
 Hotspot.
@@ -189,7 +189,7 @@ Use the owner's own phone number so all test SMS go to the owner.
 
 **Expired-customer page rules (once per router):** Sidebar → PPPOE → **Expired page** → copy **Router rules (run once
 per router)** → paste into the hEX terminal (WinBox → New Terminal). This lets expired PPPoE customers reach only DNS and
-netops, and sends their web browsing to the "Your internet has expired" page with M-Pesa renewal.
+Kade Cloud, and sends their web browsing to the "Your internet has expired" page with M-Pesa renewal.
 
 ---
 
@@ -220,7 +220,7 @@ Checks in netops:
 2. **Advanced → Operation Mode → Access Point** (the Archer stops being a router and just bridges Wi-Fi to the wire).
 3. Wi-Fi name `KADE-LAB-HOTSPOT`, **no password** (open, like a real hotspot) or a simple one, your choice.
 4. Plug an Archer **LAN** port into switch port 4 (cable 6).
-5. On your phone, join `KADE-LAB-HOTSPOT`. The netops login page opens (if not, browse to any `http://` site or
+5. On your phone, join `KADE-LAB-HOTSPOT`. The Kade Cloud login page opens (if not, browse to any `http://` site or
    `http://wifi.kade`).
 
 Checks:
@@ -233,8 +233,8 @@ Checks:
 
 ## 10. TR-069 for the two Cambiums
 
-1. netops → Sidebar → **Router auto-enrol (TR-069)**:
-   * check the ACS address is `https://netops.kadenetworks.com/cwmp/`;
+1. Kade Cloud → Sidebar → **Router auto-enrol (TR-069)**:
+   * check the ACS address is `https://cloud.kadenetworks.com/cwmp/`;
    * **Turn on shared login** (lab only; it is turned off again at the end) and **Turn on automatic registration**.
    * The page shows: *Username = the router's serial · Password: …* and the ACS address.
 2. On each Cambium's web page find the **TR-069 / ACS** settings (usually under *Administration* or *Management*):
@@ -242,16 +242,16 @@ Checks:
    | Field | Value |
    |---|---|
    | Enable TR-069 | on |
-   | ACS URL | `https://netops.kadenetworks.com/cwmp/` |
+   | ACS URL | `https://cloud.kadenetworks.com/cwmp/` |
    | ACS username | the Cambium's **serial number** (from its label / status page) |
-   | ACS password | the shared password shown on the netops page |
+   | ACS password | the shared password shown on the Kade Cloud page |
    | Periodic inform | on, every **300** seconds |
-   | Connection request username/password | leave as they are (netops sets its own later) |
+   | Connection request username/password | leave as they are (Kade Cloud sets its own later) |
 
    If the Cambium is managed by cnMaestro, turn cnMaestro off on it for this test, or TR-069 may be ignored.
 3. Wait 2–10 minutes. Then in netops:
    * **TR-069 → Devices**: both Cambiums appear, **Online**.
-   * Because their PPPoE usernames are `user1`/`user2`, netops **registers them to those customers by itself** and then
+   * Because their PPPoE usernames are `user1`/`user2`, Kade Cloud **registers them to those customers by itself** and then
      moves each one to its **own private ACS login** (Router auto-enrol page → audit shows "Registered … automatically",
      then "now uses its own ACS login").
    * Customer profile (PPPoE) shows the TR-069 CPE and, after ~30 minutes, **"N devices on their router now"**.
@@ -262,7 +262,7 @@ Checks:
 
 ## 11. Feature test checklist
 
-Tick each one. "Where" is the netops screen.
+Tick each one. "Where" is the Kade Cloud screen.
 
 | # | Feature | How to test | Where to see the result |
 |---|---|---|---|
@@ -272,7 +272,7 @@ Tick each one. "Where" is the netops screen.
 | 4 | Self-service link | user1 profile → **Self-service link** → **Send by SMS** | SMS arrives as a short `/s/...` link; opens user1's account page (no router guide shown) |
 | 5 | Disconnect / reset | user1 profile → **Disconnect** (or **Reset conn.**) | Cambium #1 reconnects within seconds; Router jobs shows it succeeded |
 | 6 | Speed change | Change user1 to **Lab 20 Mbps** | After reconnect (or at once if Settings → Live changes is on) the speed test shows ~20 |
-| 7 | Expiry | user2 profile → **Extend** → explicit date/time 2 minutes from now; wait; **Disconnect** user2 so Cambium #2 redials | An `http://` site shows the netops "expired" page (needs the Expired page router rules from §7); **Renew** restores it |
+| 7 | Expiry | user2 profile → **Extend** → explicit date/time 2 minutes from now; wait; **Disconnect** user2 so Cambium #2 redials | An `http://` site shows the Kade Cloud "expired" page (needs the Expired page router rules from §7); **Renew** restores it |
 | 8 | Payment code login (hotspot) | Phone A connects with a voucher/M-Pesa code; on phone B use the same code: try **Sharing** then **Migration** (hotspot customer profile → **Payment Ref**) | Sharing: both online. Migration: phone A is signed out |
 | 9 | TR-069 | §10 | TR-069 → Devices; customer profile |
 | 10 | Neighbour discovery | Wait ~45 min after §5 | Router profile → neighbours / Network map shows the Cambiums and Archer if they speak LLDP/CDP/MNDP |

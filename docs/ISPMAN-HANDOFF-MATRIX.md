@@ -164,7 +164,7 @@ Update this file with every increment.
 | 19.7 Vouchers: bulk, phone list + SMS, import, print | Done | Check step with row errors before saving; print = HTML page → Save as PDF (grid 2–12, compact 18–100, A4/Letter). |
 | 19.8 PPPoE import | Done | CSV with a dry run (`/api/radius/import`). XLSX not accepted: save as CSV. |
 | 19.9 Campaigns: codes, activations, edit | Done | 100% off charges KSh 1 (smallest M-Pesa payment); a truly free code is not built. |
-| 19.10 Platform invoice | Skip | That is ISPman billing the ISP; netops has no platform bill. |
+| 19.10 Platform invoice | Skip | That is ISPman billing the ISP; Kade Cloud has no platform bill. |
 | 19.11 Email audiences and templates | Done | Plain text with fields; union of audiences; one per address; per-recipient result. No rich-text editor. |
 
 ## 20. HOTSPOT section deep dive (Oct 31, 2026)
@@ -179,7 +179,7 @@ Update this file with every increment.
 | 20.6 Sessions | Done | Active = not stopped and updated in the last 30 min. Filters: Customer, Username, IP, MAC. Sync every 10 s. Includes router-reported sessions that our RADIUS does not handle, marked "Router". |
 | 20.7 Auth logs | Done | 7 days in an indexed table. Filters: Customer, Username, MAC, Reply, date. Shows Access-Accept/Access-Reject and the reason. |
 | 20.8 Acct logs | Done | Per session: Started, Stopped, Last update, Up, Down, Terminate cause; a second tab has the raw Start/Interim/Stop records. Kept 7 days. |
-| 20.9 Servers | Done | New page: server, SSID, router, router IP, interface/profile, connected, enabled. Read-only. Full details need customer discovery v9 on each router (Replace discovery script, a read-only print of `/ip hotspot` and the wireless SSIDs). Until then servers are listed from the sessions the routers report. Checkboxes select rows for export. Enable/disable from netops is intentionally not offered. |
+| 20.9 Servers | Done | New page: server, SSID, router, router IP, interface/profile, connected, enabled. Read-only. Full details need customer discovery v9 on each router (Replace discovery script, a read-only print of `/ip hotspot` and the wireless SSIDs). Until then servers are listed from the sessions the routers report. Checkboxes select rows for export. Enable/disable from Kade Cloud is intentionally not offered. |
 | 20.10 Manual connects | Done | Two tables with filters (Customer, Package, Team member, date): "Manual connects by team members" and "Manual connect logs" (every staff change to paid-until: manual connect, renew, edit, auto billing, with before and after). |
 
 ## Handoff update §20 (1 Nov 2026) and §21 (3 Nov 2026)
@@ -188,7 +188,7 @@ Update this file with every increment.
 | 20.1 Hotspot migration import (mac, package_id, paid_until) | Missing | Next: preview with an explicit import timezone, duplicate rule, batch provenance. |
 | 20.2 Permanent override vs flight speed | Done | Flight speed changes the current session only. |
 | 20.3 Payment-reference sharing / migration (ISP → router → customer) | Done | |
-| 20.4 Phone OTP verified state | Skip | netops has no phone OTP login; nothing to override. |
+| 20.4 Phone OTP verified state | Skip | Kade Cloud has no phone OTP login; nothing to override. |
 | 20.5 Extend with quick increments | Done | Profile → Extend: +30 min … +3 months from the current expiry, or an exact time; reason required; not a payment. |
 | 20.6 Package change applies on reconnect | Done | Existing behaviour (RADIUS reply at next login). |
 | 20.7 PPPoE max connections + split bandwidth | Done | Limit only when set on the customer. Divisor = the configured maximum (not live sessions), so speeds never change while sessions join or leave. |
@@ -208,12 +208,12 @@ Update this file with every increment.
 | Screen | Status | Notes |
 |---|---|---|
 | 206–210, 212–213 Package editors (burst, FUP, customize, daily FUP, expiry notices, speed override, create) | Done | Per-package expiry notices (minutes/hours/days before, on expiry) already existed. |
-| 211 Hotspot configuration types (paid, free with ads, free with details, free, quiz) | Done | Free mode, ads, quizzes and paid are separate netops features. |
+| 211 Hotspot configuration types (paid, free with ads, free with details, free, quiz) | Done | Free mode, ads, quizzes and paid are separate Kade Cloud features. |
 | 214–216, 229 Vouchers by phone CSV, customer selector, email templates | Done | |
 | 217–220 Payment providers (M-Pesa edit, Paystack, PawaPay, JulyPay) | Skip for now | Owner asked to leave the new providers. |
 | 221–222 Add router (Ruijie, MikroTik), 223/230 TR-069 credentials | Done | |
 | 224–228 PPPoE change package, max connections, MAC binding, speed override, flight speed | Done | Max connections/split and MAC prefix/list added 3 Nov. |
-| 231–232 Router device access / support contact / public RADIUS | Done | netops RADIUS runs over the router's WireGuard tunnel; no public RADIUS switch needed. |
+| 231–232 Router device access / support contact / public RADIUS | Done | Kade Cloud RADIUS runs over the router's WireGuard tunnel; no public RADIUS switch needed. |
 | 233–234 Captive features: connect after payment, leave a message, payment-ref login, login-or-purchase, sharing code | Done | Payment already logs the device in at once; login-or-purchase choice and seamless sharing code added (both off by default). |
 | 235–236 Free mode themes and Evict free users | Done | Evict now or automatically; paid logins stay connected. |
 | 237 Alert settings (invitations, invoices SMS) | Skip | Platform notices for ISPman's own account. |

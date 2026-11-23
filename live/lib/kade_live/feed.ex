@@ -1,4 +1,4 @@
-defmodule NetopsLive.Feed do
+defmodule KadeLive.Feed do
   @moduledoc """
   One process polls the hub's internal live feed and broadcasts each new snapshot on PubSub, so a hundred open
   screens cost the hub one request every few seconds. Viewers get the latest snapshot as soon as they connect.
@@ -17,7 +17,7 @@ defmodule NetopsLive.Feed do
 
   @impl true
   def init(_) do
-    if interval() > 0 and (url() || NetopsLive.Hub.api_url()), do: send(self(), :poll)
+    if interval() > 0 and (url() || KadeLive.Hub.api_url()), do: send(self(), :poll)
     {:ok, %{snapshot: nil, error: nil}}
   end
 
@@ -34,7 +34,7 @@ defmodule NetopsLive.Feed do
         {:ok, snapshot} -> store(state, snapshot)
         {:error, reason} ->
           if state.error != reason, do: Logger.warning("live feed: #{reason}")
-          Phoenix.PubSub.broadcast(NetopsLive.PubSub, @topic, {:feed_error, reason})
+          Phoenix.PubSub.broadcast(KadeLive.PubSub, @topic, {:feed_error, reason})
           %{state | error: reason}
       end
 
@@ -45,7 +45,7 @@ defmodule NetopsLive.Feed do
   # Only changed snapshots are broadcast ("at" always changes, so it is left out of the comparison).
   defp store(state, snapshot) do
     if Map.delete(snapshot, "at") != (state.snapshot && Map.delete(state.snapshot, "at")) or state.error do
-      Phoenix.PubSub.broadcast(NetopsLive.PubSub, @topic, {:snapshot, snapshot})
+      Phoenix.PubSub.broadcast(KadeLive.PubSub, @topic, {:snapshot, snapshot})
     end
 
     %{state | snapshot: snapshot, error: nil}
@@ -54,11 +54,11 @@ defmodule NetopsLive.Feed do
   # The v1 snapshot (with its event cursor) unless an explicit feed URL is configured.
   defp fetch do
     case url() do
-      nil -> NetopsLive.Hub.get("/snapshot")
-      u -> NetopsLive.Hub.get_url(u)
+      nil -> KadeLive.Hub.get("/snapshot")
+      u -> KadeLive.Hub.get_url(u)
     end
   end
 
-  defp url, do: Application.get_env(:netops_live, :feed_url)
-  defp interval, do: Application.get_env(:netops_live, :poll_ms, 3000)
+  defp url, do: Application.get_env(:kade_live, :feed_url)
+  defp interval, do: Application.get_env(:kade_live, :poll_ms, 3000)
 end

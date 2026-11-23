@@ -1,11 +1,11 @@
 import Config
 
-config :netops_live, NetopsLiveWeb.Endpoint,
+config :kade_live, KadeLiveWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
   # No url path: the routes, static files and socket already sit under /live.
   url: [host: "localhost"],
-  render_errors: [formats: [html: NetopsLiveWeb.ErrorHTML], layout: false],
-  pubsub_server: NetopsLive.PubSub,
+  render_errors: [formats: [html: KadeLiveWeb.ErrorHTML], layout: false],
+  pubsub_server: KadeLive.PubSub,
   live_view: [signing_salt: "netops-live-view"]
 
 config :phoenix, :json_library, Jason

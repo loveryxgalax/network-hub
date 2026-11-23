@@ -36,7 +36,7 @@ test('internal v1: snapshot with cursor, events, sign-in check that ends on logo
   const ev=await feed('/internal/v1/events?after=0');assert.ok(ev.body.events.some(e=>e.type==='alert.opened'));assert.equal(ev.body.last,snap.body.seq);
   assert.equal((await feed('/internal/v1/nope')).status,404);
   // The hub forwards a session id; Phoenix checks it, and it stops being valid after sign-out.
-  assert.equal((await fetch(origin+'/live',{headers:{Cookie:cookie}})).status,200);const sid=seen['x-netops-session'];assert.match(sid,/^[a-f0-9]{64}$/);
+  assert.equal((await fetch(origin+'/live',{headers:{Cookie:cookie}})).status,200);const sid=seen['x-kade-session'];assert.match(sid,/^[a-f0-9]{64}$/);
   assert.deepEqual((await feed('/internal/v1/session?sid='+sid)).body,{valid:true,role:'admin',email:'v1@example.test'});
   assert.equal((await feed('/internal/v1/session?sid='+'0'.repeat(64))).body.valid,false);assert.equal((await feed('/internal/v1/session?sid=bad')).body.valid,false);
   const lo=await fetch(origin+'/api/logout',{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf},body:'{}'});assert.ok(lo.status<300,'logout '+lo.status);
@@ -55,7 +55,7 @@ test('internal v1 actions: alerts acknowledged/resolved by the signed-in viewer,
  const port=await listen(app.server),feedPort=await listen(app.liveFeed),origin='http://127.0.0.1:'+port;
  const act=(input,tok=token)=>fetch('http://127.0.0.1:'+feedPort+'/internal/v1/actions',{method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(input)}).then(async r=>({status:r.status,body:await r.json()}));
  try{const owner=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'act@example.test',password:'fixture-owner-password-123'})});const cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
-  await fetch(origin+'/live',{headers:{Cookie:cookie}});const sid=seen['x-netops-session'];
+  await fetch(origin+'/live',{headers:{Cookie:cookie}});const sid=seen['x-kade-session'];
   const a=app.store.put('alerts',{title:'RB951 is unreachable',status:'Open',severity:'critical'});
   assert.equal((await act({sid,action:'alert.acknowledge',id:a.id},'wrong-token-wrong-token-wrong-tok')).status,401,'needs the shared token');
   assert.equal((await act({sid:'0'.repeat(64),action:'alert.acknowledge',id:a.id})).status,401,'unknown session');

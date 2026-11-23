@@ -18,7 +18,7 @@ test('Remote Access link: admin makes a 1-hour link, it opens the router web pag
   res=await fetch(link.url.replace(/^https?:\/\/[^/]+/,o),{redirect:'manual'});assert.equal(res.status,302);assert.equal(res.headers.get('location'),'/webfig/');
   const tc=res.headers.get('set-cookie');assert.match(tc,/nt_tunnel=.*HttpOnly.*SameSite=Lax.*Max-Age=\d+/);
   res=await fetch(o+'/webfig/',{headers:{Cookie:tc.split(';')[0]+'; '+cookie}});const text=await res.text();
-  assert.equal(res.status,200);assert.match(text,/^WEBFIG 127\.0\.0\.1 cookie=$/,'router gets no netops cookies');assert.equal(res.headers.get('set-cookie'),null);assert.equal(res.headers.get('content-security-policy'),null);
+  assert.equal(res.status,200);assert.match(text,/^WEBFIG 127\.0\.0\.1 cookie=$/,'router gets no Kade Cloud cookies');assert.equal(res.headers.get('set-cookie'),null);assert.equal(res.headers.get('content-security-policy'),null);
   const cur=st.list('tunnelLinks')[0];st.put('tunnelLinks',{...cur,expiresAt:Date.now()-1},cur);
   assert.equal((await fetch(o+'/webfig/',{headers:{Cookie:tc.split(';')[0]}})).status,410,'expired');
   assert.equal((await fetch(link.url.replace(/^https?:\/\/[^/]+/,o),{redirect:'manual'})).status,410);

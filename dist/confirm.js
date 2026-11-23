@@ -1,4 +1,4 @@
-// Modern confirmation dialog in place of the browser's "netops.kadenetworks.com says" box.
+// Modern confirmation dialog in place of the browser's "cloud.kadenetworks.com says" box.
 // confirm() must answer at once, so when it is asked from a click or form submit we answer "no", show our dialog,
 // and if the person presses the confirm button we repeat that same click/submit with the answer "yes".
 // Anywhere else (after an await, no event) the browser's own box is used, so nothing ever runs without a yes.

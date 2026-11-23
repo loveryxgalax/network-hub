@@ -2,27 +2,27 @@
 
 MikroTik → **Link a MikroTik** (admins). Four steps:
 
-1. **Router identity**: the name (also set on the router so netops RADIUS recognises it), and what to install:
-   WireGuard tunnel, netops RADIUS (none / test logins `user@realm` / all logins), job runner.
-2. **Link script**: one line to paste in Winbox → New Terminal. The router downloads its private bundle from netops
+1. **Router identity**: the name (also set on the router so Kade Cloud RADIUS recognises it), and what to install:
+   WireGuard tunnel, Kade Cloud RADIUS (none / test logins `user@realm` / all logins), job runner.
+2. **Link script**: one line to paste in Winbox → New Terminal. The router downloads its private bundle from Kade Cloud
    over HTTPS (certificate checked; the link works for 2 hours) and installs monitoring, customer discovery and the
    parts you chose. The page ticks each check as the router reports in. If RouterOS says "not allowed by
-   device-mode", follow the steps shown (netops never changes device-mode itself).
+   device-mode", follow the steps shown (Kade Cloud never changes device-mode itself).
 3. **Services** (new or reset routers only): PPPoE and/or Hotspot, the uplink port (never bridged) and the customer
    ports. Ports already in a bridge, with an address or carrying the uplink cannot be chosen. Preview shows exactly
    what will be set up and the script.
 4. **Apply**: type the router name. The job runner runs the script within a minute.
 
 What the setup creates: bridge `netops-bridge` with the chosen ports; hotspot (address, pool, DHCP, profile using
-RADIUS, login page downloaded from netops, walled garden for the netops address); PPPoE server `netops` with a pool
+RADIUS, login page downloaded from Kade Cloud, walled garden for the Kade Cloud address); PPPoE server `Kade Cloud` with a pool
 and profile, PPP AAA using RADIUS with accounting; NAT masquerade out of the uplink if missing.
 
-Small routers (32 MB RAM, for example a hAP lite): tick "Small router" in step 1. netops then makes one part per pass
+Small routers (32 MB RAM, for example a hAP lite): tick "Small router" in step 1. Kade Cloud then makes one part per pass
 (name, WireGuard, monitoring, RADIUS, job runner, customer lists) instead of one big script. Each pass has Step A
 (download only), a size check, and Step B (import), so a failure shows which step it was. Customer lists report every
 10 minutes instead of 2. Do the parts in that order and wait for the router to settle between them. If a terminal
 crashes, reboot the router once and repeat only that part. If it still crashes, use that router for basic routing and
-put the full netops role on a router with more memory. Certificate checking stays on in every mode.
+put the full Kade Cloud role on a router with more memory. Certificate checking stays on in every mode.
 
 Server first (once, from your PC; it is safe to run again):
 
@@ -43,9 +43,9 @@ in `bridge` with the factory `defconf` marker are touched, and at least one port
 stays reachable at its default address. Ports in any other bridge are never changed.
 
 Safety: the script checks the router first and returns "STOPPED: nothing was changed" if it finds a PPPoE server, a
-hotspot, the netops bridge, a chosen port that is in a bridge, has an address or a DHCP client, an address range
-already in use, or no netops RADIUS entry. netops also refuses the step for routers that report PPPoE/hotspot
+hotspot, the Kade Cloud bridge, a chosen port that is in a bridge, has an address or a DHCP client, an address range
+already in use, or no Kade Cloud RADIUS entry. Kade Cloud also refuses the step for routers that report PPPoE/hotspot
 sessions. It never reboots, never upgrades or resets RouterOS, and never touches router users.
 
 Needs on the server: `NETWORK_PUBLIC_ORIGIN`; for WireGuard, the server details on Operations → WireGuard & Winbox
-access; for netops RADIUS, `RADIUS_SECRET` in `.env` (passed to the hub as `NETWORK_RADIUS_SECRET`).
+access; for Kade Cloud RADIUS, `RADIUS_SECRET` in `.env` (passed to the hub as `NETWORK_RADIUS_SECRET`).

@@ -3,7 +3,7 @@
 # so failed builds and unhealthy starts are retried even after Git has advanced.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-exec 9>"${NETOPS_DEPLOY_LOCK:-/tmp/netops-autodeploy.lock}"
+exec 9>"${KADE_DEPLOY_LOCK:-/tmp/kade-autodeploy.lock}"
 flock -n 9 || exit 0
 log() { echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') $*"; }
 if ! git fetch -q origin; then log 'fetch failed'; exit 1; fi

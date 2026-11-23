@@ -1,4 +1,4 @@
-defmodule NetopsLive.Events do
+defmodule KadeLive.Events do
   @moduledoc """
   Follows the hub's event outbox with a cursor (alert opened, router down, payment received, customer
   connected…). One process for every viewer: it asks for events after the last one it saw about once a second,
@@ -25,7 +25,7 @@ defmodule NetopsLive.Events do
 
   @impl true
   def init(_) do
-    if interval() > 0 and NetopsLive.Hub.api_url(), do: send(self(), :poll)
+    if interval() > 0 and KadeLive.Hub.api_url(), do: send(self(), :poll)
     {:ok, %{cursor: nil, events: [], lag_ms: nil, last_ok_at: nil, error: nil, received: 0}}
   end
 
@@ -42,7 +42,7 @@ defmodule NetopsLive.Events do
     path = if state.cursor, do: "/events?after=#{state.cursor}&limit=200", else: "/events?limit=#{@keep}"
 
     state =
-      case NetopsLive.Hub.get(path) do
+      case KadeLive.Hub.get(path) do
         {:ok, response} -> apply_response(state, response, System.system_time(:millisecond))
         {:error, reason} ->
           if state.error != reason, do: Logger.warning("live events: #{reason}")
@@ -70,7 +70,7 @@ defmodule NetopsLive.Events do
       end
 
     if new != [] or fresh do
-      Phoenix.PubSub.broadcast(NetopsLive.PubSub, @topic, {:events, kept, %{reset: fresh, lag_ms: lag}})
+      Phoenix.PubSub.broadcast(KadeLive.PubSub, @topic, {:events, kept, %{reset: fresh, lag_ms: lag}})
     end
 
     %{state | cursor: cursor, events: kept, lag_ms: lag, last_ok_at: now, error: nil, received: state.received + length(new)}
@@ -79,5 +79,5 @@ defmodule NetopsLive.Events do
   defp apply_response(state, _other, _now), do: %{state | error: "the hub sent an unexpected event list"}
 
   defp stats(state), do: Map.take(state, [:cursor, :lag_ms, :last_ok_at, :error, :received])
-  defp interval, do: Application.get_env(:netops_live, :events_ms, 1000)
+  defp interval, do: Application.get_env(:kade_live, :events_ms, 1000)
 end

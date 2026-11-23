@@ -1,5 +1,5 @@
 # Tests for both services, and the Phoenix live-view image built here (not on the server) and pushed to GHCR.
-# On the server: LIVE_IMAGE=ghcr.io/<owner>/netops-live:latest, then `docker compose pull live && docker compose --profile live up -d live`.
+# On the server: LIVE_IMAGE=ghcr.io/<owner>/kade-live:latest, then `docker compose pull live && docker compose --profile live up -d live`.
 name: live
 on:
   push:
@@ -57,7 +57,7 @@ jobs:
           context: live
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/netops-live:latest
-            ghcr.io/${{ github.repository_owner }}/netops-live:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/kade-live:latest
+            ghcr.io/${{ github.repository_owner }}/kade-live:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

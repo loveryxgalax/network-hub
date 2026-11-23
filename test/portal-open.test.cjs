@@ -4,7 +4,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createApp}=require('../server.cjs'),radius=require('../lib/radius.cjs'),self=require('../lib/selfservice.cjs'),hm=require('../lib/hotspotme.cjs'),lc=require('../lib/landing.cjs');
 test('open portal: hotspot and home customers use every page from any browser; connecting still needs the WiFi; switching off restores the split',async()=>{
- const app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'open-')),collector:false,publicOrigin:'https://netops.example.test',portalOrigin:'https://my.example.test'});
+ const app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'open-')),collector:false,publicOrigin:'https://kade.example.test',portalOrigin:'https://my.example.test'});
  await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const o='http://127.0.0.1:'+app.server.address().port,st=app.store;
  try{const MY={Host:'my.example.test',Origin:'https://my.example.test',Referer:'https://my.example.test/portal/'};
   const hp=st.put('plans',radius.plan({name:'Day',service:'hotspot',downloadMbps:5,uploadMbps:5,price:50,durationValue:1,durationUnit:'days'})),pp=st.put('plans',radius.plan({name:'Home 10',service:'pppoe',downloadMbps:10,uploadMbps:10,price:1500,durationValue:30,durationUnit:'days'}));

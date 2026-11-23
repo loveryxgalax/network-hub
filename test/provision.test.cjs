@@ -10,7 +10,7 @@ test('subnets: gateway, pool around the gateway, private ranges only, overlaps',
 });
 test('services: refuses the uplink, used ports and overlapping networks; the script checks the router before changing it',()=>{
  const state={ports:[{name:'ether1',uplink:true},{name:'ether2'},{name:'ether3'},{name:'ether4',bridge:'bridge1'},{name:'ether5',address:'192.168.88.1/24'}],addresses:[{address:'192.168.88.1/24',interface:'ether5'}]};
- const ok={pppoe:true,hotspot:true,ports:['ether2','ether3'],uplink:'ether1'},ctx={portalHost:'netops.example.test',state};
+ const ok={pppoe:true,hotspot:true,ports:['ether2','ether3'],uplink:'ether1'},ctx={portalHost:'kade.example.test',state};
  assert.throws(()=>pv.validateServices({...ok,ports:['ether1']},ctx),/uplink/);
  assert.throws(()=>pv.validateServices({...ok,ports:['ether4']},ctx),/bridge1/);
  assert.throws(()=>pv.validateServices({...ok,ports:['ether5']},ctx),/192.168.88.1/);
@@ -20,7 +20,7 @@ test('services: refuses the uplink, used ports and overlapping networks; the scr
  assert.throws(()=>pv.validateServices({...ok,hotspotNet:'10.20.0.1/22',pppoeNet:'10.20.1.1/24'},ctx),/overlap/);
  assert.throws(()=>pv.validateServices({...ok,pppoe:false,hotspot:false},ctx),/PPPoE, Hotspot/);
  assert.throws(()=>pv.validateServices({...ok,dnsName:'bad name'},ctx),/DNS/);
- const s=pv.validateServices(ok,ctx),body=pv.servicesBody(s,'https://netops.example.test');
+ const s=pv.validateServices(ok,ctx),body=pv.servicesBody(s,'https://kade.example.test');
  // Every check comes before the first change, and a refusal returns STOPPED without changing anything.
  const firstChange=body.indexOf('/interface bridge add'),stop=body.indexOf(':return ("STOPPED');
  assert.ok(stop>0&&stop<firstChange);
@@ -30,7 +30,7 @@ test('services: refuses the uplink, used ports and overlapping networks; the scr
  assert.ok(!/reboot|package|reset-configuration|\/user (add|set|remove)/.test(body),'never reboots, upgrades, resets or touches users');
  const paste=pv.pasteScript(body,'R1');assert.match(paste,/:local run do=\{/);assert.match(paste,/:put \[\$run\]/);
  // The job carries the spec and rebuilds the same script.
- assert.equal(jobs.TYPES['provision-services'].script({spec:pv.encodeSpec(s),origin:'https://netops.example.test'}),body);
+ assert.equal(jobs.TYPES['provision-services'].script({spec:pv.encodeSpec(s),origin:'https://kade.example.test'}),body);
  assert.equal(jobs.TYPES['provision-services'].risky,true);
 });
 test('health reports addresses, bridge ports, DHCP clients and the PPPoE server count',()=>{
@@ -39,24 +39,24 @@ test('health reports addresses, bridge ports, DHCP clients and the PPPoE server 
  assert.match(health.SCRIPT,/pppoe-server server print count-only/);assert.ok(!/\/(ip address|interface bridge port|ip dhcp-client) (add|set|remove)/.test(health.SCRIPT));
 });
 test('HTTP: link a MikroTik end to end (bundle once per link, checks, in-service guard, typed confirmation, STOPPED)',async()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'prov-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://netops.example.test',radiusSecret:'testRadiusSecret123'});
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'prov-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://kade.example.test',radiusSecret:'testRadiusSecret123'});
  const port=await listen(app.server),origin='http://127.0.0.1:'+port;
  try{const owner=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'p@example.test',password:'fixture-owner-password-123'})});const cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
-  const api=async(r,method='GET',input)=>{const x=await fetch(origin+'/api/'+r,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf,Host:'netops.example.test'},...(input===undefined?{}:{body:JSON.stringify(input)})});return {status:x.status,body:await x.json().catch(()=>null)};};
+  const api=async(r,method='GET',input)=>{const x=await fetch(origin+'/api/'+r,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf,Host:'kade.example.test'},...(input===undefined?{}:{body:JSON.stringify(input)})});return {status:x.status,body:await x.json().catch(()=>null)};};
   const st=app.store;
   assert.equal((await api('provision','POST',{name:'bad;name'})).status,400);
   assert.equal((await api('provision','POST',{name:'HEX Ikutha',radius:'all'})).status,409,'RADIUS needs WireGuard set up on the server');
   st.setting('wgServer',{publicKey:'A'.repeat(43)+'=',endpoint:'203.0.113.10',port:51820});
   const r=await api('provision','POST',{name:'HEX Ikutha',radius:'all',runner:true});assert.equal(r.status,201,JSON.stringify(r.body));
-  assert.match(r.body.oneLiner,/^\/tool fetch url="https:\/\/netops\.example\.test\/api\/provision\/bundle\/[a-f0-9-]{36}" http-header-field="Authorization:Bearer [A-Za-z0-9_-]{43}" check-certificate=yes/);
+  assert.match(r.body.oneLiner,/^\/tool fetch url="https:\/\/kade\.example\.test\/api\/provision\/bundle\/[a-f0-9-]{36}" http-header-field="Authorization:Bearer [A-Za-z0-9_-]{43}" check-certificate=yes/);
   assert.deepEqual(r.body.parts.map(p=>p.split(' ')[0]),['Router','WireGuard','Kade','Monitoring','Customer','Job']);
   assert.equal((await api('provision','POST',{name:'hex ikutha'})).status,409,'same name');
   const [,bid,tok]=/bundle\/([a-f0-9-]{36})" http-header-field="Authorization:Bearer ([A-Za-z0-9_-]{43})"/.exec(r.body.oneLiner);
-  const bundle=await fetch(origin+'/api/provision/bundle/'+bid,{headers:{Authorization:'Bearer '+tok,Host:'netops.example.test'}});assert.equal(bundle.status,200);const text=await bundle.text();
+  const bundle=await fetch(origin+'/api/provision/bundle/'+bid,{headers:{Authorization:'Bearer '+tok,Host:'kade.example.test'}});assert.equal(bundle.status,200);const text=await bundle.text();
   for(const piece of ['/system identity set name="HEX Ikutha"','/interface wireguard add name=wg-netops','/radius add address=10.99.0.1 secret="testRadiusSecret123" service=ppp,hotspot src-address=10.99.0.','network-hub-agent','network-hub-discovery','network-hub-jobs'])assert.ok(text.includes(piece),piece);
   assert.ok(!text.includes('<RADIUS_SECRET>'));assert.ok(!/check-certificate=no/.test(text));
-  assert.equal((await fetch(origin+'/api/provision/bundle/'+bid,{headers:{Authorization:'Bearer '+'x'.repeat(43),Host:'netops.example.test'}})).status,404);
-  assert.equal((await fetch(origin+'/api/provision/bundle/'+bid,{headers:{Host:'netops.example.test'}})).status,404);
+  assert.equal((await fetch(origin+'/api/provision/bundle/'+bid,{headers:{Authorization:'Bearer '+'x'.repeat(43),Host:'kade.example.test'}})).status,404);
+  assert.equal((await fetch(origin+'/api/provision/bundle/'+bid,{headers:{Host:'kade.example.test'}})).status,404);
   const id=r.body.router.id;let s=(await api('provision/'+id)).body;assert.equal(s.checks.monitoring,null);assert.equal(s.checks.runner,0,'runner installed but not polled yet');assert.match(s.checks.wireguard.address,/^10\.99\.0\./);
   // Before the router reports, services are refused.
   const spec={pppoe:true,hotspot:true,ports:['ether2','ether3'],uplink:'ether1'};
@@ -85,10 +85,10 @@ test('HTTP: link a MikroTik end to end (bundle once per link, checks, in-service
  }finally{await app.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('forget a router: preview, typed name, removes only that router\'s data; payments stay; customers optional',async()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'fg-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://netops.example.test'});
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'fg-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://kade.example.test'});
  const port=await listen(app.server),origin='http://127.0.0.1:'+port;
  try{const owner=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'f@example.test',password:'fixture-owner-password-123'})});const cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
-  const api=async(r,input)=>{const x=await fetch(origin+'/api/'+r,{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf,Host:'netops.example.test'},body:JSON.stringify(input)});return {status:x.status,body:await x.json()};};
+  const api=async(r,input)=>{const x=await fetch(origin+'/api/'+r,{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf,Host:'kade.example.test'},body:JSON.stringify(input)});return {status:x.status,body:await x.json()};};
   const st=app.store,radius=require('../lib/radius.cjs'),billing=require('../lib/billing.cjs');
   const t1=st.put('devices',{name:'TEST-1',type:'router',driver:'routeros-script'}),hex=st.put('devices',{name:'HEX',type:'router',driver:'routeros-script'});
   for(const r of [t1,hex]){st.setting('customerDiscovery:'+r.id,{lastReport:1});st.setting('routerHealth:'+r.id,{time:1});st.secret('agent:'+r.id,{tokenHash:'x'});st.put('alerts',{title:r.name+' down',deviceId:r.id,status:'Open'});st.put('routerJobs',{routerId:r.id,type:'disconnect',status:'succeeded'});}

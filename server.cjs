@@ -43,7 +43,7 @@ function createApp(options={}){
  function signinAlert(user,ip,ua){try{const key='knownSignins:'+user.id,known=store.setting(key)||{items:[]},sig=crypto.createHash('sha256').update(ip+'|'+ua).digest('hex').slice(0,24);
   if(known.items.includes(sig))return;const first=!known.items.length;store.setting(key,{items:[sig,...known.items].slice(0,30)});
   if(first||!store.setting('signinAlerts:'+user.id)||passive)return;
-  emailLib.send(store,user.email,'New sign-in to netops','Your Kade Cloud account ('+user.email+') just signed in from a new browser or address.\n\nAddress: '+ip+'\nBrowser: '+ua+'\nTime: '+new Date().toISOString()+'\n\nIf this was not you, change your password under My account and sign out other devices.','security').catch(()=>{});}catch{}}
+  emailLib.send(store,user.email,'New sign-in to Kade Cloud','Your Kade Cloud account ('+user.email+') just signed in from a new browser or address.\n\nAddress: '+ip+'\nBrowser: '+ua+'\nTime: '+new Date().toISOString()+'\n\nIf this was not you, change your password under My account and sign out other devices.','security').catch(()=>{});}catch{}}
  const passive=options.passive??process.env.NETWORK_PASSIVE==='1';if(passive)console.log('Passive mode: automatic messages, deactivation and router changes are off.');
  const publicOrigin=options.publicOrigin??process.env.NETWORK_PUBLIC_ORIGIN;
  const publicUrl=publicOrigin?new URL(publicOrigin):null;
@@ -218,7 +218,7 @@ function createApp(options={}){
     twoStep:totp.status(store,user.id),
     otherSessions:store.db.prepare('SELECT COUNT(*) n FROM sessions WHERE user_id=? AND token<>? AND expires>?').get(user.id,user.token,now).n});}
   // Two-step sign-in set-up for the signed-in user. Starting and switching off both need the current password.
-  if(route==='/api/me/2fa/start'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.password||'').slice(0,257),user.password))throw error(400,'Your password is not right');return json(res,200,totp.start(store,user,store.setting('workspace')?.name||'NetOps'));}
+  if(route==='/api/me/2fa/start'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.password||'').slice(0,257),user.password))throw error(400,'Your password is not right');return json(res,200,totp.start(store,user,store.setting('workspace')?.name||'Kade Cloud'));}
   if(route==='/api/me/2fa/enable'&&method==='POST'){const input=await body(req),r=totp.enable(store,user,String(input.code||''));store.db.prepare('DELETE FROM sessions WHERE user_id=? AND token<>?').run(user.id,user.token);store.audit(user,'Switched on two-step sign-in',user.id);return json(res,200,r);}
   if(route==='/api/me/2fa/disable'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.password||'').slice(0,257),user.password))throw error(400,'Your password is not right');if(!totp.check(store,user.id,String(input.code||'')))throw error(400,'Enter a current code from your app (or a recovery code) to switch it off');totp.disable(store,user.id);store.audit(user,'Switched off two-step sign-in',user.id);return json(res,200,{enabled:false});}
   // An admin can clear two-step sign-in for someone who lost their phone and recovery codes (never for themselves here).
@@ -300,7 +300,7 @@ function createApp(options={}){
    if(route==='/api/billing/settings'&&method==='PUT'){const saved=billing.updateSettings(store,await body(req));store.audit(user,'Updated SMS reminders','billing');return json(res,200,saved);}
    if(route==='/api/billing/sms'&&method==='PUT'){const saved=billing.setSmsConfig(store,await body(req));store.audit(user,'Updated SMS provider','billing');return json(res,200,saved);}
    if(route==='/api/billing/sms/send'&&method==='POST'){access.need(store,user,'messages.send');const input=await body(req),sub=store.get('subscribers',String(input.subscriberId||''));if(!sub)throw error(404,'Subscriber not found');const text=String(input.message||'').trim();if(!text||text.length>459)throw error(400,'The message must be 1–459 characters');if(!billing.phone(sub.phone))throw error(400,'This customer has no valid phone number');const r=await billing.sendSms(store,sub.phone,billing.fill(text,billing.values(store,sub)),'manual');store.audit(user,'Sent SMS to customer',sub.id);return json(res,200,r);}
-   if(route==='/api/billing/sms/test'&&method==='POST'){const input=await body(req);const result=await billing.sendSms(store,input.to,String(input.message||'Test message from Kade Networks Kade Cloud.').slice(0,459),'test');store.audit(user,'Sent test SMS','billing');return json(res,200,result);}
+   if(route==='/api/billing/sms/test'&&method==='POST'){const input=await body(req);const result=await billing.sendSms(store,input.to,String(input.message||'Test message from Kade Cloud.').slice(0,459),'test');store.audit(user,'Sent test SMS','billing');return json(res,200,result);}
    throw error(404,'API endpoint not found');
   }
   {const ip=route.match(/^\/api\/invoices\/([a-f0-9-]{36})\/pdf$/);if(ip&&method==='GET'){if(['installer','viewer'].includes(user.role))throw error(403,'Not available to your role');const inv=store.get('invoices',ip[1]);if(!inv)throw error(404,'Invoice not found');
@@ -477,7 +477,7 @@ function createApp(options={}){
    throw error(404,'Not found');}
   if(route==='/api/email'&&method==='GET'){role(user,['admin','manager']);return json(res,200,{config:emailLib.publicConfig(store),providers:emailLib.PROVIDERS,log:emailLib.log(store).slice(0,200),escalation:escalation.settings(store)});}
   if(route==='/api/email'&&method==='PUT'){role(user,['admin']);const saved=emailLib.setConfig(store,await body(req));store.audit(user,'Updated email settings','email');return json(res,200,saved);}
-  if(route==='/api/email/test'&&method==='POST'){role(user,['admin']);const input=await body(req),r=await emailLib.send(store,input.to,'Test email from netops','If you can read this, email from Kade Networks Kade Cloud works.','test');if(!r.ok)throw error(502,'Not sent: '+r.error);return json(res,200,r);}
+  if(route==='/api/email/test'&&method==='POST'){role(user,['admin']);const input=await body(req),r=await emailLib.send(store,input.to,'Test email from Kade Cloud','If you can read this, email from Kade Cloud works.','test');if(!r.ok)throw error(502,'Not sent: '+r.error);return json(res,200,r);}
   if(route==='/api/alert-escalation'&&method==='PUT'){role(user,['admin']);const saved=escalation.save(store,await body(req));store.audit(user,'Updated alert escalation','alerts');return json(res,200,saved);}
   if(route==='/api/shortlinks'&&method==='POST'){role(user,['admin','manager','operator','support']);const input=await body(req),o=custOrigin||('http://'+req.headers.host);const r=require('./lib/shortlink.cjs').create(store,input.url,{origin:o,by:user.name});store.audit(user,'Shortened a link',r.code);return json(res,201,r);}
   if(route==='/api/media'){role(user,['admin','manager']);const media=require('./lib/media.cjs');if(method==='GET')return json(res,200,{items:media.list(store)});if(method==='POST'){const m=media.save(store,await body(req,4500000),user);store.audit(user,'Uploaded image '+m.name,m.file);return json(res,201,m);}}
@@ -1073,7 +1073,7 @@ function createApp(options={}){
  // Phoenix re-checks the sign-in with this id (an HMAC of the stored session hash), so signing out of Kade Cloud ends the live view too.
  const liveSid=user=>crypto.createHmac('sha256',liveToken).update(String(user.token)).digest('hex');
  const liveOrigin=req=>{const o=req.headers.origin;if(!o)return false;const ok=new Set([publicUrl?.origin,'https://'+req.headers.host,'http://'+req.headers.host].filter(Boolean));return ok.has(o);};
- const liveHeaders=(req,user)=>{const h={...req.headers};delete h['x-netops-user'];delete h['x-netops-proxy'];delete h['x-netops-session'];h.host=liveTarget.host;h['x-netops-user']=Buffer.from(JSON.stringify({id:user.id,name:user.name,email:user.email,role:user.role})).toString('base64url');h['x-netops-proxy']=liveToken;h['x-netops-session']=liveSid(user);h['x-forwarded-proto']='https';return h;};
+ const liveHeaders=(req,user)=>{const h={...req.headers};delete h['x-kade-user'];delete h['x-kade-proxy'];delete h['x-kade-session'];h.host=liveTarget.host;h['x-kade-user']=Buffer.from(JSON.stringify({id:user.id,name:user.name,email:user.email,role:user.role})).toString('base64url');h['x-kade-proxy']=liveToken;h['x-kade-session']=liveSid(user);h['x-forwarded-proto']='https';return h;};
  function liveProxy(req,res,url){
   const user=auth(req);if(!user){res.writeHead(302,{Location:'/#dashboard'});return res.end();}
   if(!liveAllowed(user)){res.writeHead(403,{'Content-Type':'text/plain'});return res.end(user.role==='installer'?'The live view is not available to field installers.':'The live view is limited to some roles on this server. Ask an admin.');}

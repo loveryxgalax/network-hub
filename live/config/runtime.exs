@@ -4,7 +4,7 @@ if config_env() == :prod do
   token = (System.get_env("NETWORK_LIVE_TOKEN") |> then(&(&1 != "" && &1))) || raise "NETWORK_LIVE_TOKEN is missing (shared with the hub)"
   if byte_size(token) < 24, do: raise("NETWORK_LIVE_TOKEN must be at least 24 characters")
 
-  config :netops_live, NetopsLiveWeb.Endpoint,
+  config :kade_live, KadeLiveWeb.Endpoint,
     server: true,
     http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT", "4000"))],
     url: [host: System.get_env("PUBLIC_HOST", "cloud.kadenetworks.com"), scheme: "https", port: 443],
@@ -19,7 +19,7 @@ if config_env() == :prod do
 
   roles = System.get_env("LIVE_ROLES", "") |> String.split(",", trim: true) |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
 
-  config :netops_live,
+  config :kade_live,
     # Internal v1 API on the hub: /snapshot, /events, /session. LIVE_FEED_URL (old /internal/live) still works.
     api_url: System.get_env("LIVE_API_URL", "http://hub:4319/internal/v1"),
     feed_url: (System.get_env("LIVE_FEED_URL") |> then(&(&1 != "" && &1))) || nil,

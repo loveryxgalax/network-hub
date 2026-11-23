@@ -9,7 +9,7 @@ test('router health reports raise and clear specific alerts',()=>{
    ethernet:[{name:'ether1',status:'link-ok',rate:'1Gbps',rxFcs:'0',rxAlign:'0'},{name:'sfp-sfpplus1',status:'link-ok',rate:'10Gbps',sfpPresent:'true',sfpRx:'-9.1',sfpTx:'-2',sfpTemp:'41',sfpVendor:'FS'}],
    pools:[{name:'dhcp_pool',ranges:'10.0.0.2-10.0.0.11',used:'4'}],pings:[{target:'1.1.1.1',sent:3,received:3,avgUs:20000},{target:'8.8.8.8',sent:3,received:3,avgUs:25000}],...over});
   health.ingest(store,r,make(),now);assert.equal(store.list('alerts').filter(a=>a.source==='router-health').length,0,'a healthy router raises nothing');
-  const h=store.setting('routerHealth:'+r.id);assert.equal(h.drift,5,'clock drift is measured against netops time in the router zone');
+  const h=store.setting('routerHealth:'+r.id);assert.equal(h.drift,5,'clock drift is measured against Kade Cloud time in the router zone');
   health.ingest(store,r,make({sensors:[{name:'temperature',value:'88'}],ethernet:[{name:'ether1',status:'link-ok',rate:'100Mbps',rxFcs:'0',rxAlign:'0'},{name:'sfp-sfpplus1',status:'link-ok',rate:'10Gbps',sfpPresent:'true',sfpRx:'-28.4',sfpTemp:'41'}],pools:[{name:'dhcp_pool',ranges:'10.0.0.2-10.0.0.11',used:'10'}],pings:[{target:'1.1.1.1',sent:3,received:0,avgUs:0},{target:'8.8.8.8',sent:3,received:1,avgUs:300000}]}),now+120000);
   const open=store.list('alerts').filter(a=>a.source==='router-health'&&a.status!=='Resolved').map(a=>a.logKey).sort();
   assert.deepEqual(open,['link:ether1','pool:dhcp_pool','sfp-rx:sfp-sfpplus1','temperature','wan-quality']);

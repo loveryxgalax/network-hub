@@ -1,10 +1,10 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {Store}=require('../lib/store.cjs'),sl=require('../lib/shortlink.cjs');
-const O='https://netops.kadenetworks.com';
+const O='https://cloud.kadenetworks.com';
 test('short links: only this site, unguessable codes, reused, expire',()=>{
  const st=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'sl-')));const now=Date.now();
- const a=sl.create(st,O+'/portal/account.html?t=eyJabc.def',{origin:O,now});assert.match(a.url,/^https:\/\/netops\.kadenetworks\.com\/[A-Za-z0-9]{7}$/,'bit.ly style: site/code');
+ const a=sl.create(st,O+'/portal/account.html?t=eyJabc.def',{origin:O,now});assert.match(a.url,/^https:\/\/cloud\.kadenetworks\.com\/[A-Za-z0-9]{7}$/,'bit.ly style: site/code');
  assert.equal(sl.resolve(st,a.code),'/portal/account.html?t=eyJabc.def');
  assert.equal(sl.create(st,'/portal/account.html?t=eyJabc.def',{origin:O,now}).code,a.code,'same target reuses the code');
  assert.throws(()=>sl.create(st,'https://evil.example/phish',{origin:O}),/Only links on this site/);
@@ -16,7 +16,7 @@ test('short links: only this site, unguessable codes, reused, expire',()=>{
 test('every link in a message to a customer is shortened automatically (this site and outside links)',async()=>{
  const st=new Store(fs.mkdtempSync(path.join(os.tmpdir(),'sl-')));sl.setOrigin(O);
  const msg='Hi Jane, renew here: '+O+'/portal/account.html?t=eyJzIjoiMjZlNjc1ZTYtOWVmOC00ZTFlLWFjOWItYTBhNjYzYmI5ZmU3IiwiZSI6MTc5ODk5NTY1NzIzMX0.jEZHws_MWwtAAmyYtBsLE. Or see https://example.com/some/very/long/page?with=parameters&and=more.';
- const out=sl.shortenText(st,msg);const links=out.match(/(?<!\/)netops\.kadenetworks\.com\/[A-Za-z0-9]{7}(?![A-Za-z0-9])/g);assert.ok(!/https:\/\/netops/.test(out),'no https:// in the message');
+ const out=sl.shortenText(st,msg);const links=out.match(/(?<!\/)cloud\.kadenetworks\.com\/[A-Za-z0-9]{7}(?![A-Za-z0-9])/g);assert.ok(!/https:\/\/kade/.test(out),'no https:// in the message');
  assert.equal(links.length,2);assert.ok(out.includes(links[0]+'. Or'),'full stop kept after the link');assert.ok(out.endsWith('.'));
  assert.match(sl.resolve(st,links[0].slice(-7)),/^\/portal\/account\.html\?t=/);assert.equal(sl.resolve(st,links[1].slice(-7)),'https://example.com/some/very/long/page?with=parameters&and=more');
  assert.equal(sl.shortenText(st,out),out,'short links are left alone');assert.equal(sl.shortenText(st,'No links here'),'No links here');

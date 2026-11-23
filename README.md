@@ -4,7 +4,7 @@ Claude Code handoff: read [CLAUDE.md](CLAUDE.md) first. Safe source and private-
 
 An independent network operations app based on observed Texin Hub workflows. SQLite stores workspace records; RouterOS, SNMP and an independently hosted GenieACS provide equipment connections. No Texin API, credentials, licences or private account records are used.
 
-Live at **https://netops.kadenetworks.com** through Cloudflare Tunnel. The owner account is initialized, public HTTPS serves the current app, and unauthenticated dashboard access is blocked. The old placeholder Worker remains preserved without this hostname. See [feature status](docs/FEATURE-PARITY.md), [reference workflows](docs/REFERENCE-WORKFLOWS.md), [equipment capabilities](docs/EQUIPMENT.md) and [deployment](docs/DEPLOYMENT.md).
+Live at **https://cloud.kadenetworks.com** through Cloudflare Tunnel. The owner account is initialized, public HTTPS serves the current app, and unauthenticated dashboard access is blocked. The old placeholder Worker remains preserved without this hostname. See [feature status](docs/FEATURE-PARITY.md), [reference workflows](docs/REFERENCE-WORKFLOWS.md), [equipment capabilities](docs/EQUIPMENT.md) and [deployment](docs/DEPLOYMENT.md).
 
 ## Run
 

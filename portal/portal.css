@@ -415,7 +415,7 @@ body[data-theme=elegant] .pkg.pop::after{position:static;margin-left:10px;backgr
 body[data-theme=midnight] .help a,body[data-theme=futuristic] .help a,body[data-theme=midnight] .tile-help a,body[data-theme=futuristic] .tile-help a{color:color-mix(in srgb,var(--brand) 45%,#fff)}
 body[data-theme=midnight] .howto,body[data-theme=futuristic] .howto{background:color-mix(in srgb,var(--brand) 22%,transparent)}
 body[data-theme=midnight] .pkg.pop::after,body[data-theme=futuristic] .pkg.pop::after{color:#fff}
-/* ============ NETOPS ADDITIONS: buy sheet, payment overlays, account result ============ */
+/* ============ Kade Cloud ADDITIONS: buy sheet, payment overlays, account result ============ */
 .logo img{background:#fff;padding:3px}
 .acc-result{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:14px;display:grid;gap:10px;background:color-mix(in srgb,var(--brand) 6%,var(--surface))}
 .acc-result .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.acc-result b{font-size:15px}
@@ -592,7 +592,7 @@ body[data-loading=wifi] .boot-mark{display:block;position:relative;width:56px;he
 /* =========================================================
    THEMES 10–20 · Essential, Studio, Festive, Blueprint, Showcase, Night, Celebrate, Day Pass, Edition, Social, Together
    One column like a phone app; each design sets its own colours, type and plan shape.
-   Plan shapes only apply when the package layout is "auto", so a layout chosen in netops still wins.
+   Plan shapes only apply when the package layout is "auto", so a layout chosen in Kade Cloud still wins.
    ========================================================= */
 body[data-theme=essential] .main-grid,body[data-theme=studio] .main-grid,body[data-theme=festive] .main-grid,body[data-theme=blueprint] .main-grid,body[data-theme=showcase] .main-grid,body[data-theme=night] .main-grid,body[data-theme=celebrate] .main-grid,body[data-theme=daypass] .main-grid,body[data-theme=edition] .main-grid,body[data-theme=social] .main-grid,body[data-theme=together] .main-grid{grid-template-columns:minmax(0,1fr);max-width:560px;margin:0 auto}
 body[data-theme=essential] .main-grid > *,body[data-theme=studio] .main-grid > *,body[data-theme=festive] .main-grid > *,body[data-theme=blueprint] .main-grid > *,body[data-theme=showcase] .main-grid > *,body[data-theme=night] .main-grid > *,body[data-theme=celebrate] .main-grid > *,body[data-theme=daypass] .main-grid > *,body[data-theme=edition] .main-grid > *,body[data-theme=social] .main-grid > *,body[data-theme=together] .main-grid > *{grid-column:auto!important;grid-row:auto!important;position:static!important}

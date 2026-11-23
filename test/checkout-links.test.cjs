@@ -31,7 +31,7 @@ test('checkout pay: STK prompt, callback confirmed with Safaricom, signed post t
  await new Promise(r=>setTimeout(r,20));
  const s=await CO.status(st,r.id,r.token,f);assert.equal(s.status,'paid');assert.equal(s.receipt,'TKX1Y2Z3AB');
  const hook=f.calls.find(c=>c.url==='https://hooks.example.com/pay');assert.ok(hook);
- const sig=crypto.createHmac('sha256',st.get('checkoutLinks',l.id).apiSecret).update(hook.opt.body).digest('hex');assert.equal(hook.opt.headers['X-Netops-Signature'],sig);
+ const sig=crypto.createHmac('sha256',st.get('checkoutLinks',l.id).apiSecret).update(hook.opt.body).digest('hex');assert.equal(hook.opt.headers['X-Kade-Signature'],sig);
  assert.equal(st.get('checkoutPays',r.id).notified,true);
  const d=CO.detail(st,l.code);assert.equal(d.collected,2500);assert.equal(d.count,1);
  assert.equal(st.list('payments').length,0,'checkout payments never touch customer payments or balances');

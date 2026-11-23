@@ -119,7 +119,7 @@ test('PPPoE pool: off by default; when on, RADIUS gives each customer a fixed ad
   const r2=pool.reassignAll(store);assert.deepEqual(r2,{cleared:2,assigned:2});assert.deepEqual(['ann','ben'].map(u=>store.subscriberByUsername(u).pppoeIp).sort(),['10.40.0.2','10.40.0.3']);
  }finally{done();}
 });
-test('router config audit: confirms check-in, RADIUS accounting, job runner and backup from what netops receives',()=>{
+test('router config audit: confirms check-in, RADIUS accounting, job runner and backup from what Kade Cloud receives',()=>{
  const {store,done}=fx();try{const {audit}=require('../lib/audit-routers.cjs'),now=Date.now(),r=store.put('devices',{name:'CCR2004',type:'router',ip:'10.99.0.2',lastSeen:now-30000});
   store.db.prepare("INSERT INTO records(kind,id,body,created,updated) VALUES('radiusSessions','s1',?,?,?)").run(JSON.stringify({username:'ann',nas:'10.99.0.2',nasName:'CCR2004',startedAt:now-6e4,updatedAt:now-6e4}),now,now);
   let a=audit(store,now)[0];const ok=k=>a.checks.find(c=>c.key===k).ok;

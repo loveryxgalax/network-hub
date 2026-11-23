@@ -21,7 +21,7 @@ test('moves one router at a time, only in the quiet hours, and checks logins aft
  assert.ok(st.list('alerts').some(x=>x.severity==='critical'&&/moved back/.test(x.title)));
  assert.equal(RA.tick(st,at(4)),null,'a router moved back waits for a person; the other one is already moved');
 });
-test('does not move a router with customers missing from netops, or without the job runner',()=>{const st=mk(),r=router(st,'HEX',7);
+test('does not move a router with customers missing from Kade Cloud, or without the job runner',()=>{const st=mk(),r=router(st,'HEX',7);
  st.setting('customerDiscovery:'+r.id,{lastReport:at(3),observations:[{evidence:{ppp:{name:'stranger',observedAt:at(3)}}}]});
  assert.match(RA.blockers(st,r,at(3)).join(),/1 customer\(s\) online without a Kade Cloud account/);assert.equal(RA.tick(st,at(3)),null);
  const n=st.put('devices',{name:'NEW',type:'router'});assert.match(RA.blockers(st,n,at(3)).join(),/job runner not installed/);

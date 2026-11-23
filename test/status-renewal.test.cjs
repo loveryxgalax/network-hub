@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const {page,DEFAULTS}=require('../lib/status.cjs');
 test('all status designs preserve encoded hotspot context for renewal',()=>{
  for(const design of Object.keys(require('../lib/status.cjs').DESIGNS)){
-  const html=page({...DEFAULTS,design},'https://netops.example',false);
+  const html=page({...DEFAULTS,design},'https://kade.example',false);
   const href=html.match(/class="btn buy" href="([^"]+)"/)[1].replaceAll('&amp;','&');
   const values={'mac-esc':'EA%3A6A%3A55%3AD7%3AE4%3AEF','ip-esc':'10.5.3.245','link-login-only-esc':encodeURIComponent('http://wifi.kade/login')};
   // Buy more stays on the router's own WiFi page (buy.html next to status.html), never the customer address.
@@ -18,6 +18,6 @@ test('all status designs preserve encoded hotspot context for renewal',()=>{
  }
 });
 test('status preview never supplies fake device context',()=>{
- const html=page(DEFAULTS,'https://netops.example',true);
- assert.match(html,/class="btn buy" href="https:\/\/netops.example\/portal\/"/);
+ const html=page(DEFAULTS,'https://kade.example',true);
+ assert.match(html,/class="btn buy" href="https:\/\/kade.example\/portal\/"/);
 });

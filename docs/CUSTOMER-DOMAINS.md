@@ -2,11 +2,11 @@
 
 | Address | Who | What |
 |---|---|---|
-| `netops.kadenetworks.com` | Staff | Admin and operations. Unchanged. |
+| `cloud.kadenetworks.com` | Staff | Admin and operations. Unchanged. |
 | `my.kadenetworks.com` | Customers (hotspot and PPPoE) | Packages, M-Pesa, My account, self-service links, short links (`my.kadenetworks.com/Ab3dE7k`) |
 | `wifi.kadenetworks.com` | Hotspot customers on the WiFi | The router's own login, timer and disconnect pages (replaces `wifi.kade`) |
 
-## What netops does
+## What Kade Cloud does
 
 **Once `NETWORK_PORTAL_ORIGIN` is set** to `https://my.kadenetworks.com`:
 
@@ -17,7 +17,7 @@
   - upgrade and insight messages
   - the router login, status and logout pages
   - payment return pages
-- **Nothing old breaks.** The customer pages keep working on `netops.kadenetworks.com` as well, so links already sent and routers not yet switched keep working.
+- **Nothing old breaks.** The customer pages keep working on `cloud.kadenetworks.com` as well, so links already sent and routers not yet switched keep working.
 - **Pushing the WiFi pages to a router** also adds `my.kadenetworks.com` to that router's walled garden, so the pages and the address they use always arrive together.
 - **Browsers are told to always use HTTPS** on both addresses (HSTS).
 
@@ -33,7 +33,7 @@
    - URL `hub:4317`
 3. Save, then check that `https://my.kadenetworks.com/` shows the customer portal.
 
-### 2. Server: switch netops to the new address for customer links
+### 2. Server: switch Kade Cloud to the new address for customer links
 
 In the server's `.env` (on the server only, never in chat or git), add:
 
@@ -53,7 +53,7 @@ From now on, new customer links say `my.kadenetworks.com`.
 
 ### 3. Test on LAB-HEX first
 
-1. In netops, go to MikroTik → Router jobs and queue **Push hotspot login and status pages** for LAB-HEX. This:
+1. In Kade Cloud, go to MikroTik → Router jobs and queue **Push hotspot login and status pages** for LAB-HEX. This:
    - writes the new `login.html`, `status.html` and `logout.html`
    - adds `my.kadenetworks.com` to that router's walled garden
 2. Change the hotspot's name on LAB-HEX in the terminal. First look:
@@ -84,11 +84,11 @@ If your routers use different hotspot gateway addresses, either give them the sa
 
 Only when you decide, one router at a time, at a quiet hour: repeat step 3 for that router. Until then it keeps working exactly as before.
 
-### 6. Later (optional): Cloudflare Access in front of netops
+### 6. Later (optional): Cloudflare Access in front of Kade Cloud
 
-This adds an email sign-in in front of `netops.kadenetworks.com`. Routers, the ACS and payment callbacks also use that address, so it needs bypass rules for their paths. Ask for the exact bypass list before turning it on.
+This adds an email sign-in in front of `cloud.kadenetworks.com`. Routers, the ACS and payment callbacks also use that address, so it needs bypass rules for their paths. Ask for the exact bypass list before turning it on.
 
 ## Undo
 
-1. Remove `NETWORK_PORTAL_ORIGIN` from `.env` and run `docker compose up -d hub`. Customer links go back to `netops.kadenetworks.com`.
+1. Remove `NETWORK_PORTAL_ORIGIN` from `.env` and run `docker compose up -d hub`. Customer links go back to `cloud.kadenetworks.com`.
 2. On a router, set `dns-name` back to `wifi.kade`.

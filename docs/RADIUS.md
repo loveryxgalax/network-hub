@@ -1,6 +1,6 @@
-# Netops RADIUS: leaving ISPman
+# Kade Cloud RADIUS: leaving ISPman
 
-Netops now has its own RADIUS: plans, subscribers, the login decision, speed limits, expiry and session
+Kade Cloud now has its own RADIUS: plans, subscribers, the login decision, speed limits, expiry and session
 accounting (**Subscribers & plans** in the sidebar). The MikroTiks keep doing the work (PPPoE, hotspot, queues,
 firewall); only the RADIUS server they ask changes.
 
@@ -37,15 +37,15 @@ docker compose --profile radius up -d --build
 sudo bash deployment/wireguard/add-router.sh hEX 2
 ```
 Paste the printed commands on that MikroTik. They add a WireGuard tunnel and a RADIUS entry with `realm=kade`:
-only logins written `username@kade` go to netops; every other customer keeps using ISPman.
+only logins written `username@kade` go to Kade Cloud; every other customer keeps using ISPman.
 
-Create a plan and a test subscriber in netops, renew it, then log in as `test@kade` (PPPoE on a spare router, or
+Create a plan and a test subscriber in Kade Cloud, renew it, then log in as `test@kade` (PPPoE on a spare router, or
 the hotspot page). Check **Online now** and **Login log**.
 
 ## 3. Switching a router over
 
-When tests pass: move that router's customers into netops (same usernames and passwords, renew their expiry),
-then on the router remove `realm=kade` from the netops RADIUS entry and disable ISPman's entry. Look first with
+When tests pass: move that router's customers into Kade Cloud (same usernames and passwords, renew their expiry),
+then on the router remove `realm=kade` from the Kade Cloud RADIUS entry and disable ISPman's entry. Look first with
 `/radius print` and note ISPman's entry number (shown as N below):
 ```
 /radius set [find comment~"netops"] realm=""

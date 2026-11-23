@@ -4,7 +4,7 @@
 // Show me around button on the home page starts it again any time. Also: a Copy button on every code/script box.
 (function(){
  const STEPS=[
-  {t:'Welcome to netops',b:'A quick walk round your dashboard: the home page first, then the menu. Use Next and Back, or put it away for later.'},
+  {t:'Welcome to Kade Cloud',b:'A quick walk round your dashboard: the home page first, then the menu. Use Next and Back, or put it away for later.'},
   {s:'.kd2-actions',t:'Quick actions',b:'Add a hotspot or PPPoE customer, find anyone, link a MikroTik or open the system logs from here.'},
   {s:'#kd-kpis',t:'Today at a glance',b:'Customers online, people on the WiFi page, revenue today and this month, who expires in the next 3 days and open alerts.'},
   {s:'#kd-pn',t:'On the captive portal now',b:'Phones on your WiFi page right now, by router and by page, with checkouts that are pending, paid or failed.'},
@@ -77,8 +77,8 @@
  function dsButton(){const t=document.getElementById('theme-toggle');if(!t||document.getElementById('ds-gear'))return;const b=t.cloneNode(false);b.id='ds-gear';b.className=t.className+' ds-gear';b.setAttribute('aria-label','Dashboard settings');b.title='Dashboard settings';
   b.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
   b.onclick=e=>{e.preventDefault();e.stopPropagation();dsOpen();};t.parentNode.insertBefore(b,t);}
- window.netopsDashSettings={open:dsOpen,apply:dsApply};
- window.netopsTour={start,reset:()=>{put('never',null);put('snooze',null);put('done',null);}};
+ window.kadeDashSettings={open:dsOpen,apply:dsApply};
+ window.kadeTour={start,reset:()=>{put('never',null);put('snooze',null);put('done',null);}};
  const due=()=>!get('never')&&!get('done')&&!(Number(get('snooze'))>Date.now());
  // Home page: add the Show me around button and start once by itself.
  let tried=false;

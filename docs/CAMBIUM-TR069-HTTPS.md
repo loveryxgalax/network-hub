@@ -6,7 +6,7 @@ Cambium have not been changed. Every live step below is still to be done and is 
 ## 1. Why
 
 The Cambium cnPilot R195W (hardware V4.3, serial WFWM0BKTD6CV) never completes a TR-069 Inform through
-`https://netops.kadenetworks.com/cwmp/`:
+`https://cloud.kadenetworks.com/cwmp/`:
 
 * A capture on firmware 4.7.2 showed a TLS 1.2 ClientHello **without SNI** to both Cloudflare addresses, answered at once
   with a fatal `handshake_failure`, before any certificate or ACS authentication. Cloudflare needs SNI to pick a certificate.
@@ -15,7 +15,7 @@ The Cambium cnPilot R195W (hardware V4.3, serial WFWM0BKTD6CV) never completes a
   expected). The upgraded firmware's ClientHello has **not** been captured, so its SNI behaviour is unverified.
 * `/etc/tr069/client.crt … Check private key and cert file failed` means the device has no **client** certificate of
   its own. GenieACS does not ask for one (it uses the serial/password), so this message is not the cause by itself.
-* A laptop `curl --tlsv1.2 https://netops.kadenetworks.com/cwmp/` gets `405 CWMP requires POST`: the route and the
+* A laptop `curl --tlsv1.2 https://cloud.kadenetworks.com/cwmp/` gets `405 CWMP requires POST`: the route and the
   laptop's TLS work. That says nothing about the Cambium's own handshake.
 
 The fix: a second, **DNS-only** hostname served directly by the VPS through Caddy, which always presents its own
@@ -71,7 +71,7 @@ Do not reset the server, change its credentials, or restart the hub, MongoDB, RA
 ### 4.1 Confirm what is actually running
 
 ```sh
-cd <the netops checkout used by autodeploy>          # the directory containing docker-compose.yml and .env
+cd <the Kade Cloud checkout used by autodeploy>          # the directory containing docker-compose.yml and .env
 git rev-parse --abbrev-ref HEAD; git log -1 --oneline # expect claude/always-online-hosting at or after this commit
 docker compose ps                                     # hub, acs, mongo, tunnel (and radius/live if enabled) Up
 sudo ss -ltnp '( sport = :80 or sport = :443 )'       # MUST print nothing. If anything listens, stop here.
@@ -129,15 +129,15 @@ and import it in the Cambium's TR-069 CA certificate field. Never disable certif
 
 ## 6. Switch only the lab Cambium
 
-1. In netops → **Router auto-enrol (TR-069)** → *ACS address for one device*: serial `WFWM0BKTD6CV`, address
+1. In Kade Cloud → **Router auto-enrol (TR-069)** → *ACS address for one device*: serial `WFWM0BKTD6CV`, address
    `https://acs.kadenetworks.com/cwmp/` → Save. (The serial must already be on the allow-list; it is after the earlier
-   enrolment attempt. If netops says it is not, register it first from the user1 profile.) This pin keeps the dedicated
+   enrolment attempt. If Kade Cloud says it is not, register it first from the user1 profile.) This pin keeps the dedicated
    address on record for this serial; later automatic re-registration no longer resets it to the global address.
-   netops never writes an ACS URL into a device: neither the automatic registration nor the private-credential
+   Kade Cloud never writes an ACS URL into a device: neither the automatic registration nor the private-credential
    migration (`ManagementServer.Username/Password/ConnectionRequest*` only) changes `ManagementServer.URL`.
 2. On the Cambium (LAN 192.168.11.1): TR-069 → ACS URL `https://acs.kadenetworks.com/cwmp/`. Keep TLS 1.2, the
    username (= serial) and the current ACS password exactly as they are; do not touch the connection-request fields.
-   Note the previous URL first (`https://netops.kadenetworks.com:443/cwmp/`) for rollback. Save, then trigger an Inform
+   Note the previous URL first (`https://cloud.kadenetworks.com:443/cwmp/`) for rollback. Save, then trigger an Inform
    (or wait one periodic interval).
 3. Do not reset the Cambium, change PPPoE, or touch LAB-HEX for this. Production CCR, HEX and RBX are out of scope.
 
@@ -167,11 +167,11 @@ When all pass and no other installer is enrolling a device: **Router auto-enrol 
   `acs-https`.
 * Certificate errors: check the device clock (NTP) before anything else, then the CA import in §5.
 * 401 for the serial: check the allow-list entry is enabled and the password on the device matches the shared or
-  private login netops expects. Do not weaken GenieACS authentication.
+  private login Kade Cloud expects. Do not weaken GenieACS authentication.
 
 ## 9. Rollback
 
-1. Cambium: set the ACS URL back to `https://netops.kadenetworks.com:443/cwmp/`.
+1. Cambium: set the ACS URL back to `https://cloud.kadenetworks.com:443/cwmp/`.
 2. netops: Router auto-enrol → *ACS address for one device* → serial `WFWM0BKTD6CV`, empty address → Save (clears the pin).
 3. Stop and remove only the new service; keep its certificate volumes:
    ```sh
@@ -182,5 +182,5 @@ When all pass and no other installer is enrolling a device: **Router auto-enrol 
 4. Remove the `acs` DNS record (only if no CPE uses it) and the 80/443 provider-firewall rule added in §4.2; restore the
    iptables/UFW backups only if you changed them.
 
-The Cloudflare `https://netops.kadenetworks.com/cwmp/` route, GenieACS, MongoDB, the hub and RADIUS are untouched
+The Cloudflare `https://cloud.kadenetworks.com/cwmp/` route, GenieACS, MongoDB, the hub and RADIUS are untouched
 throughout.

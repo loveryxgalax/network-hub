@@ -1,4 +1,4 @@
-defmodule NetopsLiveWeb.Health do
+defmodule KadeLiveWeb.Health do
   @moduledoc """
   GET /healthz for Docker and for checking the service by hand. Only reachable on the private network: the hub
   forwards nothing but /live. Says whether the snapshot feed and the event stream are flowing and how far behind.
@@ -9,8 +9,8 @@ defmodule NetopsLiveWeb.Health do
 
   def call(%Plug.Conn{request_path: "/healthz", method: "GET"} = conn, _opts) do
     now = System.system_time(:millisecond)
-    {snapshot, feed_error} = NetopsLive.Feed.latest()
-    {_events, ev} = NetopsLive.Events.recent()
+    {snapshot, feed_error} = KadeLive.Feed.latest()
+    {_events, ev} = KadeLive.Events.recent()
 
     body = %{
       ok: true,

@@ -6,7 +6,7 @@ const file='Payment Wallet,Username,Name,Phone Number,Email,Package,Balance,Expi
 const input={service:'pppoe',csv:file};
 const save=(s,i)=>{const p=mirror.preview(s,i);return mirror.commit(s,{...i,digest:p.digest,revision:p.revision},{id:'owner'},1700000000000);};
 test('ISPman preview is read-only; committing does not touch operational records or secrets',t=>{
- const s=fixture(t),sub=s.put('subscribers',{username:'Jane@Realm',name:'Netops Jane',service:'pppoe',balance:400,expiresAt:123,planId:'netops-plan'});s.secret('subscriber:'+sub.id,'private-test-value');s.put('payments',{amount:90});s.put('jobs',{name:'Existing job'});
+ const s=fixture(t),sub=s.put('subscribers',{username:'Jane@Realm',name:'Kade Cloud Jane',service:'pppoe',balance:400,expiresAt:123,planId:'netops-plan'});s.secret('subscriber:'+sub.id,'private-test-value');s.put('payments',{amount:90});s.put('jobs',{name:'Existing job'});
  const before=s.db.prepare('SELECT * FROM records ORDER BY kind,id').all(),secrets=s.db.prepare('SELECT * FROM secrets').all();
  const p=mirror.preview(s,input);assert.equal(p.creates,1);assert.equal(p.rows[0].match.id,sub.id);assert.equal(p.rows[0].balanceMinor,null);assert.equal(p.warnings.length,1);assert.equal(s.setting('ispmanMirror'),null);assert.equal(s.db.prepare('SELECT count(*) n FROM audit').get().n,0);
  save(s,input);assert.deepEqual(s.db.prepare('SELECT * FROM records ORDER BY kind,id').all(),before);assert.deepEqual(s.db.prepare('SELECT * FROM secrets').all(),secrets);

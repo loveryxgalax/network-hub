@@ -1,17 +1,17 @@
-defmodule NetopsLiveWeb.NocLive do
+defmodule KadeLiveWeb.NocLive do
   @moduledoc """
   The live NOC screen: customers online, routers, open alerts, captive portal visitors and today's payments.
   Every viewer is subscribed to the one feed process; changes arrive the moment the poller sees them.
-  Money is shown to admins only, as in netops.
+  Money is shown to admins only, as in Kade Cloud.
   """
-  use NetopsLiveWeb, :live_view
-  alias NetopsLive.{Feed, Events, Sessions}
+  use KadeLiveWeb, :live_view
+  alias KadeLive.{Feed, Events, Sessions}
 
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      Phoenix.PubSub.subscribe(NetopsLive.PubSub, Feed.topic())
-      Phoenix.PubSub.subscribe(NetopsLive.PubSub, Events.topic())
+      Phoenix.PubSub.subscribe(KadeLive.PubSub, Feed.topic())
+      Phoenix.PubSub.subscribe(KadeLive.PubSub, Events.topic())
       schedule_session_check()
     end
 
@@ -25,7 +25,7 @@ defmodule NetopsLiveWeb.NocLive do
   @impl true
   def handle_event("alert", %{"id" => id, "act" => act}, socket) when act in ["acknowledge", "resolve"] do
     if can_act?(socket.assigns.user) do
-      case NetopsLive.Hub.action(socket.assigns[:sid], "alert." <> act, id) do
+      case KadeLive.Hub.action(socket.assigns[:sid], "alert." <> act, id) do
         {:ok, %{"alert" => a}} -> {:noreply, assign(socket, notice: {:ok, "#{a["title"]}: #{String.downcase(a["status"] || "")}"})}
         {:ok, _} -> {:noreply, assign(socket, notice: {:ok, "Done"})}
         {:error, reason} -> {:noreply, assign(socket, notice: {:error, to_string(reason)})}
@@ -46,7 +46,7 @@ defmodule NetopsLiveWeb.NocLive do
   def handle_info({:feed_error, reason}, socket), do: {:noreply, assign(socket, error: reason)}
   def handle_info({:events, events, meta}, socket), do: {:noreply, assign(socket, events: events, lag_ms: meta.lag_ms, events_error: nil)}
 
-  # Signing out of netops ends the live view: the sign-in is re-checked with the hub every 30 seconds. If the hub
+  # Signing out of Kade Cloud ends the live view: the sign-in is re-checked with the hub every 30 seconds. If the hub
   # cannot be asked three times in a row, the screen closes too (the hub refuses new connections anyway).
   def handle_info(:check_session, socket) do
     case Sessions.checker().check(socket.assigns[:sid]) do
@@ -64,7 +64,7 @@ defmodule NetopsLiveWeb.NocLive do
   end
 
   defp schedule_session_check do
-    case Application.get_env(:netops_live, :session_check_ms, 30_000) do
+    case Application.get_env(:kade_live, :session_check_ms, 30_000) do
       ms when is_integer(ms) and ms > 0 -> Process.send_after(self(), :check_session, ms)
       _ -> :ok
     end
@@ -74,7 +74,7 @@ defmodule NetopsLiveWeb.NocLive do
   def render(%{snapshot: nil} = assigns) do
     ~H"""
     <section class="card empty">
-      <h1>Connecting to netops…</h1>
+      <h1>Connecting to Kade Cloud…</h1>
       <p :if={@error}>{@error}</p>
     </section>
     """

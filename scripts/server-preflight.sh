@@ -5,7 +5,7 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 ok(){ echo "  OK     $*"; }; fix(){ echo "  FIXED  $*"; }; bad(){ echo "  CHECK  $*"; ISSUES=$((ISSUES+1)); }
-ISSUES=0; echo "netops server preflight"
+ISSUES=0; echo "Kade Cloud server preflight"
 [ -f .env ] || { touch .env; chmod 600 .env; fix ".env did not exist, created it"; }
 val(){ grep -s "^$1=" .env | head -1 | cut -d= -f2- | tr -d '"'; }
 rnd(){ head -c 32 /dev/urandom | base64 | tr -d '/+=' | cut -c1-40; }

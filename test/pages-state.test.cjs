@@ -10,11 +10,11 @@ test('WiFi pages: never / current / outdated, recorded when a page push succeeds
  assert.equal(jobs.pagesState(st,lab.id),'never');assert.equal(jobs.pagesState(st,prod.id),'never');
  // A page push on LAB-HEX succeeds: current.
  const j=jobs.create(st,{routerId:lab.id,type:'push-design-auto',params:{origin:'https://my.example.test',host:'my.example.test'}},now);
- const n=jobs.next(st,lab.id,now+1000).id;assert.equal(n,j.id);jobs.result(st,lab.id,j.id,{ok:true,output:'netops pages in 1 hotspot profile(s)'},now+2000);
+ const n=jobs.next(st,lab.id,now+1000).id;assert.equal(n,j.id);jobs.result(st,lab.id,j.id,{ok:true,output:'Kade Cloud pages in 1 hotspot profile(s)'},now+2000);
  assert.equal(jobs.pagesState(st,lab.id),'current');
  // The pages change (new Disconnect page, new status design): outdated, and nothing was queued on any router.
  version='v2';const before=st.list('routerJobs').length;
- assert.equal(jobs.pagesState(st,lab.id),'outdated');assert.equal(jobs.pagesState(st,prod.id),'never','a router that never had netops pages is not offered an update');
+ assert.equal(jobs.pagesState(st,lab.id),'outdated');assert.equal(jobs.pagesState(st,prod.id),'never','a router that never had Kade Cloud pages is not offered an update');
  assert.equal(st.list('routerJobs').length,before);
  assert.deepEqual(jobs.overview(st,now+3000).routers.map(r=>[r.name,r.pages]).sort(),[['LAB-HEX','outdated'],['PROD','never']]);
 });

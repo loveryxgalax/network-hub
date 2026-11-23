@@ -1,8 +1,8 @@
-# Moving netops to the HOSTKEY server
+# Moving Kade Cloud to the HOSTKEY server
 
 New server: **82.47.143.14** (HOSTKEY Frankfurt, vm.v2-mini: 4 vCPU, 8 GB RAM, 120 GB NVMe, Ubuntu 24.04). Log in as `ubuntu` with the `kade-netops` SSH key; root login is off.
 
-The site name stays **netops.kadenetworks.com** (Cloudflare Tunnel), so staff, customers, router check-in scripts and TR-069 CPEs need no change. The WireGuard hub moves with its **same keys**, so each router only needs its WireGuard endpoint changed to the new IP. RADIUS reaches netops over that tunnel.
+The site name stays **cloud.kadenetworks.com** (Cloudflare Tunnel), so staff, customers, router check-in scripts and TR-069 CPEs need no change. The WireGuard hub moves with its **same keys**, so each router only needs its WireGuard endpoint changed to the new IP. RADIUS reaches Kade Cloud over that tunnel.
 
 HOSTKEY has no backup option on this plan, so the nightly encrypted off-site backup (step 3) is the only backup. Set it up before moving live data.
 
@@ -48,10 +48,10 @@ It prints a **public key** (`age1…`). Keep `kade-netops-backup-key.txt` (the p
 ```bash
 cd ~/network-hub
 cp deployment/docker/backup.env.example deployment/docker/backup.env
-nano deployment/docker/backup.env   # AGE_RECIPIENT=the age1… public key; OFFSITE_PATH=offsite:YOUR-BUCKET/netops
+nano deployment/docker/backup.env   # AGE_RECIPIENT=the age1… public key; OFFSITE_PATH=offsite:YOUR-BUCKET/kade
 ```
 
-The timer is installed after the import (step 4), because the backup needs netops running.
+The timer is installed after the import (step 4), because the backup needs Kade Cloud running.
 
 ## 4. Rehearsal: copy a test copy across (live site untouched)
 
@@ -59,7 +59,7 @@ On the **old server**:
 
 ```bash
 cd ~/network-hub && git pull            # gets the migration scripts; does not restart anything
-bash deployment/migrate/export-old.sh   # netops keeps running
+bash deployment/migrate/export-old.sh   # Kade Cloud keeps running
 scp ~/netops-migration.tar ubuntu@82.47.143.14:~/
 ```
 
@@ -72,7 +72,7 @@ cd ~/network-hub
 bash deployment/migrate/import-new.sh   # builds, restores, starts everything EXCEPT the Cloudflare tunnel
 ```
 
-It ends with `netops answering; setup needed: false`. Now install and test the backup:
+It ends with `Kade Cloud answering; setup needed: false`. Now install and test the backup:
 
 ```bash
 bash deployment/docker/install-backup.sh
@@ -88,12 +88,12 @@ tar -tzf restore.tar.gz     # must list b/network.sqlite b/master.key b/env b/cp
 
 ## 5. Cut-over (about 15 minutes; choose a quiet hour, e.g. 02:00)
 
-Netops is unavailable from the first command until the tunnel starts on the new server.
+Kade Cloud is unavailable from the first command until the tunnel starts on the new server.
 
 Old server:
 
 ```bash
-cd ~/network-hub && bash deployment/migrate/export-old.sh --final   # stops netops, RADIUS and the tunnel here
+cd ~/network-hub && bash deployment/migrate/export-old.sh --final   # stops Kade Cloud, RADIUS and the tunnel here
 scp ~/netops-migration.tar ubuntu@82.47.143.14:~/
 ```
 
@@ -103,7 +103,7 @@ New server:
 cd ~/network-hub && bash deployment/migrate/import-new.sh --final   # replaces the rehearsal copy and starts the tunnel
 ```
 
-Open https://netops.kadenetworks.com, sign in, and check a few customers, payments and the dashboard.
+Open https://cloud.kadenetworks.com, sign in, and check a few customers, payments and the dashboard.
 
 **Routers (one command each, when you choose).** Until this is done, routers keep sending RADIUS to the old address. Check-in scripts and TR-069 use the site name, so they are unaffected. On each router:
 

@@ -18,7 +18,7 @@ function fixture(){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'network-porta
  const home=store.put('plans',radius.plan({name:'Home 10',service:'pppoe',downloadMbps:10,uploadMbps:5,price:2500,durationValue:30,durationUnit:'days'}));
  return {store,daily,home,secret:mpesa.config(store).callbackSecret,done:()=>{store.close();fs.rmSync(dir,{recursive:true,force:true});}};}
 
-const O='https://netops.example';
+const O='https://kade.example';
 const acctSub=(store,plan,balance=0)=>{const s=store.put('subscribers',{...radius.subscriber(store,{name:'B',username:'kne-bbb222',service:'pppoe',planId:plan.id,phone:'0711111111',expiresAt:Date.now()-1000}),balance});return s;};
 test('9. a receipt already credited to account A does not mark account B paid',async()=>{
  const {store,home,secret,done}=fixture(),d=daraja();try{

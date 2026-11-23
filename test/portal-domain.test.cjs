@@ -3,8 +3,8 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const {createApp}=require('../server.cjs'),radius=require('../lib/radius.cjs');
 const get=(port,host,p,extra={})=>new Promise((ok,bad)=>{const r=http.request({host:'127.0.0.1',port,path:p,method:extra.method||'GET',headers:{Host:host,...(extra.headers||{})}},res=>{let b='';res.on('data',d=>b+=d);res.on('end',()=>ok({status:res.statusCode,headers:res.headers,body:b}));});r.on('error',bad);if(extra.body)r.write(extra.body);r.end();});
 test('customer pages on their own address: portal at /, no admin there, links and router pages use it, old links still work',async()=>{
- const app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'pd-')),collector:false,publicOrigin:'https://netops.example.test',portalOrigin:'https://my.example.test'});
- await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const port=app.server.address().port,MY='my.example.test',OPS='netops.example.test';
+ const app=createApp({dataDir:fs.mkdtempSync(path.join(os.tmpdir(),'pd-')),collector:false,publicOrigin:'https://kade.example.test',portalOrigin:'https://my.example.test'});
+ await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const port=app.server.address().port,MY='my.example.test',OPS='kade.example.test';
  try{
   let r=await get(port,MY,'/');assert.equal(r.status,200);assert.match(r.body,/\/portal\/portal\.js/);assert.match(r.headers['strict-transport-security'],/max-age/);
   assert.equal((await get(port,MY,'/api/session')).status,404,'no admin API on the customer address');
@@ -23,7 +23,7 @@ test('customer pages on their own address: portal at /, no admin there, links an
   r=await get(port,OPS,'/api/radius/subscribers/'+s.id+'/self-service',{method:'POST',headers:{Cookie:cookie,'X-CSRF-Token':csrf,'Content-Type':'application/json',Origin:'https://'+OPS},body:'{}'});
   const link=JSON.parse(r.body);assert.match(link.link,/^https:\/\/my\.example\.test\/[A-Za-z0-9]{7}$/);assert.match(link.fullLink,/^https:\/\/my\.example\.test\/portal\/account\.html\?t=|^\/api\/customers\/[a-f0-9-]+\/portal$/);
   r=await get(port,MY,new URL(link.link).pathname);assert.equal(r.status,302);assert.match(r.headers.location,/^\/portal\/account\.html/);
-  // An admin shortening an old netops link still works
-  const sl=require('../lib/shortlink.cjs');assert.match(sl.create(app.store,'https://netops.example.test/portal/?x=1',{origin:'https://my.example.test'}).url,/^https:\/\/my\.example\.test\//);
+  // An admin shortening an old Kade Cloud link still works
+  const sl=require('../lib/shortlink.cjs');assert.match(sl.create(app.store,'https://kade.example.test/portal/?x=1',{origin:'https://my.example.test'}).url,/^https:\/\/my\.example\.test\//);
  }finally{app.server.close();}
 });

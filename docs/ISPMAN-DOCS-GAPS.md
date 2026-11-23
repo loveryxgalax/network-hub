@@ -1,8 +1,8 @@
-# netops vs ISPman help pages (all 114 pages + 3 guides)
+# Kade Cloud vs ISPman help pages (all 114 pages + 3 guides)
 
-Checked section by section against netops (code, not memory). Written in our own words; no ISPman text is copied.
+Checked section by section against Kade Cloud (code, not memory). Written in our own words; no ISPman text is copied.
 
-## Same as ISPman (already in netops)
+## Same as ISPman (already in Kade Cloud)
 - **Account**: alerts, assistant, billing, network settings, overview, profile, reports & trends, settings, team & roles, branches.
 - **Communication**: SMS (send, log, templates, sender IDs, settings, custom SMS API), email, customer support/tickets.
 - **Customers**: customer pages, finding (global search), importing, overview.
@@ -23,7 +23,7 @@ Checked section by section against netops (code, not memory). Written in our own
   offline alerts, SMS log, withdrawal statuses, PPPoE auth log reasons).
 
 ## Built in this round (were missing)
-| ISPman page | What netops now has |
+| ISPman page | What Kade Cloud now has |
 |---|---|
 | Payments → Checkout links | Payments → **Checkout links**: fixed or variable amount, custom 3-letter code, public pay page (`/portal/pay.html?c=CODE`), Copy URL, **Download QR**, signed callback to your own system, API secret, totals and payments per link, turn off. Money is confirmed with Safaricom and kept separate from customer balances. |
 | PPPoE → Invoices → templates | Invoice **design** picker on each invoice: Classic, Modern, Minimal (used for the PDF and Print). |

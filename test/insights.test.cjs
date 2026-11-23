@@ -37,6 +37,6 @@ test('fibre: a falling ONU signal and a weak TR-069 ONT are flagged, a good one 
 test('messages: churn check-in includes the account link; contacting again within 14 days needs force',async()=>{
  const st=mk(),now=Date.now(),p=plan(st,{}),s=st.put('subscribers',radius.subscriber(st,{name:'Ann Lee',username:'ann',phone:'0712345678',service:'pppoe',planId:p.id}));
  assert.match(ins.text(st,'churn',s,'https://x/s/abc'),/^Hi Ann, .*https:\/\/x\/s\/abc$/);
- await ins.contact(st,'churn',s.id,{origin:'https://netops.example.test'},now).catch(()=>{});
+ await ins.contact(st,'churn',s.id,{origin:'https://kade.example.test'},now).catch(()=>{});
  st.put('subscribers',{...st.get('subscribers',s.id),insight:{churn:now}},st.get('subscribers',s.id));
  await assert.rejects(()=>ins.contact(st,'churn',s.id,{},now+DAY),/14 days/);});

@@ -6,7 +6,7 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      # Main admin address (cloud.kadenetworks.com). The old netops address can stay in NETWORK_ALIAS_ORIGINS for routers and Safaricom until they are moved.
+      # Main admin address (cloud.kadenetworks.com). The old Kade Cloud address can stay in NETWORK_ALIAS_ORIGINS for routers and Safaricom until they are moved.
       NETWORK_PUBLIC_ORIGIN: ${NETWORK_PUBLIC_ORIGIN:-https://cloud.kadenetworks.com}
       # Other admin addresses that keep working (comma list), e.g. the old one during a move; NETWORK_ALIAS_REDIRECT=1 sends people (not routers or callbacks) to the main address.
       NETWORK_ALIAS_ORIGINS: ${NETWORK_ALIAS_ORIGINS:-}
@@ -24,7 +24,7 @@ services:
       # Internal RADIUS bridge for FreeRADIUS (port 4318 on the private network only). Empty = disabled.
       NETWORK_RADIUS_TOKEN: ${NETWORK_RADIUS_TOKEN:-}
       NETWORK_RADIUS_HOST: 0.0.0.0
-      # Same value as FreeRADIUS's: written into a router's "Link a MikroTik" script when you choose netops RADIUS.
+      # Same value as FreeRADIUS's: written into a router's "Link a MikroTik" script when you choose Kade Cloud RADIUS.
       NETWORK_RADIUS_SECRET: ${RADIUS_SECRET:-}
       # Phoenix live view (optional, profile "live"). The feed listens on 4319 on the private network only.
       NETWORK_LIVE_TOKEN: ${NETWORK_LIVE_TOKEN:-}
@@ -42,12 +42,12 @@ services:
 
   # Phoenix live NOC view: docker compose --profile live up -d --build live
   # Reached only through the hub at /live (sign-in checked there); never published, no database.
-  # LIVE_IMAGE=ghcr.io/<owner>/netops-live:latest uses the image CI built (docker compose pull live) instead of
+  # LIVE_IMAGE=ghcr.io/<owner>/kade-live:latest uses the image CI built (docker compose pull live) instead of
   # compiling Elixir on the server.
   live:
     profiles: [live]
     mem_limit: ${LIVE_MEMORY:-384m}
-    image: ${LIVE_IMAGE:-netops-live:local}
+    image: ${LIVE_IMAGE:-kade-live:local}
     build: ./live
     restart: unless-stopped
     environment:
@@ -107,7 +107,7 @@ services:
       - "${RADIUS_BIND:-10.99.0.1}:5514:5514/udp"
     networks: [internal]
 
-  # Netops RADIUS (replaces ISPman's). Off until you run: docker compose --profile radius up -d
+  # Kade Cloud RADIUS (replaces ISPman's). Off until you run: docker compose --profile radius up -d
   # Listens only on the WireGuard address (wg0, 10.99.0.1), so only enrolled MikroTiks can reach it.
   radius:
     profiles: [radius]

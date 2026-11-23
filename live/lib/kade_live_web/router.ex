@@ -1,12 +1,12 @@
-defmodule NetopsLiveWeb.Router do
-  use NetopsLiveWeb, :router
+defmodule KadeLiveWeb.Router do
+  use KadeLiveWeb, :router
 
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
-    plug NetopsLiveWeb.Proxied
+    plug KadeLiveWeb.Proxied
     plug :fetch_live_flash
-    plug :put_root_layout, html: {NetopsLiveWeb.Layouts, :root}
+    plug :put_root_layout, html: {KadeLiveWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers, %{
       "content-security-policy" =>
@@ -14,10 +14,10 @@ defmodule NetopsLiveWeb.Router do
     }
   end
 
-  scope "/live", NetopsLiveWeb do
+  scope "/live", KadeLiveWeb do
     pipe_through :browser
 
-    live_session :noc, session: {NetopsLiveWeb.Proxied, :live_session, []}, on_mount: NetopsLiveWeb.Proxied do
+    live_session :noc, session: {KadeLiveWeb.Proxied, :live_session, []}, on_mount: KadeLiveWeb.Proxied do
       live "/", NocLive, :index
     end
   end

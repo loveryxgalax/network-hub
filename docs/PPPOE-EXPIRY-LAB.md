@@ -1,6 +1,6 @@
 # LAB-HEX PPPoE expiry controls
 
-Scope: LAB-HEX E50UG only. This is a lab repair, not a production deployment template. It does not modify the NetOps global expiry policy. CCR, production HEX and RBX remain excluded.
+Scope: LAB-HEX E50UG only. This is a lab repair, not a production deployment template. It does not modify the Kade Cloud global expiry policy. CCR, production HEX and RBX remain excluded.
 
 ## Problem
 

@@ -1,4 +1,4 @@
-defmodule NetopsLiveWeb do
+defmodule KadeLiveWeb do
   @moduledoc false
   def static_paths, do: ~w(assets favicon.ico)
 
@@ -13,7 +13,7 @@ defmodule NetopsLiveWeb do
 
   def live_view do
     quote do
-      use Phoenix.LiveView, layout: {NetopsLiveWeb.Layouts, :app}
+      use Phoenix.LiveView, layout: {KadeLiveWeb.Layouts, :app}
       unquote(html_helpers())
     end
   end
@@ -30,7 +30,7 @@ defmodule NetopsLiveWeb do
     quote do
       import Phoenix.HTML
       alias Phoenix.LiveView.JS
-      use Phoenix.VerifiedRoutes, endpoint: NetopsLiveWeb.Endpoint, router: NetopsLiveWeb.Router, statics: NetopsLiveWeb.static_paths()
+      use Phoenix.VerifiedRoutes, endpoint: KadeLiveWeb.Endpoint, router: KadeLiveWeb.Router, statics: KadeLiveWeb.static_paths()
     end
   end
 

@@ -1,4 +1,4 @@
-/* Optional dashboard fonts (Dashboard settings → Font), served from netops itself. Latin characters. */
+/* Optional dashboard fonts (Dashboard settings → Font), served from Kade Cloud itself. Latin characters. */
 @font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/BricolageGrotesque-400-800.woff2") format("woff2")}
 @font-face{font-family:'DM Sans';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/DMSans-400-800.woff2") format("woff2")}
 @font-face{font-family:'Figtree';font-style:normal;font-weight:400 800;font-display:swap;src:url("/fonts/extra/Figtree-400-800.woff2") format("woff2")}

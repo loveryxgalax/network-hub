@@ -2,12 +2,12 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createApp}=require('../server.cjs'),jobs=require('../lib/jobs.cjs'),radius=require('../lib/radius.cjs');
 const listen=s=>new Promise(r=>s.listen(0,'127.0.0.1',()=>r(s.address().port)));
-test('HTTP: move to netops RADIUS refuses while online customers have no netops account',async()=>{
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'rm-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://netops.example.test',radiusSecret:'testRadiusSecret123'});
+test('HTTP: move to Kade Cloud RADIUS refuses while online customers have no Kade Cloud account',async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'rm-')),app=createApp({dataDir:dir,collector:false,publicOrigin:'https://kade.example.test',radiusSecret:'testRadiusSecret123'});
  const port=await listen(app.server),origin='http://127.0.0.1:'+port;
  try{const owner=await fetch(origin+'/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Owner',workspace:'QA',email:'p@example.test',password:'fixture-owner-password-123'})});
   const cookie=owner.headers.get('set-cookie').split(';')[0],csrf=(await owner.json()).csrf;
-  const api=async(r,method='GET',input)=>{const x=await fetch(origin+'/api/'+r,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf,Host:'netops.example.test'},...(input===undefined?{}:{body:JSON.stringify(input)})});return {status:x.status,body:await x.json().catch(()=>({}))};};
+  const api=async(r,method='GET',input)=>{const x=await fetch(origin+'/api/'+r,{method,headers:{'Content-Type':'application/json',Cookie:cookie,'X-CSRF-Token':csrf,Host:'kade.example.test'},...(input===undefined?{}:{body:JSON.stringify(input)})});return {status:x.status,body:await x.json().catch(()=>({}))};};
   const st=app.store,r=st.put('devices',{name:'Core',type:'router'});
   let x=await api('routers/'+r.id+'/radius-move','POST',{mode:'all',confirm:'Core'});assert.equal(x.status,409);assert.match(x.body.error,/job runner/);
   jobs.enroll(st,r.id);x=await api('routers/'+r.id+'/radius-move','POST',{mode:'all',confirm:'Core'});assert.match(x.body.error,/WireGuard/);

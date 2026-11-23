@@ -1,6 +1,6 @@
 'use strict';
 // A small QR code maker (byte mode, error correction M, versions 1-10: up to 213 characters), no dependencies.
-// netopsQR(text) → {size, dark(x,y)}; netopsQRPng(text, px) → PNG data URL with the standard white border.
+// kadeQR(text) → {size, dark(x,y)}; kadeQRPng(text, px) → PNG data URL with the standard white border.
 (function(root){
  const ECC=[0,10,16,26,18,24,16,18,22,22,26],BLOCKS=[0,1,1,1,2,2,4,4,4,5,5];
  const mul=(x,y)=>{let z=0;for(let i=7;i>=0;i--){z=(z<<1)^((z>>>7)*0x11D);z^=((y>>>i)&1)*x;}return z;};
@@ -46,6 +46,6 @@
   return {size,version:v,dark:(x,y)=>m[y][x]};}
  function png(text,px=8){const q=make(text),b=4,n=q.size+b*2,c=document.createElement('canvas');c.width=c.height=n*px;const g=c.getContext('2d');
   g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.fillStyle='#000';for(let y=0;y<q.size;y++)for(let x=0;x<q.size;x++)if(q.dark(x,y))g.fillRect((x+b)*px,(y+b)*px,px,px);return c.toDataURL('image/png');}
- root.netopsQR=make;root.netopsQRPng=png;
+ root.kadeQR=make;root.kadeQRPng=png;
  if(typeof module!=='undefined')module.exports={make};
 })(typeof window!=='undefined'?window:globalThis);

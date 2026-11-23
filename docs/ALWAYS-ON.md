@@ -1,6 +1,6 @@
 # Always-on hosting (Linux server + Docker)
 
-Goal: `https://netops.kadenetworks.com` keeps running with the owner's PC switched off. Same hostname and paths (including `/cwmp/`), so routers and CPE need no change. The Cloudflare tunnel connector runs on the server, not on a PC.
+Goal: `https://cloud.kadenetworks.com` keeps running with the owner's PC switched off. Same hostname and paths (including `/cwmp/`), so routers and CPE need no change. The Cloudflare tunnel connector runs on the server, not on a PC.
 
 Status: **prepared, not yet tested on a real server** (written without a Docker daemon available). Treat the first run as a rehearsal on an empty database before moving live data.
 
@@ -48,11 +48,11 @@ Without the tunnel, check from the server only: `docker compose exec hub node -e
 2. Back up together: `data\network.sqlite` plus any `-wal`/`-shm` files and `data\master.key`. From the WSL distribution: `mongodump` of the `genieacs` database, and copy `/etc/network-hub-acs/cpes.json`.
 3. Copy them to the server over SSH (scp), never through chat or git.
 4. Restore into the volumes (hub-data gets the three data files; `mongorestore` into `mongo`; `cpes.json` into `acs-private`) before starting `hub`/`acs`. Set the dashboard's ACS connection URL to `http://acs:7557` under TR-069 → Connect ACS (credentials stay in the UI).
-5. Tunnel (Cloudflare dashboard, kadenetworks.com account): Zero Trust → Networks → Tunnels → **Create a tunnel** → Cloudflared, name `netops-server`. Copy only the token into `TUNNEL_TOKEN` in the server's `.env` (never into chat or git). Delete the old DNS record for `netops` (it points to the PC's tunnel), then add two **Public hostnames** to the new tunnel, in this order: `netops.kadenetworks.com` path `^/cwmp/` → `http://acs:7548`, then `netops.kadenetworks.com` (no path) → `http://hub:4317`. Run `docker compose up -d tunnel`.
+5. Tunnel (Cloudflare dashboard, kadenetworks.com account): Zero Trust → Networks → Tunnels → **Create a tunnel** → Cloudflared, name `netops-server`. Copy only the token into `TUNNEL_TOKEN` in the server's `.env` (never into chat or git). Delete the old DNS record for `Kade Cloud` (it points to the PC's tunnel), then add two **Public hostnames** to the new tunnel, in this order: `cloud.kadenetworks.com` path `^/cwmp/` → `http://acs:7548`, then `cloud.kadenetworks.com` (no path) → `http://hub:4317`. Run `docker compose up -d tunnel`.
 6. Verify: sign in at the public URL, router freshness updating, a TR-069 device check-in, one CPE refresh. Keep the PC's data folder untouched for at least a week as the rollback copy.
 7. Disable the Windows tasks **Kade Network Hub** and **Kade Network Hub ACS** so two connectors never serve the same tunnel.
 
-Rollback: remove the public hostnames from `netops-server`, run `cloudflared tunnel route dns --overwrite-dns kade-network-ops netops.kadenetworks.com` on the PC, then `scripts\install-online-startup.ps1 -StartNow`.
+Rollback: remove the public hostnames from `netops-server`, run `cloudflared tunnel route dns --overwrite-dns kade-network-ops cloud.kadenetworks.com` on the PC, then `scripts\install-online-startup.ps1 -StartNow`.
 
 ## Backups (required for always-on)
 

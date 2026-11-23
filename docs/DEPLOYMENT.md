@@ -1,6 +1,6 @@
 # Windows and Cloudflare deployment
 
-Target: **netops.kadenetworks.com**.
+Target: **cloud.kadenetworks.com**.
 
 Status: live and verified on 2026-10-19. The owner account is initialized. The previous placeholder Worker’s domain attachment was removed with user approval; the Worker itself was preserved. The hostname now routes to the named tunnel. Local previous-DNS metadata is retained in deployment/previous-dns.local.json and excluded from distribution.
 
@@ -18,9 +18,9 @@ Commands, in order:
 
 1. cloudflared tunnel login
 2. cloudflared tunnel create kade-network-ops
-3. .\scripts\configure-cloudflare.ps1 -Hostname netops.kadenetworks.com -TunnelId YOUR_TUNNEL_UUID -CredentialsFile C:\Users\hp\.cloudflared\YOUR_TUNNEL_UUID.json
+3. .\scripts\configure-cloudflare.ps1 -Hostname cloud.kadenetworks.com -TunnelId YOUR_TUNNEL_UUID -CredentialsFile C:\Users\hp\.cloudflared\YOUR_TUNNEL_UUID.json
 4. Stop the previous Node instance; run .\scripts\start-dashboard.ps1 -EnvironmentFile .env.cloudflare
-5. In another terminal, after reviewing the hostname: cloudflared tunnel route dns YOUR_TUNNEL_UUID netops.kadenetworks.com
+5. In another terminal, after reviewing the hostname: cloudflared tunnel route dns YOUR_TUNNEL_UUID cloud.kadenetworks.com
 6. .\scripts\start-cloudflare.ps1
 
 The generator creates .env.cloudflare and deployment/cloudflare.local.yml, makes no account/DNS changes, validates credential identity and refuses accidental overwrites. Keep certificates/credentials outside source.
@@ -53,7 +53,7 @@ This leaves a maintenance flag that prevents subsequent supervisor starts until 
 
 ## ACS deployment
 
-Installed on 2026-10-20: a dedicated Ubuntu 24.04 WSL distribution, **NetworkHub-ACS**, runs GenieACS 1.2.16, Node 24.21.0 and MongoDB 8.0.34. The dashboard is connected to NBI at `http://127.0.0.1:7557`. The existing tunnel publishes `https://netops.kadenetworks.com/cwmp/` through a connection-isolation proxy at `127.0.0.1:7548`, before the app route; it forwards to GenieACS CWMP at `127.0.0.1:7547` using a fresh upstream connection for each request. This prevents tunnel connection pooling from mixing CPE sessions. NBI and MongoDB remain on loopback with no public tunnel route. MongoDB authentication is enabled. Unknown CPE serials are rejected; each enrolled device receives its own credentials.
+Installed on 2026-10-20: a dedicated Ubuntu 24.04 WSL distribution, **NetworkHub-ACS**, runs GenieACS 1.2.16, Node 24.21.0 and MongoDB 8.0.34. The dashboard is connected to NBI at `http://127.0.0.1:7557`. The existing tunnel publishes `https://cloud.kadenetworks.com/cwmp/` through a connection-isolation proxy at `127.0.0.1:7548`, before the app route; it forwards to GenieACS CWMP at `127.0.0.1:7547` using a fresh upstream connection for each request. This prevents tunnel connection pooling from mixing CPE sessions. NBI and MongoDB remain on loopback with no public tunnel route. MongoDB authentication is enabled. Unknown CPE serials are rejected; each enrolled device receives its own credentials.
 
 The **Kade Network Hub ACS** scheduled task keeps this WSL distribution running at Windows sign-in. MongoDB, CWMP and NBI have systemd startup/recovery inside Linux. CWMP crash recovery, duplicate host protection and rejection of unauthenticated public Inform requests were tested. No Windows reboot/sign-out has been tested. The same powered-on, awake, online and signed-in requirement applies.
 

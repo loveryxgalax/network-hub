@@ -17,11 +17,11 @@ test('STK payer name comes from the Transaction Status result, once per receipt,
  const s=st.put('subscribers',radius.subscriber(st,{name:'Hotspot 0702805605',username:'kne-q1',service:'hotspot',planId:plan.id,phone:'0702805605'}));
  st.put('portalPayments',{status:'paid',provider:'mpesa',receipt:'TKQ9XY12AB',subscriberId:s.id,paidAt:Date.now(),kind:'hotspot'});
  const calls=[];const fake=async(url,opt)=>{calls.push(url);if(/oauth/.test(url))return {ok:true,status:200,json:async()=>({access_token:'t',expires_in:3599}),text:async()=>JSON.stringify({access_token:'t',expires_in:'3599'})};return {ok:true,status:200,json:async()=>({ConversationID:'AG_1',OriginatorConversationID:'OC_1',ResponseCode:'0'}),text:async()=>JSON.stringify({ConversationID:'AG_1',OriginatorConversationID:'OC_1',ResponseCode:'0'})};};
- assert.equal(await pn.lookup(st,'https://netops.example',fake),0,'no B2C initiator: nothing asked');
+ assert.equal(await pn.lookup(st,'https://kade.example',fake),0,'no B2C initiator: nothing asked');
  require('../lib/mpesa.cjs');st.secret('mpesa:config',{env:'sandbox',type:'paybill',shortcode:'505958',consumerKey:'k',consumerSecret:'s',passkey:'p',callbackSecret:'c'});
  st.secret('mpesa:b2c',{initiatorName:'api',shortcode:'505958',securityCredential:'x'.repeat(120),commandId:'BusinessPayment',resultSecret:'a'.repeat(36)});
- assert.equal(await pn.lookup(st,'https://netops.example',fake),1);assert.ok(calls.some(u=>/transactionstatus/.test(u)));
- assert.equal(await pn.lookup(st,'https://netops.example',fake),0,'each receipt is asked once');
+ assert.equal(await pn.lookup(st,'https://kade.example',fake),1);assert.ok(calls.some(u=>/transactionstatus/.test(u)));
+ assert.equal(await pn.lookup(st,'https://kade.example',fake),0,'each receipt is asked once');
  pn.result(st,{Result:{ResultCode:0,ConversationID:'AG_1',OriginatorConversationID:'OC_1',ResultParameters:{ResultParameter:[{Key:'DebitPartyName',Value:'254702805605 - BRIAN OTIENO'},{Key:'ReceiptNo',Value:'TKQ9XY12AB'}]}}});
  assert.equal(st.get('subscribers',s.id).name,'Brian Otieno');
 });

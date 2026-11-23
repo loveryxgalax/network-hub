@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createApp}=require('../server.cjs');
 const rest=value=>Object.fromEntries(Object.entries(value).map(([k,v])=>[k,{type:'string',value:[v]}]));
-test('netops RADIUS decides logins, speeds and expiry, and records accounting',async()=>{
+test('Kade Cloud RADIUS decides logins, speeds and expiry, and records accounting',async()=>{
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'network-radius-')),app=createApp({dataDir:directory,collector:false,publicOrigin:'https://network.example.test',radiusToken:'bridge-token-for-tests-0123456789'});
  await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));await new Promise(resolve=>app.bridge.listen(0,'127.0.0.1',resolve));
  const origin='http://127.0.0.1:'+app.server.address().port,bridgeOrigin='http://127.0.0.1:'+app.bridge.address().port;let cookie='',csrf='';
