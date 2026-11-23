@@ -46,3 +46,18 @@ test('remote access: a router that sends /webfig/ to its root page stays inside 
   assert.equal(TN.rewrite('window.location.replace(`/${window.location.hash}`)','application/javascript'),'window.location.replace(`/webfig/_root/${window.location.hash}`)');}
  finally{router.close();front.close();}
 });
+
+test('remote access: WebFig modules that the router only sends gzip-compressed load (no 406), and gzip pages are still rewritten',async()=>{
+ const TN=require('../lib/tunnel.cjs'),zlib=require('node:zlib');
+ const router=http.createServer((req,res)=>{if(!/gzip/.test(req.headers['accept-encoding']||'')){res.writeHead(406,{'Content-Type':'text/html'});return res.end('<h1>Error 406 : Not Acceptable</h1>');}
+  if(req.url==='/webfig/roteros-1.jg'){res.writeHead(200,{'Content-Type':'application/octet-stream','Content-Encoding':'gzip'});return res.end(zlib.gzipSync('[{name:"x"}]'));}
+  if(req.url==='/webfig/m.js'){res.writeHead(200,{'Content-Type':'application/x-javascript','Content-Encoding':'gzip'});return res.end(zlib.gzipSync('window.location.replace(`/${window.location.hash}`)'));}
+  res.writeHead(404);res.end();});
+ await new Promise(r=>router.listen(0,'127.0.0.1',r));
+ const front=http.createServer((req,res)=>TN.proxy({address:'127.0.0.1',port:router.address().port,routerName:'R'},req,res,new URL(req.url,'http://x')));
+ await new Promise(r=>front.listen(0,'127.0.0.1',r));
+ try{const base=`http://127.0.0.1:${front.address().port}`;
+  let r=await fetch(base+'/webfig/roteros-1.jg');assert.equal(r.status,200);assert.equal(await r.text(),'[{name:"x"}]');
+  r=await fetch(base+'/webfig/m.js');assert.equal(r.status,200);assert.equal(await r.text(),'window.location.replace(`/webfig/_root/${window.location.hash}`)');}
+ finally{router.close();front.close();}
+});
