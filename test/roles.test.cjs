@@ -38,3 +38,13 @@ test('scheduled maintenance: notice on the WiFi page, alert escalation paused fo
   const r=await esc.run(store,now,async()=>({ok:true,status:200,text:async()=>'{}'}));assert.equal(store.list('alerts')[0].escalations,undefined,'paused during maintenance');void r;
  }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('routers on the old 1-minute runner are switched to 10 seconds once, automatically',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'rf-')),store=new Store(dir),jobs=require('../lib/jobs.cjs');try{
+  const r=store.put('devices',{name:'OLD-1',type:'router',driver:'none'});store.secret('jobs:'+r.id,{tokenHash:'x',issuedAt:Date.parse('2026-11-01')});
+  const j=jobs.next(store,r.id);assert.equal(store.get('routerJobs',j.id).type,'runner-fast');assert.match(j.script,/interval=10s/);assert.match(jobs.TYPES['runner-fast'].script({}),/interval=10s/);
+  jobs.result(store,r.id,j.id,{ok:true,output:'ok'});assert.equal(jobs.next(store,r.id),null,'sent only once');
+  const n=store.put('devices',{name:'NEW-1',type:'router',driver:'none'});const t=jobs.enroll(store,n.id);assert.ok(t.token);
+  assert.ok(!store.list('routerJobs').some(x=>x.routerId===n.id&&x.type==='runner-fast'));
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});

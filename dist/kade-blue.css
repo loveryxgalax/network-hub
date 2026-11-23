@@ -1401,3 +1401,9 @@ html body .row-actions .ra-btn.ra-primary[data-device] span{display:inline!impor
 .kc-dlg .kc-f button{min-width:96px;height:38px;border-radius:8px;font-weight:600;cursor:pointer;border:1px solid var(--border,#d0d7e2);background:var(--card,#fff);color:inherit}
 .kc-dlg .kc-f .kc-ok{border:0;background:var(--primary,#0032fd);color:#fff}.kc-dlg.danger .kc-f .kc-ok{background:#dc2626}
 .kc-dlg .kc-f button:focus-visible{outline:2px solid var(--primary,#0032fd);outline-offset:2px}
+
+/* Package reorder mode */
+.pk-rbar{display:flex;justify-content:flex-end;margin:0 0 10px}.pk-rbar.on{justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:10px}
+.pk-rbtns{display:flex;gap:8px}.pk-reorder tbody tr{cursor:grab}.pk-reorder tbody tr.pk-dragging{opacity:.45}
+.pk-order{white-space:nowrap}.pk-order .pk-n{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:50%;background:var(--soft,#f1f5f9);font-size:12px;margin-right:8px}
+.pk-grip{font-size:20px;color:var(--muted,#94a3b8);cursor:grab;margin-right:6px;vertical-align:middle}.pk-mv{padding:2px 6px!important}
