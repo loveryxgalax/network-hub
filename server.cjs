@@ -918,7 +918,7 @@ function createApp(options={}){
     if(!l){res.writeHead(410,{'Content-Type':'text/html; charset=utf-8'});return res.end(TN.page('This remote access link has expired','Make a new one on the router\'s page in Kade Cloud: Remote Access.'));}
     store.audit({id:'system',name:'Remote Access'},'Remote access link opened for '+l.routerName,l.routerId);
     const secure=String(req.headers['x-forwarded-proto']||'').includes('https')||!!req.headers['cf-visitor']||publicUrl?.protocol==='https:';
-    res.writeHead(302,{'Set-Cookie':`nt_tunnel=${tm[1]}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.max(1,Math.floor((l.expiresAt-Date.now())/1000))}${secure?'; Secure':''}`,Location:'/webfig/','Cache-Control':'no-store'});return res.end();}
+    res.writeHead(302,{'Set-Cookie':`nt_tunnel=${tm[1]}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.max(1,Math.floor((l.expiresAt-Date.now())/1000))}${secure?'; Secure':''}`,Location:'/webfig/_root/','Cache-Control':'no-store'});return res.end();}
    if(TN.PATHS.test(url.pathname)){const l=TN.check(store,TN.cookieOf(req));if(!l){res.removeHeader('Content-Security-Policy');res.writeHead(410,{'Content-Type':'text/html; charset=utf-8'});return res.end(TN.page('Remote access has ended','Open a new Remote Access link from the router\'s page in Kade Cloud.'));}return TN.proxy(l,req,res,url);}}
   if(/^\/(fonts|img)\//.test(url.pathname))res.setHeader('Access-Control-Allow-Origin','*');
   // The customer address serves only customer things: the portal (also at /), its API, short links, images and fonts.
