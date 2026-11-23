@@ -88,8 +88,9 @@ function buySheet(p,home){here('Paying');
  let saved='';try{saved=localStorage.getItem('portal-phone')||'';}catch{}
  sheet(`<h2>${esc(t('buy',{p:p.name}))}</h2><div class="price">${esc(kes(p.price))}</div><ul class="list">${facts(p,false).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>
   <form id="pay-form"><label>${esc(t('phone'))}<input class="field" name="phone" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required value="${esc(saved)}"></label>
-  <p class="muted small">${esc(t('payNote'))}</p><p class="err" id="pay-err"></p><button class="btn wide">${esc(t('pay',{a:kes(p.price)}))}</button>
-  ${p.trial?`<button type="button" class="btn wide ghost" id="trial">${esc(t('trial',{n:p.trial.minutes}))}</button>`:''}</form>`);
+  <p class="muted small">${esc(t('payNote'))}</p><p class="err" id="pay-err"></p><button class="btn wide${p.trial?' ghost':''}">${esc(t('pay',{a:kes(p.price)}))}</button></form>`);
+ // A package with a free trial: the free trial is the main button (no M-Pesa); paying stays below it.
+ if(p.trial){const f=$('#pay-form');f.insertAdjacentHTML('beforebegin',`<button type="button" class="btn wide" id="trial">${esc(t('trial',{n:p.trial.minutes}))}</button><p class="muted small" style="text-align:center;margin:10px 0 4px">${LANG==='sw'?'Au lipia kifurushi kamili:':'Or buy the full package:'}</p>`);}
  $('#pay-form').onsubmit=async e=>{e.preventDefault();const phone=e.target.phone.value.trim(),b=e.target.querySelector('.btn');b.disabled=true;$('#pay-err').textContent='';try{localStorage.setItem('portal-phone',phone);}catch{}
   try{const start=await call('pay',{body:{kind:'hotspot',planId:p.id,phone,mac:router.mac}});waitPayment(start,p);}catch(err){b.disabled=false;$('#pay-err').textContent=err.message;}};
  const tr=$('#trial');if(tr)tr.onclick=async()=>{if(!router.login||!router.mac){$('#pay-err').textContent=t('needWifi');return;}tr.disabled=true;try{const r=await call('trial',{body:{planId:p.id,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge}});toRouter(r);}catch(err){tr.disabled=false;$('#pay-err').textContent=err.message;}};}

@@ -33,3 +33,13 @@ test('remote access job: only the server address, only the www port, no duplicat
  assert.doesNotMatch(s,/0\.0\.0\.0|address=""/);
  assert.match(off.script({}),/remove \[find where comment="kade: remote access"\]/);
 });
+
+test('remote access: a router that sends /webfig/ to its root page stays inside the tunnel (no jump to the dashboard)',async()=>{
+ const TN=require('../lib/tunnel.cjs');
+ const router=http.createServer((req,res)=>{if(req.url==='/webfig/'){res.writeHead(302,{Location:'http://10.99.0.2/'});return res.end();}if(req.url==='/'){res.writeHead(200,{'Content-Type':'text/html'});return res.end('<title>RouterOS</title><script src="/webfig/x.js"></script>');}res.writeHead(404);res.end();});
+ await new Promise(r=>router.listen(0,'127.0.0.1',r));
+ const front=http.createServer((req,res)=>TN.proxy({address:'127.0.0.1',port:router.address().port,routerName:'R'},req,res,new URL(req.url,'http://x')));
+ await new Promise(r=>front.listen(0,'127.0.0.1',r));
+ try{const r=await fetch(`http://127.0.0.1:${front.address().port}/webfig/`,{redirect:'manual'});assert.equal(r.status,200);assert.equal(r.headers.get('location'),null);assert.match(await r.text(),/RouterOS/);}
+ finally{router.close();front.close();}
+});

@@ -6,7 +6,7 @@ test('new status designs: every one renders, keeps router context, live layer co
  assert.ok(st.FRESH.length>=9);for(const old of ['dashboard','classic','branded','minimal','receipt','aurora','boarding','neon','softdial','ribbon'])assert.ok(st.DESIGNS[old],old);
  for(const design of st.FRESH)for(const preview of [true,false]){
   const html=st.page({...st.DEFAULTS,design,showPackage:true},'https://kade.example',preview,false);
-  assert.match(html,/id="tl"/);assert.match(html,/id="upt"/);assert.match(html,/data-k="big"|data-k="left"/);assert.match(html,/Maven Pro/);
+  assert.match(html,/id="tl"/);assert.match(html,/id="upt"/);assert.match(html,/data-k="big"|data-k="left"/);assert.match(html,/Google Sans/);
   assert.match(html,/class="warn"/,design+' has the running-low warning');assert.match(html,/Top up/);
   for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))new Function(m[1]);
   if(!preview){assert.match(html,/\$\(session-time-left\)/);assert.match(html,/\$\(bytes-out\)/);assert.match(html,/\/portal\/api\/active\?mac=/);assert.match(html,/\$\(link-logout\)/);
