@@ -248,7 +248,7 @@ document.addEventListener('click',async event=>{const target=event.target.closes
  if(target.dataset.teamTab){state.teamTab=target.dataset.teamTab;renderTeam();return;}if(target.dataset.roleEdit){editRole(target.dataset.roleEdit);return;}
  if(target.dataset.editKind){$('#detail-dialog').close();openEditor(target.dataset.editKind,target.dataset.id);}
  if(target.dataset.deleteKind==='devices'&&(state.rows.devices||[]).find(d=>d.id===target.dataset.id)?.type==='router'){await forgetRouter(target.dataset.id);return;}
- if(target.dataset.deleteKind){if(!confirm('Delete this '+names[target.dataset.deleteKind]+'?'))return;await api('records/'+target.dataset.deleteKind+'/'+target.dataset.id,'DELETE',{});await load();render();toast('Record deleted');}
+ if(target.dataset.deleteKind){if(!(await kdConfirm('Delete this '+names[target.dataset.deleteKind]+'?')))return;await api('records/'+target.dataset.deleteKind+'/'+target.dataset.id,'DELETE',{});await load();render();toast('Record deleted');}
  if(target.dataset.device)await monitor(target.dataset.device);
  if(target.dataset.connect)configureConnection(target.dataset.connect);
  if(target.dataset.poll){target.disabled=true;const result=await api('records/devices/'+target.dataset.poll+'/poll','POST',{});await load();await monitor(target.dataset.poll);toast(result.online?'Device check succeeded':result.error);target.disabled=false;}

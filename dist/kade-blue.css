@@ -1407,3 +1407,9 @@ html body .row-actions .ra-btn.ra-primary[data-device] span{display:inline!impor
 .pk-rbtns{display:flex;gap:8px}.pk-reorder tbody tr{cursor:grab}.pk-reorder tbody tr.pk-dragging{opacity:.45}
 .pk-order{white-space:nowrap}.pk-order .pk-n{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:50%;background:var(--soft,#f1f5f9);font-size:12px;margin-right:8px}
 .pk-grip{font-size:20px;color:var(--muted,#94a3b8);cursor:grab;margin-right:6px;vertical-align:middle}.pk-mv{padding:2px 6px!important}
+
+/* SMS page: units note and this month's delivery stats */
+.sms-intro{padding:18px 20px}.sms-intro p{margin:0 0 6px;color:var(--muted,#64748b);font-size:13.5px;line-height:1.55}.sms-intro p b{color:var(--ink,#0f172a)}
+.sms-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
+.sms-stats>div{border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px 16px;background:var(--card,#fff)}
+.sms-stats small{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted,#64748b)}.sms-stats b{display:block;font-size:26px;font-weight:700;color:var(--primary,#0032fd);margin:4px 0}.sms-stats span{font-size:12.5px;color:var(--muted,#64748b)}
