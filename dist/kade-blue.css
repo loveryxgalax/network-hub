@@ -1453,3 +1453,11 @@ html .collapsed .sidebar .nav-group-label{font-size:0!important;line-height:0!im
 html .collapsed .sidebar .nav-group-label *{display:none!important}
 html .collapsed .sidebar #navigation>a[hidden]{display:flex!important}
 html .collapsed .sidebar .nav-search{display:none!important}
+
+/* Topology (2D editor + 3D view) */
+.tp-legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:14px 20px;font-size:12.5px}.tp-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.tp-scroll{overflow:auto;padding:0 12px 16px}.tp-svg{display:block;margin:0 auto;touch-action:none;user-select:none}
+.tp-node rect:first-child{fill:var(--card,#fff);stroke:var(--border,#cbd5e1);stroke-width:1.2}.tp-node{cursor:grab}.tp-node.tp-drag{cursor:grabbing;opacity:.85}.tp-node.tp-target rect:first-child{stroke:var(--primary,#0032fd);stroke-width:2.5}
+.tp-ic path{fill:none;stroke:var(--primary,#0032fd);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.tp-name{font-size:13px;font-weight:700;fill:var(--ink,#0f172a)}.tp-sub{font-size:11px;fill:var(--muted,#64748b)}
+.tp-link path{fill:none;stroke:#94a3b8;stroke-width:2}.tp-link .tp-hit{stroke:transparent;stroke-width:14;cursor:pointer}.tp-link:hover path:first-child{stroke:#dc2626}.tp-link text{font-size:11px;fill:var(--muted,#64748b)}
+.tp-3d{display:block;width:100%;height:auto;max-height:70vh;cursor:grab;touch-action:none}.tp-mode button{min-width:96px}

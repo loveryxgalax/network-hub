@@ -70,6 +70,7 @@
   'device-mgmt':'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
   'ap-monitor':'M12 12v10 M8.5 8.5a5 5 0 0 1 7 0 M5.6 5.6a9 9 0 0 1 12.8 0 M12 12h.01',
   'net-reports':'M4 20h16 M7 16v-5 M12 16V6 M17 16v-8',
+  topology:'M12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4 M5 23a2 2 0 1 0 0-4 2 2 0 0 0 0 4 M19 23a2 2 0 1 0 0-4 2 2 0 0 0 0 4 M12 5v6 M12 11l-7 8 M12 11l7 8 M9 11h6',
   'router-link':'M12 5v14 M5 12h14',
   'router-jobs':'M3 6h12 M3 12h12 M3 18h8 M17 15l5 3-5 3z',
   'config-backups':'M5 3h12l4 4v14H5z M8 3v5h8V3 M8 21v-7h8v7',
