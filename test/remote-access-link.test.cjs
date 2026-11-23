@@ -41,8 +41,8 @@ test('remote access: a router that sends /webfig/ to its root page stays inside 
  const front=http.createServer((req,res)=>TN.proxy({address:'127.0.0.1',port:router.address().port,routerName:'R'},req,res,new URL(req.url,'http://x')));
  await new Promise(r=>front.listen(0,'127.0.0.1',r));
  try{const base=`http://127.0.0.1:${front.address().port}`;let r=await fetch(base+'/webfig/',{redirect:'manual'});assert.equal(r.status,302);assert.equal(r.headers.get('location'),'/webfig/_root/','router root stays under the tunnel');
-  r=await fetch(base+'/webfig/_root/');assert.equal(r.status,200);const html=await r.text();assert.match(html,/RouterOS/);assert.match(html,/src="\/webfig\/x\.js"/);
-  assert.match(TN.rewrite('<link href="/assets/a.css"><img src="/logo.png">','text/html'),/href="\/webfig\/_root\/assets\/a\.css".*src="\/webfig\/_root\/logo\.png"/);
+  r=await fetch(base+'/webfig/_root/');assert.equal(r.status,200);assert.equal(r.headers.get('cache-control'),'private, no-store','never cached by Cloudflare or the browser');const html=await r.text();assert.match(html,/RouterOS/);assert.match(html,/src="\/webfig\/x\.js\?kt=2"/);
+  assert.match(TN.rewrite('<link href="/assets/a.css"><img src="/logo.png">','text/html'),/href="\/webfig\/_root\/assets\/a\.css\?kt=2".*src="\/webfig\/_root\/logo\.png"/);
   assert.equal(TN.rewrite('window.location.replace(`/${window.location.hash}`)','application/javascript'),'window.location.replace(`/webfig/_root/${window.location.hash}`)');}
  finally{router.close();front.close();}
 });
