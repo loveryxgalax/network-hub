@@ -453,7 +453,12 @@ function createApp(options={}){
    return json(res,200,{router:{id:r.id,name:r.name,ip:r.ip||'',model:r.metrics?.model||r.model||'',version:r.metrics?.version||'',uptime:r.metrics?.uptime||'',cpu:r.metrics?.cpu??null,identity:r.metrics?.identity||r.name},backupAt:b?(b.checked||b.time):null,details});}
   if(route==='/api/router-automation'){role(user,['admin']);const RA=require('./lib/routerauto.cjs');if(method==='GET')return json(res,200,RA.overview(store));
    if(method==='PUT'){const v=RA.save(store,await body(req));store.audit(user,'Changed router automation','router-automation');return json(res,200,RA.overview(store));}}
-  {const tl=route.match(/^\/api\/routers\/([^/]+)\/remote-link$/);if(tl&&method==='POST'){role(user,['admin']);const r=require('./lib/tunnel.cjs').create(store,tl[1],user.name),dev=store.get('devices',tl[1]);store.audit(user,'Made a 1-hour remote access link for '+dev.name,dev.id);return json(res,201,{url:(publicUrl?.origin||'http://'+req.headers.host)+'/tunnel/'+r.token,expiresAt:r.expiresAt});}}
+  {const tl=route.match(/^\/api\/routers\/([^/]+)\/remote-link$/);if(tl&&method==='POST'){role(user,['admin']);const r=require('./lib/tunnel.cjs').create(store,tl[1],user.name),dev=store.get('devices',tl[1]);store.audit(user,'Made a 1-hour remote access link for '+dev.name,dev.id);
+    // Open the router's firewall for Kade Cloud once (automatic job; needs the job runner). Skipped when done or queued already.
+    let opening='';const done=store.list('routerJobs').filter(j=>j.routerId===dev.id&&j.type==='remote-access-on').sort((x,y)=>(y.createdAt||0)-(x.createdAt||0))[0];
+    if(store.secret('jobs:'+dev.id)&&(!done||done.status==='failed'||done.status==='cancelled')){try{jobs.create(store,{routerId:dev.id,type:'remote-access-on',params:{},user:{id:'system',name:'Remote Access'}});opening='queued';}catch{}}
+    else if(done&&done.status!=='succeeded')opening='pending';else if(!store.secret('jobs:'+dev.id))opening='no-runner';
+    return json(res,201,{url:(publicUrl?.origin||'http://'+req.headers.host)+'/tunnel/'+r.token,expiresAt:r.expiresAt,opening});}}
   {const cr=route.match(/^\/api\/checkouts(?:\/([A-Za-z0-9]{3}))?$/);if(cr){role(user,['admin','manager']);const CO=require('./lib/checkouts.cjs'),payUrl=c=>(custOrigin||publicUrl?.origin||'')+'/portal/pay.html?c='+c;
    if(!cr[1]&&method==='GET')return json(res,200,{items:CO.list(store).map(l=>({...l,url:payUrl(l.code)}))});
    if(!cr[1]&&method==='POST'){const l=CO.create(store,await body(req),user.name);store.audit(user,'Created checkout link '+l.code+' ('+l.description+')',l.id);return json(res,201,{...l,url:payUrl(l.code)});}

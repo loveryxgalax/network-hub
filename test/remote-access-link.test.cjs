@@ -24,3 +24,12 @@ test('Remote Access link: admin makes a 1-hour link, it opens the router web pag
   assert.equal((await fetch(link.url.replace(/^https?:\/\/[^/]+/,o),{redirect:'manual'})).status,410);
  }finally{app.server.close();router.close();}
 });
+
+test('remote access job: only the server address, only the www port, no duplicate rule, and a way back',()=>{
+ const jobs=require('../lib/jobs.cjs'),on=jobs.TYPES['remote-access-on'],off=jobs.TYPES['remote-access-off'];
+ assert.equal(on.risky,false);const s=on.script({});
+ assert.match(s,/src-address=10\.99\.0\.1 protocol=tcp dst-port=\$port action=accept comment="kade: remote access"/);
+ assert.match(s,/:if \(\[:len \[\/ip firewall filter find where comment="kade: remote access"\]\]=0\)/);
+ assert.doesNotMatch(s,/0\.0\.0\.0|address=""/);
+ assert.match(off.script({}),/remove \[find where comment="kade: remote access"\]/);
+});
