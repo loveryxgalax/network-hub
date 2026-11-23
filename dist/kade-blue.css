@@ -1436,3 +1436,13 @@ html body .card.sms-intro{margin-bottom:18px!important}html body .sms-intro+.sms
 .tk-bub p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}.tk-bub.cust{align-self:flex-start;background:#f8fafc}.tk-bub.team{align-self:flex-end;background:#eef4ff;border-color:#c7d7fe}
 .tk-chatbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.tk-chatbar input{flex:1;min-width:200px;height:42px;border:1px solid var(--border,#cbd5e1);border-radius:10px;padding:0 14px}.tk-chatbar .check-label{flex-basis:100%}
 .tk-quick{margin-left:auto}.tk-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* Device management / access points / network reports */
+.dm-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.dm-chips>div{border:1px solid var(--border,#e2e8f0);border-radius:12px;padding:14px 16px;background:var(--card,#fff)}.dm-chips small{display:block;font-size:12px;color:var(--muted,#64748b)}.dm-chips b{font-size:24px;font-weight:700}
+.dm-filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:0 20px 14px}.dm-filter input{flex:1 1 260px;width:auto!important}.dm-filter select{flex:0 0 190px;width:190px!important}
+.dm-cap{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.dm-yes{background:#dcfce7;color:#166534}.dm-approval{background:#fef3c7;color:#92400e}.dm-sim{background:#e0e7ff;color:#3730a3}.dm-no{background:#f1f5f9;color:#64748b}
+.dm-matrix td,.dm-matrix th{white-space:nowrap}tr.ap-sel td{background:color-mix(in srgb,var(--primary,#0032fd) 6%,transparent)}
+@media(max-width:600px){.dm-filter select{flex:1 1 100%;width:100%!important}}
+html body #ap-days,html body #nr-days{width:auto!important;min-width:170px;flex:0 0 auto}
