@@ -550,6 +550,7 @@ function createApp(options={}){
   const srRoute=route.match(/^\/api\/stock-requests\/([a-f0-9-]{36})\/(approve|reject|issue)$/);
   if(srRoute&&method==='POST'){role(user,['admin','manager']);const input=await body(req),saved=stockreq.decide(store,srRoute[1],srRoute[2],user,input.note);store.audit(user,`Stock request ${srRoute[2]}: ${saved.quantity} × ${saved.itemName}`,saved.id);return json(res,200,saved);}
   if(route==='/api/stock/receive'&&method==='POST'){role(user,['admin','manager']);const saved=stockreq.receive(store,await body(req),user);store.audit(user,'Received stock',saved.stockId);return json(res,201,saved);}
+  if(route==='/api/ledger/start-books'&&method==='POST'){role(user,['admin']);const input=await body(req);const r=ledger.startBooks(store,{date:input.date,confirm:input.confirm,user});store.audit(user,`Started the books on ${r.date}: removed ${r.removed} earlier ledger entries (backup ${r.backup})`,'ledger');return json(res,200,r);}
   if(route==='/api/ledger'&&method==='GET'){access.need(store,user,'ledger.view');const q=k=>url.searchParams.get(k)||undefined,from=q('from')?Date.parse(q('from')+'T00:00:00+03:00'):undefined,to=q('to')?Date.parse(q('to')+'T00:00:00+03:00')+864e5:undefined;
    // One snapshot (one read) feeds the list, the totals and the export, so they always agree and a write that lands
    // during a long export cannot add, drop or repeat rows.
@@ -561,7 +562,7 @@ function createApp(options={}){
     if(!res.write('seq,time,type,customer,amount_kes,wallet_change_kes,reference,note,actor,hash'))await new Promise(r=>res.once('drain',r));
     for(let i=0;i<items.length;i+=1000){if(res.destroyed)return;const chunk='\n'+items.slice(i,i+1000).map(row).join('\n');if(!res.write(chunk))await new Promise(r=>res.once('drain',r));}
     return res.end();}
-   return json(res,200,{items:items.slice(0,500),count:items.length,shown:Math.min(500,items.length),snapshotSeq:snapSeq,totals:ledger.totals(store,from||0,to||Infinity,snap),integrity:ledger.verify(store)});}
+   return json(res,200,{booksStart:(({history,...x})=>x)(store.setting('ledgerBooksStart')||{history:[]}),items:items.slice(0,500),count:items.length,shown:Math.min(500,items.length),snapshotSeq:snapSeq,totals:ledger.totals(store,from||0,to||Infinity,snap),integrity:ledger.verify(store)});}
   const revRoute=route.match(/^\/api\/payments\/([a-f0-9-]{36})\/reverse$/);
   if(revRoute&&method==='POST'){access.need(store,user,'payments.reverse');const input=await body(req),r=ledger.reverse(store,radius,revRoute[1],{reason:input.reason,confirm:input.confirm,rollbackExpiry:input.rollbackExpiry!==false,user});store.audit(user,'Reversed payment '+r.payment.reference+': '+r.payment.reversalReason,r.payment.subscriberId);try{statics.sync(store,jobs,radius.stateOf,user);}catch{}return json(res,200,r);}
   if(route==='/api/payouts'&&method==='GET'){if(!access.can(store,user,'payouts.request')&&!access.can(store,user,'payouts.approve'))access.need(store,user,'payouts.request');return json(res,200,{items:payouts.list(store),b2c:payouts.b2cPublic(store)});}
