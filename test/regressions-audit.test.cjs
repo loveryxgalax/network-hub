@@ -103,3 +103,15 @@ test('portal designs: all 20 designs and the package layout (auto/list/grid/swip
  for(const t of themes.filter(t=>t!=='classic'))assert.ok(css.includes('[data-theme='+t+']'),'styles for '+t);
  for(const l of ['list','grid','swipe'])assert.ok(css.includes('body.lay-'+l),'layout '+l);
  assert.match(js,/kade:'ready'/);assert.match(js,/e\.data\?\.kade!=='config'/);});
+
+test('audit: accounting sent with the router identity and from its WireGuard address counts for that router',()=>{
+ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{Store}=require('../lib/store.cjs'),au=require('../lib/audit-routers.cjs'),radius=require('../lib/radius.cjs');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'aud-')),store=new Store(dir);try{
+  const r=store.put('devices',{name:'hEX S (E60iUGS)',type:'router',metrics:{identity:'E60iUGS'},lastSeen:Date.now()});store.put('wgPeers',{kind:'router',routerId:r.id,name:'hEX S',address:'10.99.0.2/32',publicKey:'k',enabled:true});
+  store.put('radiusSessions',{username:'u1',service:'hotspot',nasName:'',nas:'10.99.0.2',startedAt:Date.now()-60000,updatedAt:Date.now()});
+  const chk=au.audit(store).find(x=>x.id===r.id||x.routerId===r.id||x.name===r.name);const acct=(chk.checks||chk).find?.(c=>c.key==='radius')||chk.checks.find(c=>c.key==='radius');
+  assert.equal(acct.ok,true,'session from 10.99.0.2 belongs to the hEX S');
+  const req={'NAS-Identifier':'E60iUGS','NAS-IP-Address':'10.99.0.2'};
+  if(radius.routerOf)assert.equal(radius.routerOf(store,req),r.id);
+ }finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}
+});
