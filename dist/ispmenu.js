@@ -1,4 +1,15 @@
 'use strict';
+// Plain meaning of Safaricom STK push results, shown under the reason in Payment requests.
+function mpesaMeaning(r){r=String(r||'').toLowerCase();
+ if(/initiator information is invalid/.test(r))return 'Customer entered a wrong M-Pesa PIN.';
+ if(/insufficient/.test(r))return 'Not enough money in the customer\'s M-Pesa (or over their daily limit).';
+ if(/cancelled by user/.test(r))return 'Customer pressed Cancel on the prompt.';
+ if(/no response from user/.test(r))return 'Prompt showed but the customer did not enter the PIN in time.';
+ if(/ds timeout|cannot be reached/.test(r))return 'Phone could not be reached: off, no network, or an old SIM card.';
+ if(/error occurred while sending push/.test(r))return 'Safaricom could not show the prompt: another prompt was open, or the SIM needs updating.';
+ if(/wrong credentials/.test(r))return 'Your M-Pesa API settings were rejected (shortcode / passkey). Check Settings → Payments.';
+ if(/transaction is already in process|unable to lock/.test(r))return 'Customer already had a prompt open. Wait a minute and try again.';
+ return '';}
 // Sidebar sections and pages modelled on what ISPman offered, backed by Kade Cloud's own data: customers by type,
 // hotspot and PPPoE packages/sessions/logs, vouchers, manual connects, SMS campaigns and revenue reports.
 (()=>{
@@ -176,7 +187,7 @@ const pages={
   const d=await api('portal-payments');if(state.page!==id)return;
   const st={pending:'Waiting',paid:'Paid',failed:'Failed'},tabs=[['attention',`Needs attention (${d.attention})`],['all','All'],['paid',`Paid (${d.counts.paid})`],['failed',`Failed (${d.counts.failed})`],['pending',`Waiting (${d.counts.pending})`]];
   const rows=d.items.filter(p=>f.filter==='all'||(f.filter==='attention'?(p.status==='failed'||(p.status==='pending'&&p.ageMinutes>=3)):p.status===f.filter));
-  $('#im-body').innerHTML=`<div class="sites-tabs">${tabs.map(([k,l])=>`<button type="button" class="${f.filter===k?'active':''}" data-rq="${k}">${l}</button>`).join('')}</div><section class="card sites-panel">${table(['TIME','PHONE','FOR','AMOUNT','STATUS','RECEIPT / REASON','ACTIONS'],rows,p=>`<tr><td>${H(stamp(p.time))}<small>${p.ageMinutes<120?p.ageMinutes+' min ago':''}</small></td><td>${H(p.phone)}</td><td>${H(p.planName||p.kind||'')}</td><td>${ksh(p.amount)}</td><td><span class="status ${p.status==='paid'?'online':p.status==='pending'?'warning':'offline'}">${st[p.status]||H(p.status)}</span></td><td>${H(p.receipt||p.reason||'')}</td><td>${p.canRecheck?`<button class="ra-btn ra-primary" data-rq-recheck="${p.id}" title="Ask Safaricom again"><span>Recheck</span></button>`:''}${p.subscriberId?`<button class="ra-btn" data-rq-profile="${p.subscriberId}"><span>Customer</span></button>`:''}</td></tr>`,'Nothing here. Every payment request was credited.')}</section>`;
+  $('#im-body').innerHTML=`<div class="sites-tabs">${tabs.map(([k,l])=>`<button type="button" class="${f.filter===k?'active':''}" data-rq="${k}">${l}</button>`).join('')}</div><section class="card sites-panel">${table(['TIME','PHONE','FOR','AMOUNT','STATUS','RECEIPT / REASON','ACTIONS'],rows,p=>`<tr><td>${H(stamp(p.time))}<small>${p.ageMinutes<120?p.ageMinutes+' min ago':''}</small></td><td>${H(p.phone)}</td><td>${H(p.planName||p.kind||'')}</td><td>${ksh(p.amount)}</td><td><span class="status ${p.status==='paid'?'online':p.status==='pending'?'warning':'offline'}">${st[p.status]||H(p.status)}</span></td><td>${H(p.receipt||p.reason||'')}${!p.receipt&&p.reason&&mpesaMeaning(p.reason)?`<small class="muted">${H(mpesaMeaning(p.reason))}</small>`:''}</td><td>${p.canRecheck?`<button class="ra-btn ra-primary" data-rq-recheck="${p.id}" title="Ask Safaricom again"><span>Recheck</span></button>`:''}${p.subscriberId?`<button class="ra-btn" data-rq-profile="${p.subscriberId}"><span>Customer</span></button>`:''}</td></tr>`,'Nothing here. Every payment request was credited.')}</section>`;
   for(const b of document.querySelectorAll('[data-rq]'))b.onclick=()=>{f.filter=b.dataset.rq;pages.requests(id);};
   for(const b of document.querySelectorAll('[data-rq-recheck]'))b.onclick=async()=>{b.disabled=true;try{const r=await api('mpesa/payments/'+b.dataset.rqRecheck+'/recheck','POST',{});toast(r.status==='paid'?'Found it: payment credited':'Safaricom says: '+(r.reason||r.status||'still waiting'));pages.requests(id);}catch(e){toast(e.message);b.disabled=false;}};
   for(const b of document.querySelectorAll('[data-rq-profile]'))b.onclick=()=>window.openProfile(b.dataset.rqProfile);},
@@ -1179,7 +1190,10 @@ Object.assign(pages,{
      ${D.bridge?box('Bridge',kv('Name',D.bridge.name)+kv('Ports',D.bridge.ports.join(', ')||'none')):''}
      ${box('IP and DHCP',kv('IP address',D.ip?.address)+kv('Network',D.ip?.network)+kv('Pool',D.pool?D.pool.name+' ('+D.pool.ranges+')':'')+kv('DHCP server',D.dhcp?.name)+kv('Lease time',D.dhcp?.leaseTime)+kv('DNS server',D.dhcpNetwork?.['dns-server']))}
      ${box('NAT',D.nat.length?D.nat.map(n=>kv('Masquerade out',(n.outInterface||'any')+(n.disabled?' (disabled)':''))).join(''):kv('Masquerade','none found'))}`}
-     <p class="muted small">From the config backup of ${r.backupAt?H(new Date(r.backupAt).toLocaleString()):'—'}. Delete is on the servers list.</p></div>`);};
+     ${D?(()=>{const lb=String(D.profile.loginBy||''),miss=[!/mac-cookie/.test(lb)&&'MAC-cookie login (customers stay logged in)',!/http-pap/.test(lb)&&'PAP login',!D.profile.dnsName&&'WiFi DNS name'].filter(Boolean);return miss.length?`<section class="hsd-box hsd-fix"><h4>Not on the Kade standard</h4><p class="muted small">Missing: ${miss.map(H).join(', ')}. Applying the standard sets login to CHAP/PAP + MAC-cookie, the WiFi DNS name, and puts the Kade WiFi pages in its login folder. No reboot; connected customers stay online.</p><button type="button" class="button" id="hsd-std">Apply Kade standard</button></section>`:'';})():''}
+     <p class="muted small">From the config backup of ${r.backupAt?H(new Date(r.backupAt).toLocaleString()):'—'}. Delete is on the servers list.</p></div>`);
+    const sb=$('#hsd-std');if(sb)sb.onclick=async()=>{const name=r.router.name;const typed=prompt(`Type the router name (${name}) to apply the Kade standard to profile ${D.profile.name||D.server.profile}.`);if(typed==null)return;
+     try{const j=await hsJob(x.routerId,'hotspot-standard',{profile:D.profile.name||D.server.profile},typed);toast('Queued on '+j.routerName+'. It runs within a minute; take a new config backup afterwards to see it here.');sb.disabled=true;sb.textContent='Queued';}catch(e){toast(e.message);}};};
    const hsDelete=items=>{const rid=items[0].routerId;if(items.some(x=>x.routerId!==rid)){toast('Select servers from one router at a time.');return;}const rn=items[0].router,names=items.map(x=>H(x.name)).join(', ');
     showDetails('Delete hotspot server'+(items.length>1?'s':''),`<div class="pf"><p>This removes <strong>${names}</strong> from <strong>${H(rn)}</strong>. Customers connected through it are disconnected, and the WiFi login page stops appearing until a server exists again.</p>
      <label class="check-label"><input type="checkbox" id="hsd-re" checked> Create a fresh server afterwards with the same interface, profile and address pool</label>

@@ -383,7 +383,7 @@ function createApp(options={}){
     const j=jobs.create(store,{routerId:r.id,type:'radius-move',params:{src:wg.address.split('/')[0],mode,realm:mode==='test'?info.realm:''},confirm:input.confirm,user});
     store.audit(user,`Queued move to Kade Cloud RADIUS (${mode}) on ${r.name}`,j.id);return json(res,201,jobs.redact(j));}}
   if(route==='/api/router-jobs'&&method==='POST'){access.need(store,user,'router.jobs');const input=await body(req);{const sc=access.scope(store,user);if(sc&&!sc.has(input.routerId))throw error(403,'That router is not one of yours');}if(jobs.TYPES[input.type]?.risky)role(user,['admin']);if(input.type==='radius-move')throw error(400,'Use Move to Kade Cloud RADIUS on the router page, which checks the customers first');if(input.type==='push-design-auto')Object.assign(input,{params:{origin:custOrigin,host:custHost}});
-   const params={...(input.params||{})};if(input.type==='push-design')Object.assign(params,{origin:custOrigin,host:custHost,folder:params.folder||'hotspot'});
+   const params={...(input.params||{})};if(input.type==='push-design')Object.assign(params,{origin:custOrigin,host:custHost,folder:params.folder||'hotspot'});if(input.type==='hotspot-standard')Object.assign(params,{origin:custOrigin,host:custHost,dns:require('./lib/portalmode.cjs').hotspotHost(custHost)});
    const j=jobs.create(store,{routerId:input.routerId,type:input.type,params,confirm:input.confirm,user,runAt:input.runAt??null});store.audit(user,'Queued router job: '+j.label+' on '+j.routerName,j.id);return json(res,201,jobs.redact(j));}
   // Link a MikroTik (admins): create the router and its one-line link command, follow its first reports, and on a new
   // router set up PPPoE/Hotspot through the job runner after the admin types the router's name.
