@@ -206,6 +206,19 @@ function createApp(options={}){
     if(!totp.check(store,user.id,code)){miss();logAccess(user.email,user,'failed','Wrong sign-in code');return json(res,401,{error:'That code is not right. Use the newest code from your app, or a recovery code.',needCode:true});}}
    attempts.delete(key);attempts.delete(ukey);logAccess(user.email,user,'success','Signed in');signinAlert(user,ip,ua);return json(res,200,session(res,user,secure));
   }
+  // Kade SMS Bridge (Android phones): device token auth, no session cookie.
+  if(route.startsWith('/api/smsgw/device/')||route==='/api/smsgw/pair'){const G=require('./lib/smsgw.cjs');if(method!=='POST')throw error(405,'Use POST');
+   if(route==='/api/smsgw/pair'){const ip=String(req.headers['cf-connecting-ip']||req.socket.remoteAddress||'');const k='smsgw:'+ip,a=attempts.get(k);if(a&&a.until>Date.now()&&a.n>=10)throw error(429,'Too many pairing attempts. Wait 15 minutes.');
+    try{const r=G.pair(store,await body(req,8192));attempts.delete(k);store.audit({id:'device:'+r.deviceId},'Paired SMS gateway phone '+r.name,r.deviceId);return json(res,200,r);}catch(e){if(e.status===401)attempts.set(k,{n:a&&a.until>Date.now()?a.n+1:1,until:Date.now()+900000});throw e;}}
+   let d;try{d=G.authDevice(store,req.headers.authorization);}catch(e){return json(res,e.status||401,{error:e.message,revoked:!!e.revoked});}
+   const input=await body(req,65536);
+   if(route==='/api/smsgw/device/heartbeat')return json(res,200,G.heartbeat(store,d,input.info||input));
+   if(route==='/api/smsgw/device/report')return json(res,200,G.report(store,d,input.results));
+   if(route==='/api/smsgw/device/inbound')return json(res,200,G.inbound(store,d,input));
+   if(route==='/api/smsgw/device/rotate'){const r=G.rotate(store,d);store.audit({id:'device:'+d.id},'SMS gateway phone rotated its token',d.id);return json(res,200,r);}
+   if(route==='/api/smsgw/device/claim'){G.heartbeat(store,d,input.info||{});const wait=Math.max(0,Math.min(25,Number(input.wait)||0)),until=Date.now()+wait*1000;let closed=false;req.on('close',()=>{closed=true;});
+    for(;;){const jobs=G.claim(store,d,Number(input.max)||5);if(jobs.length||Date.now()>=until||closed)return closed?undefined:json(res,200,{jobs});await new Promise(r=>setTimeout(r,1000));}}
+   throw error(404,'Unknown device call');}
   const user=auth(req);if(!user)throw error(401,'Sign in to continue');if(mutating.has(method)&&req.headers['x-csrf-token']!==user.csrf)throw error(403,'Session verification failed. Reload the page.');
   if(route==='/api/ispman/delete'&&method==='POST'){role(user,['admin']);const r=require('./lib/ispman.cjs').remove(store,(await body(req,400000)).keys);store.audit(user,'Removed '+r.removed+' record(s) from the ISPman overview','ispman');return json(res,200,r);}
   if(route==='/api/ispman'&&method==='GET'){role(user,['admin']);return json(res,200,require('./lib/ispman.cjs').overview(store,Object.fromEntries(url.searchParams)));}
@@ -247,6 +260,22 @@ function createApp(options={}){
   if(route==='/api/inventory'&&method==='GET')return json(res,200,{items:require('./lib/inventory.cjs').list(store),caps:require('./lib/inventory.cjs').CAPS});
   if(route==='/api/inventory.csv'&&method==='GET'){const I=require('./lib/inventory.cjs');res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="kade-devices.csv"'});return res.end('﻿'+I.csv(I.list(store)));}
   {const im=route.match(/^\/api\/inventory\/([^/]+)$/);if(im&&method==='PATCH'){role(user,['admin','manager']);const input=await body(req),d=require('./lib/inventory.cjs').setLink(store,im[1],input);store.audit(user,'Changed the network link of '+d.name,d.id);require('./lib/collector.cjs').reset(d.id);return json(res,200,{ok:true});}}
+  if(route.startsWith('/api/smsgw')){const G=require('./lib/smsgw.cjs');if(user.role==='installer')throw error(403,'Not available to field installers');const mg=()=>access.need(store,user,'smsgw.manage');
+   if(route==='/api/smsgw'&&method==='GET')return json(res,200,{...G.overview(store),canManage:access.can?access.can(store,user,'smsgw.manage'):user.role==='admin',apk:'/downloads/kade-sms-bridge.apk'});
+   if(route==='/api/smsgw/config'&&method==='PUT'){mg();const c=G.setConfig(store,await body(req));store.audit(user,'Android SMS gateway settings: mode '+c.mode+(c.disabled?' (emergency off)':''),'smsgw');return json(res,200,c);}
+   if(route==='/api/smsgw/devices'&&method==='POST'){mg();const r=G.addDevice(store,await body(req));store.audit(user,'Added SMS gateway phone '+r.device.name,r.device.id);return json(res,201,{...r,server:publicUrl?.origin||('https://'+req.headers.host)});}
+   {const m=route.match(/^\/api\/smsgw\/devices\/([0-9a-f-]{36})(\/(pair-code|revoke))?$/);if(m){mg();
+    if(m[3]==='pair-code'&&method==='POST'){const r=G.repair(store,m[1]);store.audit(user,'New pairing code for SMS gateway phone '+r.device.name,m[1]);return json(res,200,{...r,server:publicUrl?.origin||('https://'+req.headers.host)});}
+    if(m[3]==='revoke'&&method==='POST'){const r=G.revoke(store,m[1]);store.audit(user,'Revoked SMS gateway phone '+r.name,m[1]);return json(res,200,r);}
+    if(!m[3]&&method==='PATCH'){const r=G.updateDevice(store,m[1],await body(req));store.audit(user,'Changed SMS gateway phone '+r.name,m[1]);return json(res,200,r);}}}
+   if(route==='/api/smsgw/send'&&method==='POST'){access.need(store,user,'messages.send');const input=await body(req,262144);const r=G.compose(store,input,user);store.audit(user,`Queued ${r.queued} SMS (${input.channel==='commercial'?'commercial provider':'Android gateway'})`,r.batch);return json(res,201,r);}
+   {const m=route.match(/^\/api\/smsgw\/progress\/([0-9a-f-]{36})$/);if(m&&method==='GET')return json(res,200,G.progress(store,m[1]));}
+   if((route==='/api/smsgw/jobs'||route==='/api/smsgw/jobs.csv')&&method==='GET'){const q=Object.fromEntries(url.searchParams);if(route.endsWith('.csv')){const r=G.list(store,{...q,limit:500});res.writeHead(200,{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="kade-sms-gateway.csv"'});return res.end('﻿'+G.csv(r.items));}return json(res,200,G.list(store,q));}
+   {const m=route.match(/^\/api\/smsgw\/jobs\/([0-9a-f-]{36})\/(cancel|resend)$/);if(m&&method==='POST'){access.need(store,user,'messages.send');const r=m[2]==='cancel'?G.cancel(store,m[1]):G.resend(store,m[1],await body(req),user);store.audit(user,(m[2]==='cancel'?'Cancelled':'Re-sent')+' gateway SMS',m[1]);return json(res,200,r);}}
+   if(route==='/api/smsgw/bundles'&&method==='POST'){mg();const b=G.addBundle(store,await body(req));store.audit(user,'Recorded SMS bundle '+b.name,b.id);return json(res,201,b);}
+   {const m=route.match(/^\/api\/smsgw\/bundles\/([0-9a-f-]{36})$/);if(m&&method==='DELETE'){mg();if(!store.get('smsBundles',m[1]))throw error(404,'Bundle not found');store.remove('smsBundles',m[1]);store.audit(user,'Removed SMS bundle record',m[1]);return json(res,200,{ok:true});}}
+   if(route==='/api/smsgw/opt-out'&&method==='POST'){access.need(store,user,'messages.send');const i=await body(req);const r=G.setOptOut(store,i.phone,i.optedOut!==false,'staff:'+user.name);store.audit(user,(r.optedOut?'Opted out ':'Opted back in ')+r.phone,'smsgw');return json(res,200,r);}
+   throw error(404,'Not found');}
   if(route==='/api/aps'&&method==='GET'){const days=[1,7,30].includes(Number(url.searchParams.get('days')))?Number(url.searchParams.get('days')):7;return json(res,200,{days,aps:require('./lib/aps.cjs').compare(store,Date.now(),days)});}
   {const ah=route.match(/^\/api\/aps\/([^/]+)\/history$/);if(ah&&method==='GET'){const d=store.get('devices',ah[1]);if(!d||d.type!=='ap')throw error(404,'Access point not found');const since=Date.now()-Math.min(30,Math.max(1,Number(url.searchParams.get('days'))||1))*864e5;
    return json(res,200,{points:store.history(d.id,since).filter(m=>Number.isFinite(m.clients)).map(m=>({t:m.time,clients:m.clients,util:Math.max(0,...(m.radios||[]).map(r=>r.utilization||0)),rx:m.traffic?.rxMbps??null,tx:m.traffic?.txMbps??null}))});}}
@@ -963,7 +992,7 @@ function createApp(options={}){
     if(rt&&jobs.pagesState(store,rt.id)==='current'){const hh=PM.hotspotHost(custHost);let lo;try{lo=new URL(ctx);}catch{}const host=lo&&lo.hostname===hh?lo.host:hh,renew=url.searchParams.get('renew')||url.searchParams.get('ps');
      res.writeHead(302,{Location:'http://'+host+(renew?'/buy.html'+url.search:'/login'),'Cache-Control':'no-store'});return res.end();}
     head='<meta name="portal-mode" content="hotspot"><meta name="portal-pass" content="'+PM.pass(store,url.searchParams.get('nas'))+'">';}
-   return serveFile(req,res,portalPage(url.searchParams.get('preview')==='1'&&['new','previous'].includes(url.searchParams.get('design'))?url.searchParams.get('design'):undefined),type,t=>portalIndex(t,head));}if(!['GET','HEAD'].includes(req.method))throw error(405,'Method not allowed');let requested;try{requested=decodeURIComponent(url.pathname);}catch{throw error(400,'Invalid URL');}const file=path.resolve(root,'.'+(requested==='/'?'/index.html':requested));if(!file.startsWith(root+path.sep))throw error(403,'Invalid path');if(!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.txt':'text/plain; charset=utf-8'};return serveFile(req,res,file,types[path.extname(file)]||'application/octet-stream');
+   return serveFile(req,res,portalPage(url.searchParams.get('preview')==='1'&&['new','previous'].includes(url.searchParams.get('design'))?url.searchParams.get('design'):undefined),type,t=>portalIndex(t,head));}if(!['GET','HEAD'].includes(req.method))throw error(405,'Method not allowed');let requested;try{requested=decodeURIComponent(url.pathname);}catch{throw error(400,'Invalid URL');}const file=path.resolve(root,'.'+(requested==='/'?'/index.html':requested));if(!file.startsWith(root+path.sep))throw error(403,'Invalid path');if(!fs.existsSync(file)||!fs.statSync(file).isFile())throw error(404,'Not found');const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.txt':'text/plain; charset=utf-8','.apk':'application/vnd.android.package-archive'};return serveFile(req,res,file,types[path.extname(file)]||'application/octet-stream');
   }catch(cause){
    // RouterOS /tool fetch rejects a 401 without this header ('should contain www-authenticate') and hides the reason.
    if(cause.status===401&&!res.headersSent)res.setHeader('WWW-Authenticate','Bearer realm="Kade Cloud"');
@@ -1160,6 +1189,7 @@ function createApp(options={}){
   }catch(cause){json(res,cause.status||500,{error:cause.status?cause.message:'RADIUS bridge error'});if(!cause.status)console.error(cause.name+': RADIUS bridge failed');}
  }):null;
  const pagesTimer=setInterval(()=>{try{if(process.env.NETWORK_PASSIVE!=='1')require('./lib/jobs.cjs').autoUpdatePages(store);}catch{}},120000);pagesTimer.unref();
+  const smsgwTimer=setInterval(()=>{if(process.env.NETWORK_PASSIVE==='1')return;require('./lib/smsgw.cjs').tick(store).catch(()=>{});},15000);smsgwTimer.unref();
   const walletTimer=setInterval(()=>{try{portal.expirePending(store);}catch{}},60000);walletTimer.unref();
   // Remote logging receiver (routers send syslog over WireGuard). Off unless NETWORK_SYSLOG_PORT is set (Compose sets 5514).
   if(process.env.NETWORK_SYSLOG_PORT&&options.syslog!==false){try{const sl=require('./lib/syslogin.cjs').start(store,{port:Number(process.env.NETWORK_SYSLOG_PORT)});server.on('close',()=>sl.close());}catch(e){console.warn('Remote logging not started: '+e.message);}}
