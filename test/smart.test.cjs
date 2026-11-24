@@ -73,3 +73,15 @@ test('8. owner summary includes the assistant findings; WhatsApp can carry the s
  store.put('alerts',{title:'Sales at CCR2004 are down',source:'revenue-drop',status:'Open',severity:'warning'});
  const txt=require('../lib/summary.cjs').build(store,Date.now());assert.match(txt,/Sales alerts: CCR2004/);
  assert.ok(fs.readFileSync(path.join(__dirname,'../lib/whatsapp.cjs'),'utf8').includes("'summary'"));}));
+
+test('2b. diagnosis ignores old and informational alerts: a customer who just logged in is not told RADIUS is down',withStore(async store=>{
+ const now=Date.now(),r=store.put('devices',{name:'hEX S',type:'router',status:'online'});
+ const s=store.put('subscribers',{name:'H',username:'kne-edtyfk',service:'hotspot',status:'active',expiresAt:now+H,routerId:r.id});
+ store.put('alerts',{title:'hEX S now uses Kade Cloud RADIUS',deviceId:r.id,source:'router-automation',severity:'info',status:'Open'});
+ const old=store.put('alerts',{title:'Kade Cloud RADIUS not responding: new customer logins fail',deviceId:r.id,severity:'critical',status:'Open'});
+ store.db.prepare("UPDATE records SET updated=?,created=? WHERE kind='alerts' AND id=?").run(now-2*H,now-2*H,old.id);
+ store.put('radiusSessions',{username:'kne-edtyfk',mac:'36:76:84:F5:96:82',startedAt:now-4*60000,updatedAt:now,nasName:'hEX S'});
+ const d=SM.diagnose(store,s,now);assert.equal(d.level,'ok',JSON.stringify(d.findings));assert.ok(d.findings.some(f=>/Connected now on 1 device through hEX S/.test(f.text)));
+ store.put('alerts',{title:'Kade Cloud RADIUS not responding: new customer logins fail',deviceId:r.id,severity:'critical',status:'Open'});
+ store.put('radiusSessions',{username:'kne-edtyfk',mac:'36:76:84:F5:96:82',startedAt:now-4*60000,updatedAt:now,nasName:'hEX S',stoppedAt:now-1000});
+ assert.equal(SM.diagnose(store,s,now+1000).level,'bad','a fresh RADIUS alert still shows when the customer is not connected');}));
