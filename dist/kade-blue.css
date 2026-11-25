@@ -1541,3 +1541,5 @@ html[data-theme=dark] .sm-dg.sm-bad{background:rgba(220,38,38,.12)}html[data-the
 .pu-row{display:flex;gap:10px;flex-wrap:wrap}
 @media (max-width:1100px){.pu-ed{grid-template-columns:1fr}.pu-phone{position:static;margin:0 auto;width:min(390px,100%);height:760px}}
 @media (max-width:560px){.pu-2{grid-template-columns:1fr}}
+.prl-box{border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:14px}.prl-box.info{background:#eef4ff;border:1px solid #c9dafc}.prl-box.warn{background:#fffbea;border:1px solid #f3e3a1}
+.prl-on{margin:6px 0 14px}.prl-lbl{font-weight:600;margin:0 0 8px}.prl-seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.prl-seg button{border:0;border-radius:8px;padding:10px;background:#e7eaf2;font:inherit;cursor:pointer}.prl-seg button.on{background:#1747e6;color:#fff}
