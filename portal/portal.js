@@ -293,6 +293,9 @@ function renderFree(){let el=$('#free-banner');if(!freeMode){if(el)el.remove();r
  el.innerHTML=`${freeMode.theme==='image'&&freeMode.imageUrl?`<img class="fb-img" src="${esc(freeMode.imageUrl)}" alt="">`:`<span class="fb-ico" aria-hidden="true">${T.i}</span>`}<span class="fb-tx"><b>${esc(T.t)}</b>${freeMode.reason?`<span>${esc(freeMode.reason)}</span>`:''}<small>${esc(t('freeUntil',{t:until}))}${freeMode.down?` · ${freeMode.down} Mbps down / ${freeMode.up} Mbps up`:''}</small></span><button type="button" class="btn" id="free-go">${esc(T.c)}</button>`;
  $('#free-go').onclick=async()=>{alertBox('');try{if(!router.login){alertBox(t('freeNeedWifi'),true);return;}const r=await call('login',{method:'POST',body:JSON.stringify({free:true,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;}catch(e){alertBox(e.message);}};}
 function pw(){const L=(LANG||'en').slice(0,2);return ({sw:{off:'Ukurasa huu umefunguliwa nje ya ukurasa wa kuingia wa Wi-Fi, kwa hivyo hatuoni kifaa chako hapa. Weka namba ya akaunti yako hapa chini.',label:'Nenosiri la hotspot',help:'Liko kwenye SMS tuliyokutumia baada ya kulipa. Kifaa hiki kitakumbukwa baadaye.',wifi:'Ili kuunganisha, jiunge na Wi-Fi kisha ufungue ukurasa huu kutoka kwenye ukurasa wa kuingia wa Wi-Fi.'}})[L]||{off:'This page was opened outside the WiFi login, so we cannot see your device here. Enter your account number below, or open the WiFi login page.',label:'Hotspot password',help:'It is in the SMS we sent after you paid. This device is remembered after that.',wifi:'To connect, join the WiFi and open this page from the WiFi login screen.'};}
+let POPUPS=[];
+const KP_HOME=()=>(BASE||location.origin)+'/portal/?kp=1'+(params.get('nas')||router.nas?'&nas='+encodeURIComponent(params.get('nas')||router.nas):'');
+function kpAfterPay(){if(!POPUPS.length)return;if(router.login)router.dst=KP_HOME();else setTimeout(()=>window.kadePopup&&window.kadePopup(POPUPS,BASE),1500);}
 async function routerLogin(username,password){
  if(!router.login){await call('login',{method:'POST',body:JSON.stringify({username,password})});return false;}
  const r=await call('login',{method:'POST',body:JSON.stringify({username,password,mac:router.mac,chapId:router.chapId,chapChallenge:router.chapChallenge})});
@@ -311,6 +314,7 @@ function poll(id,token,started){clearTimeout(polling);polling=setTimeout(async()
   const s=await call('pay/'+id+'?t='+encodeURIComponent(token));
   if(s.status==='pending'){if(Date.now()-started>40000)$('#wait-text').textContent=t('stillWaiting');return poll(id,token,started);}
   if(s.status==='failed')return fail(s.kind||lastKind,s.reason||t('notCompleted'));
+  kpAfterPay();
   const until=when(s.expiresAt),tick='<div class="pulse ok"><svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></div>';
   if(!s.password)return done(`${tick}<h2>${esc(t('paid'))}</h2><p>${t('accActive',{u:esc(s.username),d:esc(until)})}</p><p class="muted small">${esc(t('restart'))}</p><button type="button" class="btn ghost" id="done-back">${esc(t('ok'))}</button>`);
   done(`${tick}<h2>${esc(t('paid'))}</h2><p>${t('wifiActive',{d:esc(until)})}</p><dl class="code-box"><div><dt>${esc(t('code'))}</dt><dd>${esc(s.username)}</dd></div><div><dt>${esc(t('password'))}</dt><dd>${esc(s.password)}</dd></div></dl><p class="muted small" id="connecting">${esc(router.login?t('connecting'):t('joinWifi',{b:CFG.brandName}))}</p>${router.login?'':`<button type="button" class="btn ghost" id="done-back">${esc(t('ok'))}</button>`}`);
@@ -424,7 +428,7 @@ async function boot(){
  render();
  const q=params.get('theme');
  try{
-  const cq=new URLSearchParams();if(router.mac)cq.set('mac',router.mac);if(params.get('ip'))cq.set('ip',params.get('ip'));if(params.get('nas'))cq.set('nas',params.get('nas'));const d=await call('config'+(cq.toString()?'?'+cq:''));MAINT=d.maintenance||null;CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};applyPreview();plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;cardOn=!!d.paystack;freeMode=d.freeMode||null;engage=d.engage||{ads:[],quiz:null};state='ok';
+  const cq=new URLSearchParams();if(router.mac)cq.set('mac',router.mac);if(params.get('ip'))cq.set('ip',params.get('ip'));if(params.get('nas'))cq.set('nas',params.get('nas'));const d=await call('config'+(cq.toString()?'?'+cq:''));MAINT=d.maintenance||null;POPUPS=d.popups||[];if(params.get('kp'))setTimeout(()=>window.kadePopup&&window.kadePopup(POPUPS,BASE),900);CFG={...CFG,...d.config,show:{...CFG.show,...(d.config.show||{})}};applyPreview();plans=d.plans||[];pppoePlans=d.pppoePlans||[];mpesaOn=!!d.mpesa;cardOn=!!d.paystack;freeMode=d.freeMode||null;engage=d.engage||{ads:[],quiz:null};state='ok';
   {const nav=String(navigator.language||'').slice(0,2).toLowerCase(),pick=(CFG.defaultLang&&CFG.defaultLang!=='auto')?CFG.defaultLang:(STR[nav]?nav:'en');try{if(!localStorage.getItem('portal-lang'))LANG=STR[pick]?pick:'en';}catch{LANG=STR[pick]?pick:'en';}}
  }catch{state='error';}
  if(q&&THEMES[q])CFG.theme=q;

@@ -1518,3 +1518,14 @@ html[data-theme=dark] .sm-dg.sm-bad{background:rgba(220,38,38,.12)}html[data-the
 .tp3-tip{position:absolute;max-width:260px;background:rgba(3,22,28,.94);border:1.5px solid #22d3ee;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.45;color:#e6fffb;pointer-events:none;box-shadow:0 8px 30px rgba(34,211,238,.25)}
 .tp3-tip b{display:block;color:#67e8f9;font-size:14px;margin-bottom:2px}.tp3-tip span{display:block}.tp3-tip i{display:block;color:#99f6e4;opacity:.85;margin-top:4px}
 #tp3-pick .tp3-panel{padding:14px 16px;background:var(--card,#fff);color:var(--ink,#0f172a);border-radius:0 0 12px 12px}
+/* Portal popups page */
+.pu-master{padding:16px 20px}.pu-list{display:flex;flex-direction:column;gap:12px;padding:0 20px 20px}
+.pu-item{display:grid;grid-template-columns:140px 1fr auto;gap:16px;align-items:center;border:1px solid var(--line,#e3e8f4);border-radius:14px;padding:12px}
+.pu-thumb{width:140px;height:80px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#3b6cff,#0a1f7a);display:grid;place-items:center;color:#fff;font-size:12px}.pu-thumb img{width:100%;height:100%;object-fit:cover}
+.pu-main h3{margin:0 0 4px;font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pu-main p{margin:0 0 4px}
+.pu-stats{display:flex;gap:16px;margin-top:8px;font-size:13px;flex-wrap:wrap}.pu-acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.pu-tg{margin:0}
+@media (max-width:720px){.pu-item{grid-template-columns:1fr}.pu-thumb{width:100%;height:120px}.pu-acts{justify-content:flex-start}}
+.pu-sw{display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;margin:0}.pu-sw>input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.pu-knob{width:46px;height:26px;border-radius:99px;background:#c9d1e6;position:relative;flex:none;transition:background .2s}.pu-knob::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s}
+.pu-sw>input:checked+.pu-knob{background:#1747e6}.pu-sw>input:checked+.pu-knob::after{left:23px}.pu-sw>input:focus-visible+.pu-knob{outline:2px solid #1747e6;outline-offset:2px}.pu-sw>input:disabled+.pu-knob{opacity:.5}
+.pu-sw span{display:flex;flex-direction:column}.pu-sw small{color:var(--muted,#6b7694)}

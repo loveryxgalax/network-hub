@@ -57,6 +57,10 @@ function leftText(ms){if(ms==null)return '';const m=Math.max(1,Math.round(ms/600
 const when=ms=>ms?new Date(ms).toLocaleString(LANG==='sw'?'sw-KE':'en-KE',{dateStyle:'medium',timeStyle:'short'}):'—';
 
 /* ---------- connecting through the router ---------- */
+let POPUPS=[];
+const KP_HOME=()=>(BASE||location.origin)+'/portal/?kp=1'+(params.get('nas')||router.nas?'&nas='+encodeURIComponent(params.get('nas')||router.nas):'');
+function kpAfterPay(){if(!POPUPS.length)return;if(router.login)router.dst=KP_HOME();else setTimeout(()=>window.kadePopup&&window.kadePopup(POPUPS,BASE),1500);}
+
 function toRouter(r){if(!router.login)return false;const q=new URLSearchParams({username:r.username,password:r.password,dst:router.dst||'http://www.google.com',popup:'false'});location.href=router.login+(router.login.includes('?')?'&':'?')+q;return true;}
 async function routerLogin(username,password){
  if(!router.login)throw new Error(t('needWifi'));
@@ -100,6 +104,7 @@ function waitPayment(start,p){const started=Date.now();
  const tick=async()=>{try{const s=await call('pay/'+encodeURIComponent(start.id)+'?t='+encodeURIComponent(start.token));
    if(s.status==='pending'){if(Date.now()-started>40000){const w=$('#wait-text');if(w)w.textContent=t('stillWaiting');}polling=setTimeout(tick,3000);return;}
    if(s.status==='failed'||s.status==='review'){sheet(`<h2>${esc(LANG==='sw'?'Malipo hayakukamilika':'Payment not completed')}</h2><p>${esc(s.reason||'')}</p><button class="btn wide" id="again">${esc(LANG==='sw'?'Jaribu tena':'Try again')}</button>`);$('#again').onclick=()=>buySheet(p,false);return;}
+   kpAfterPay();
    const creds=s.username&&s.password?`<dl class="code-box"><dt>${esc(t('code'))}</dt><dd>${esc(s.username)}</dd><dt>${esc(t('password'))}</dt><dd>${esc(s.password)}</dd></dl>`:'';
    sheet(`<div class="wait"><div class="tick">${ICON.check}</div><h2>${esc(t('paid'))}</h2>${creds}<p class="muted" id="conn">${esc(router.login?t('connecting'):t('joinWifi',{b:CFG.brandName}))}</p></div>`);
    if(router.login&&s.username&&s.password)routerLogin(s.username,s.password).catch(err=>{const c=$('#conn');if(c)c.textContent=err.message;});
@@ -192,6 +197,7 @@ async function start(){translate();
  try{const q=new URLSearchParams();for(const k of ['mac','nas','ip'])if(params.get(k))q.set(k,params.get(k));const data=await call('config'+(q.toString()?'?'+q:''));
   CFG={...data.config,mpesa:!!data.mpesa,paystack:!!data.paystack,freeMode:data.freeMode||null,show:data.config.show||{}};plans=data.plans||[];homePlans=data.pppoePlans||[];
   if(!MODE&&data.mode&&data.mode!=='any')MODE=data.mode;
+  POPUPS=data.popups||[];if(params.get('kp'))setTimeout(()=>window.kadePopup&&window.kadePopup(POPUPS,BASE),900);
   if(data.maintenance){const n=$('#notice');n.hidden=false;n.textContent=t('maint')+': '+(data.maintenance.message||data.maintenance.title||'');}}
  catch(err){$('#boot').classList.add('done');alertBox(err.message);return;}
  // The customer's own choice wins; otherwise the ISP's default language, or the phone's language when that is "auto".

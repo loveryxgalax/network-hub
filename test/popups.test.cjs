@@ -1,0 +1,21 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const {Store}=require('../lib/store.cjs'),P=require('../lib/popups.cjs');
+const PNG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+test('portal popups: master switch, per-popup switch, dates, routers, account page, counts, picture',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'pu-')),st=new Store(dir);try{const now=Date.now();
+  const r1=st.put('devices',{name:'hEX S',type:'router'}),r2=st.put('devices',{name:'LAB-HEX',type:'router'});
+  const a=P.save(st,{title:'Join our WhatsApp Channel',text:'Offers first',points:'🎁 Bonus\n⚡ New packages\n',buttonText:'JOIN',buttonLink:'https://whatsapp.com/channel/x',image:PNG});
+  assert.deepEqual(a.points,['🎁 Bonus','⚡ New packages']);
+  const b=P.save(st,{title:'Only LAB',routers:[r2.id],onAccount:true});
+  assert.deepEqual(P.forPortal(st,{routerId:r1.id,now}).map(x=>x.title),['Join our WhatsApp Channel'],'b is for LAB-HEX only');
+  assert.equal(P.forPortal(st,{routerId:r2.id,now}).length,2);assert.deepEqual(P.forPortal(st,{where:'account',routerId:r2.id,now}).map(x=>x.title),['Only LAB']);
+  assert.ok(!JSON.stringify(P.forPortal(st,{routerId:r1.id})).includes('base64'),'the picture is not sent inline');assert.equal(P.forPortal(st,{routerId:r1.id})[0].hasImage,true);
+  assert.equal(P.imageOf(st,a.id).type,'image/png');
+  P.setEnabled(st,false);assert.equal(P.forPortal(st,{routerId:r1.id}).length,0,'master switch off');P.setEnabled(st,true);
+  P.save(st,{...st.get(P.KIND,a.id),active:false},st.get(P.KIND,a.id));assert.equal(P.forPortal(st,{routerId:r1.id}).length,0,'popup switched off');
+  P.save(st,{...st.get(P.KIND,a.id),active:true,endsAt:'2020-01-01'},st.get(P.KIND,a.id));assert.equal(P.forPortal(st,{routerId:r1.id}).length,0,'ended');
+  P.count(st,b.id,'view');P.count(st,b.id,'view');P.count(st,b.id,'tap');P.count(st,b.id,'hack');const c=P.list(st).find(x=>x.id===b.id);assert.equal(c.views,2);assert.equal(c.taps,1);
+  assert.throws(()=>P.save(st,{title:'x',buttonText:'Go',buttonLink:'javascript:alert(1)'}),/https/);assert.throws(()=>P.save(st,{title:'<script>'}),/cannot contain/);
+  assert.throws(()=>P.save(st,{title:'x',image:'data:text/html;base64,AAAA'}),/JPG, PNG/);assert.throws(()=>P.save(st,{title:'x',buttonText:'Go'}),/link/);
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}});
