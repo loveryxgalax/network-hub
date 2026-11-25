@@ -24,3 +24,11 @@ test('router report: resource details and public IP are kept; bad IP refused',()
  const h=H.normalize({res:{cpuFreq:'2000',build:'2026-09-29 14:21:27',factory:'7.1',platform:'MikroTik',board:'CCR2004-16G-2S+',wsr:'389227',wst:'1343167'},pubip:'129.222.147.124',hdd:{free:'96714752',total:'134217728',bad:'0'}});
  assert.equal(h.res.cpuFreq,2000);assert.equal(h.res.wst,1343167);assert.equal(h.publicIp,'129.222.147.124');assert.equal(h.hdd.bad,0);
  assert.equal(H.normalize({pubip:'<script>'}).publicIp,'');assert.match(H.SCRIPT,/myip\.opendns\.com/);assert.match(H.SCRIPT,/write-sect-total/);});
+
+test('account numbers: pattern, padding, ISP code, skips numbers in use (deleted too), suggest, off by default',()=>{const AN=require('../lib/acctnum.cjs');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'an-')),st=new Store(dir);try{
+  assert.equal(AN.take(st),'','off by default');assert.throws(()=>AN.save(st,{enabled:true}),/pattern/);assert.throws(()=>AN.save(st,{pattern:'ACC'}),/\{n\}/);assert.throws(()=>AN.save(st,{pattern:'A<{n}'}),/letters/);
+  st.put('subscribers',{username:'acc-00002',service:'pppoe'});st.put('deletedSubscribers',{username:'acc-00003'});st.put('subscribers',{username:'acc-00041',service:'static'});
+  AN.save(st,{pattern:'ACC-{n:5}',enabled:true});assert.equal(AN.view(st).next,'ACC-00001');assert.equal(AN.take(st),'ACC-00001');assert.equal(AN.take(st),'ACC-00004','2 in use, 3 deleted');
+  assert.equal(AN.suggest(st,'ACC-{n:5}').last,41);AN.save(st,{ispCode:true,last:99});assert.equal(AN.take(st),'KNE-ACC-00100');
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}});

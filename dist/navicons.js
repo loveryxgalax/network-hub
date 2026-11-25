@@ -52,6 +52,7 @@
   'pay-reports':'M21 12A9 9 0 1 1 12 3v9z M15 3.5a9 9 0 0 1 5.5 5.5H15z',
   upsell:'M3 17l6-6 4 4 8-8 M15 7h6v6',
   insights:'M9 18h6 M10 22h4 M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z',
+  'account-numbers':'M4 9h16 M4 15h16 M10 3 8 21 M16 3l-2 18',
   popups:'M4 5h16v11H8l-4 4z M8 9h8 M8 12h5',
   smart:'M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z M19 15l1 2.5 2.5 1-2.5 1L19 22l-1-2.5-2.5-1 2.5-1z',
   automation:'M6 6h12v12H6z M9 9h6v6H9z M9 2v4 M15 2v4 M9 18v4 M15 18v4 M2 9h4 M2 15h4 M18 9h4 M18 15h4',
