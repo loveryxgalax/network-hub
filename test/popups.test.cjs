@@ -19,3 +19,8 @@ test('portal popups: master switch, per-popup switch, dates, routers, account pa
   assert.throws(()=>P.save(st,{title:'x',buttonText:'Go',buttonLink:'javascript:alert(1)'}),/https/);assert.throws(()=>P.save(st,{title:'<script>'}),/cannot contain/);
   assert.throws(()=>P.save(st,{title:'x',image:'data:text/html;base64,AAAA'}),/JPG, PNG/);assert.throws(()=>P.save(st,{title:'x',buttonText:'Go'}),/link/);
  }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}});
+
+test('router report: resource details and public IP are kept; bad IP refused',()=>{const H=require('../lib/health.cjs');
+ const h=H.normalize({res:{cpuFreq:'2000',build:'2026-09-29 14:21:27',factory:'7.1',platform:'MikroTik',board:'CCR2004-16G-2S+',wsr:'389227',wst:'1343167'},pubip:'129.222.147.124',hdd:{free:'96714752',total:'134217728',bad:'0'}});
+ assert.equal(h.res.cpuFreq,2000);assert.equal(h.res.wst,1343167);assert.equal(h.publicIp,'129.222.147.124');assert.equal(h.hdd.bad,0);
+ assert.equal(H.normalize({pubip:'<script>'}).publicIp,'');assert.match(H.SCRIPT,/myip\.opendns\.com/);assert.match(H.SCRIPT,/write-sect-total/);});

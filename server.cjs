@@ -150,6 +150,7 @@ function createApp(options={}){
    if(!device||device.type!=='router'||!routerAgent.validToken(token,store.secret(credentialId)))throw error(401,'Customer discovery enrollment denied');
    if(Date.now()-(agentAccepted.get(credentialId)||0)<30000)throw error(429,'Wait at least thirty seconds between discovery reports');
    const report=await body(req,1048576);if(!routerAgent.validToken(token,store.secret(credentialId)))throw error(401,'Customer discovery enrollment denied');
+   try{const fwd=String(req.headers['cf-connecting-ip']||String(req.headers['x-forwarded-for']||'').split(',')[0]||req.socket.remoteAddress||'').trim().replace(/^::ffff:/,'');store.setting('routerSource:'+device.id,{ip:fwd.slice(0,45),country:String(req.headers['cf-ipcountry']||'').slice(0,2).toUpperCase(),time:Date.now()});}catch{}
    let accepted;try{accepted=customers.receive(store,device,report,customerUploads);}catch(cause){if(cause.status===400){store.setting('customerDiscoveryError:'+device.id,{time:Date.now(),message:cause.message});console.warn('Customer discovery report rejected for '+device.name+': '+cause.message);}throw cause;}
    if(accepted.completed){agentAccepted.set(credentialId,Date.now());store.setting('customerDiscoveryError:'+device.id,null);}return json(res,200,accepted);
   }
