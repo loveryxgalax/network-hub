@@ -55,3 +55,17 @@ test('settings: blocked devices, static installation fee, packets margin, custom
   assert.equal(radius.settings(store).selfPackageChange,true);radius.updateSettings(store,{selfPackageChange:false});assert.deepEqual(require('../lib/portal.cjs').info(store).pppoePlans,[]);
  }finally{done();}
 });
+
+test('hotspot roaming switches: same device elsewhere, other device here, other device elsewhere; all on by default',()=>{
+ const {store,done}=fx();try{const north=store.put('devices',{name:'north',type:'router',driver:'none'});store.put('devices',{name:'south',type:'router',driver:'none'});
+  const p=store.put('plans',radius.plan({name:'Hour',service:'hotspot',downloadMbps:5,uploadMbps:2,price:20,durationValue:1,durationUnit:'hours'}));
+  const s=store.put('subscribers',{...radius.subscriber(store,{name:'Hot',username:'kne-h1',service:'hotspot',planId:p.id,expiresAt:Date.now()+36e5}),maxDevices:5});radius.setPassword(store,s.id,'pw123456');
+  store.put('radiusSessions',{username:'kne-h1',mac:'AA:00:00:00:00:01',nasName:'north',updatedAt:Date.now()});
+  const hr=(nas,m)=>({'User-Name':'kne-h1','Service-Type':'Login-User','NAS-Identifier':nas,'Calling-Station-Id':m});
+  assert.equal(radius.authorize(store,hr('south','AA:00:00:00:00:01')).status,200,'default: allowed');assert.equal(radius.authorize(store,hr('south','AA:00:00:00:00:02')).status,200);
+  radius.updateSettings(store,{roamSameDevice:false,roamSameServer:false,roamAnywhere:false});
+  assert.equal(radius.authorize(store,hr('north','AA:00:00:00:00:01')).status,200,'same device, same router: a reconnect');
+  assert.equal(radius.authorize(store,hr('south','AA:00:00:00:00:01')).status,401,'(1) off');assert.equal(radius.authorize(store,hr('north','AA:00:00:00:00:02')).status,401,'(2) off');assert.equal(radius.authorize(store,hr('south','AA:00:00:00:00:02')).status,401,'(3) off');
+  radius.updateSettings(store,{roamSameDevice:true,roamSameServer:true});assert.equal(radius.authorize(store,hr('south','AA:00:00:00:00:01')).status,200);assert.equal(radius.authorize(store,hr('north','AA:00:00:00:00:02')).status,200);assert.equal(radius.authorize(store,hr('south','AA:00:00:00:00:02')).status,401);
+  assert.equal(radius.settings(store).roamAnywhere,false);void north;
+ }finally{done();}});
