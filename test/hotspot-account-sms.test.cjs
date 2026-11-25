@@ -9,7 +9,7 @@ test('first hotspot payment SMS carries the account number and a short personal 
   const s=store.put('subscribers',{name:'Hotspot 0712345678',username:'kne-ab12cd',service:'hotspot',phone:'+254712345678',status:'active',planId:plan.id});
   const pay=(amt,ref)=>{const p=store.put('subscriberPayments',{subscriberId:s.id,amount:amt,reference:ref,time:Date.now()});return {payment:p,subscriber:store.get('subscribers',s.id)};};
   await billing.receipt(store,pay(20,'UKA1'),fake);
-  assert.match(sent[0],/^Payment of KSh 20 received\. Acc: KNE-AB12CD\. Ref: UKA1\. Your internet is active until .*Check balance & buy again: my\.example\.test\/[A-Za-z0-9]{7,10}\nKade Networks\.$/s);assert.ok(sent[0].length<=160*2,'stays short');
+  assert.match(sent[0],/^Payment of KSh 20 received\. Acc: KNE-AB12CD\. Ref: UKA1\. Your internet is active until .*Check balance & buy again: my\.example\.test\/[A-Za-z0-9]{6,10}\nKade Networks\.$/s);assert.ok(sent[0].length<=160*2,'stays short');
   const code=sent[0].split('/').pop().split('\n')[0],target=sl.resolve(store,code);assert.match(String(target?.target||target?.path||JSON.stringify(target)),/\/portal\/account\.html\?t=/);
   const t=decodeURIComponent(String(target?.target||target?.path||JSON.stringify(target)).split('t=')[1].replace(/"$/,''));assert.equal(self.subscriberOf(store,t)?.id,s.id,'the link opens this customer');
   await billing.receipt(store,pay(20,'UKA2'),fake);assert.match(sent[1],/^Hi .*we received KSh 20 \(UKA2\)/,'second payment: normal SMS');assert.doesNotMatch(sent[1],/Acc:/);

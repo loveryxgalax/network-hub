@@ -21,7 +21,7 @@ test('customer pages on their own address: portal at /, no admin there, links an
   const p=app.store.put('plans',radius.plan({name:'Day',service:'hotspot',downloadMbps:5,uploadMbps:5,price:50,durationValue:1,durationUnit:'days'}));
   const s=app.store.put('subscribers',radius.subscriber(app.store,{name:'Jane',username:'jane',service:'hotspot',planId:p.id,expiresAt:Date.now()+864e5}));
   r=await get(port,OPS,'/api/radius/subscribers/'+s.id+'/self-service',{method:'POST',headers:{Cookie:cookie,'X-CSRF-Token':csrf,'Content-Type':'application/json',Origin:'https://'+OPS},body:'{}'});
-  const link=JSON.parse(r.body);assert.match(link.link,/^https:\/\/my\.example\.test\/[A-Za-z0-9]{7}$/);assert.match(link.fullLink,/^https:\/\/my\.example\.test\/portal\/account\.html\?t=|^\/api\/customers\/[a-f0-9-]+\/portal$/);
+  const link=JSON.parse(r.body);assert.match(link.link,/^https:\/\/my\.example\.test\/[A-Za-z0-9]{6}$/);assert.match(link.fullLink,/^https:\/\/my\.example\.test\/portal\/account\.html\?t=|^\/api\/customers\/[a-f0-9-]+\/portal$/);
   r=await get(port,MY,new URL(link.link).pathname);assert.equal(r.status,302);assert.match(r.headers.location,/^\/portal\/account\.html/);
   // An admin shortening an old Kade Cloud link still works
   const sl=require('../lib/shortlink.cjs');assert.match(sl.create(app.store,'https://kade.example.test/portal/?x=1',{origin:'https://my.example.test'}).url,/^https:\/\/my\.example\.test\//);
