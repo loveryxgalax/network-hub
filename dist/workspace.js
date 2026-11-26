@@ -28,7 +28,7 @@ const nav=[
  ['fibre','Fibre overview','activity','FIBRE'],['cables','Cables & cores','server'],['closures','Closures & splices','grid'],['power','ONU vs OLT power','activity'],['inventory','Inventory','server'],
  ['radius','Subscribers & plans','onu','SUBSCRIBERS'],['jobs','Work orders','check','TASKS'],['wallet','Billing records','server','ACCOUNT'],['tickets','Support tickets','info'],['team','Team','onu'],['settings','Settings','settings']
 ];
-const money=n=>new Intl.NumberFormat('en-KE',{style:'currency',currency:'KES'}).format(n||0);
+const money=n=>new Intl.NumberFormat('en-KE',{style:'currency',currency:'KES',minimumFractionDigits:0,maximumFractionDigits:2}).format(n||0);
 const stamp=value=>value?new Date(value).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'Not observed';
 const h=escapeHtml;
 const rows=kind=>state.rows[kind]||[];
