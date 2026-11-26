@@ -1555,3 +1555,4 @@ a.kd-sc-t,a.kd-sc-sub,a.kd2-chip{text-decoration:none;color:inherit;display:bloc
 @media (max-width:720px){.cs-states{grid-template-columns:1fr 1fr}}
 tr.row-link{cursor:pointer}tr.row-link:hover td{background:#f3f6ff}
 .pay-cust{white-space:nowrap}.pay-cust .pay-ph{font-size:10.5px;color:#6b7694;font-weight:400;margin-left:4px}
+.hs-tight table th,.hs-tight table td{padding:8px 7px;font-size:12px}.hs-tight table th{font-size:10.5px;letter-spacing:.2px}.hs-tight table td small{font-size:10.5px}.hs-tight .status{font-size:10.5px}
