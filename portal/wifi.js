@@ -58,6 +58,8 @@ const when=ms=>ms?new Date(ms).toLocaleString(LANG==='sw'?'sw-KE':'en-KE',{dateS
 
 /* ---------- connecting through the router ---------- */
 let POPUPS=[];
+const FRIENDLY_ERR=e=>{const s=String(e||'');if(/radius|not responding|timeout|timed out|server|internal|no response/i.test(s)){try{fetch((BASE||'')+'/portal/api/login-error',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({error:s,nas:params.get('nas')||'',mac:params.get('mac')||''})}).catch(()=>{});}catch{}return (typeof LANG!=='undefined'&&LANG==='sw')?'Hatukuweza kukuunganisha sasa hivi. Tafadhali bonyeza Unganisha tena baada ya muda mfupi.':'We could not connect you just now. Please tap Connect again in a moment.';}return s;};
+
 const KP_HOME=()=>(BASE||location.origin)+'/portal/?kp=1'+(params.get('nas')||router.nas?'&nas='+encodeURIComponent(params.get('nas')||router.nas):'');
 function kpAfterPay(){if(!POPUPS.length)return;if(router.login)router.dst=KP_HOME();else setTimeout(()=>window.kadePopup&&window.kadePopup(POPUPS,BASE),1500);}
 
@@ -217,7 +219,7 @@ async function start(){translate();
  $('#voucher').hidden=CFG.show.vouchers===false;if($('#voucher').hidden)$('#actions').style.gridTemplateColumns='1fr';
  // Off the WiFi (no device address) a hotspot customer finds their account instead; on the WiFi the page is about connecting.
  $('#find').hidden=!(home||(!router.mac&&CFG.show.findAccount!==false));
- if(params.get('error')&&!home)alertBox(params.get('error'));
+ if(params.get('error')&&!home)alertBox(FRIENDLY_ERR(params.get('error')));
  if(params.get('expired')==='1'||params.get('account')){if(params.get('account'))$('#find input').value=params.get('account');setTimeout(()=>$('#find input').focus(),300);}
  renderPackages();renderFree();
  $('#boot').classList.add('done');here(home?'Home':'Packages');

@@ -49,6 +49,7 @@
   'st-bulk':'M8 8h12v12H8z M4 16V4h12',
   'pay-received':'M12 4v16 M6 14l6 6 6-6',
   'checkout-links':'M3 3h2l2.4 12h11.2L21 7H6 M9 20h.01 M18 20h.01',
+  reports:'M21 12A9 9 0 1 1 12 3v9z M15 3.5a9 9 0 0 1 5.5 5.5H15z',
   'pay-reports':'M21 12A9 9 0 1 1 12 3v9z M15 3.5a9 9 0 0 1 5.5 5.5H15z',
   upsell:'M3 17l6-6 4 4 8-8 M15 7h6v6',
   insights:'M9 18h6 M10 22h4 M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z',
