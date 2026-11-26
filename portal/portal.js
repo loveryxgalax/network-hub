@@ -421,7 +421,7 @@ function loginChoice(){if(!CFG.show?.loginChoice||params.get('account')||params.
  d.querySelector('[data-lc=login]').focus();}
 function showMaint(){if(!MAINT||document.getElementById('maint-note'))return;const n=document.createElement('div');n.id='maint-note';n.setAttribute('role','status');
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- n.innerHTML=`<strong>${esc(MAINT.title)}</strong><span>${esc(MAINT.message)}${MAINT.until?' · until '+esc(new Date(MAINT.until).toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'})):''}</span>`;
+ n.innerHTML=`<strong>${esc(MAINT.title)}</strong><span>${esc(MAINT.message)}</span>`;
  n.style.cssText='position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:center;align-items:center;padding:10px 14px;background:#fff4e0;color:#7a4b00;border-bottom:1px solid #f0d49a;font-size:14px;line-height:1.4;text-align:center';
  document.body.prepend(n);}
 async function boot(){
