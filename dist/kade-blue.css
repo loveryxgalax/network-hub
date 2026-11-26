@@ -1556,3 +1556,15 @@ a.kd-sc-t,a.kd-sc-sub,a.kd2-chip{text-decoration:none;color:inherit;display:bloc
 tr.row-link{cursor:pointer}tr.row-link:hover td{background:#f3f6ff}
 .pay-cust{white-space:nowrap}.pay-cust .pay-ph{font-size:10.5px;color:#6b7694;font-weight:400;margin-left:4px}
 .hs-tight table th,.hs-tight table td{padding:8px 7px;font-size:12px}.hs-tight table th{font-size:10.5px;letter-spacing:.2px}.hs-tight table td small{font-size:10.5px}.hs-tight .status{font-size:10.5px}
+/* Customer profile tables: one line per cell, smaller text, scroll sideways when needed */
+.cp-page .table-wrap{overflow-x:auto}.cp-page table th,.cp-page table td{white-space:nowrap;font-size:12px;padding:8px 9px}.cp-page table td small{display:inline;margin-left:4px}
+/* My account */
+.me-page>section{margin-bottom:16px}.me-page .sites-panel>h2{padding:18px 20px 4px;margin:0}.me-page .sites-panel>p,.me-page #me-2fa>form,.me-page #me-2fa>div,.me-page #me-2fa>p{padding-left:20px;padding-right:20px}
+.me-head{display:flex;align-items:center;gap:18px;padding:20px 24px}.me-head h2{margin:0}.me-head p{margin:4px 0 0}
+.me-avatar{width:72px;height:72px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:28px;font-weight:700;overflow:hidden;background:rgba(255,255,255,.2)}.me-avatar img{width:100%;height:100%;object-fit:cover}
+.me-av-acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.me-av-btn{cursor:pointer}
+.me-grid>section:not(:has(form)){padding:20px 22px}.me-grid h2{margin-top:0}
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.me-page table th:first-child,.me-page table td:first-child{padding-left:20px}.me-page .table-wrap,.me-page .kt-card{margin:0 12px 12px}
+/* Top bar: the search box never runs under the Billing button */
+.topbar .search-trigger{min-width:0;flex:1 1 auto;max-width:420px;overflow:hidden}.topbar .wallet-button{flex:none;position:relative;z-index:1;margin-left:10px}

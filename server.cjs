@@ -229,7 +229,7 @@ function createApp(options={}){
   }
   // My account: own details, password, sign-in alerts, recent sign-ins and activity, other sessions.
   if(route==='/api/me'&&method==='GET'){const em=user.email.toLowerCase(),now=Date.now();
-   return json(res,200,{user:publicUser(user),signinAlerts:!!store.setting('signinAlerts:'+user.id),emailReady:!!emailLib.config?.(store),
+   return json(res,200,{user:publicUser(user),avatar:!!store.setting('avatar:'+user.id),signinAlerts:!!store.setting('signinAlerts:'+user.id),emailReady:!!emailLib.config?.(store),
     signins:(store.setting('accessLog')?.items||[]).filter(l=>l.email===em).slice(0,15).map(l=>({time:l.time,ip:l.ip,status:l.status,reason:l.reason,ua:l.ua})),
     activity:store.db.prepare('SELECT time,action,target FROM audit WHERE user_id=? ORDER BY id DESC LIMIT 20').all(user.id),
     twoStep:totp.status(store,user.id),
@@ -240,6 +240,10 @@ function createApp(options={}){
   if(route==='/api/me/2fa/disable'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.password||'').slice(0,257),user.password))throw error(400,'Your password is not right');if(!totp.check(store,user.id,String(input.code||'')))throw error(400,'Enter a current code from your app (or a recovery code) to switch it off');totp.disable(store,user.id);store.audit(user,'Switched off two-step sign-in',user.id);return json(res,200,{enabled:false});}
   // An admin can clear two-step sign-in for someone who lost their phone and recovery codes (never for themselves here).
   {const r2=route.match(/^\/api\/users\/([a-f0-9-]{36})\/2fa\/reset$/);if(r2&&method==='POST'){role(user,['admin']);if(r2[1]===user.id)throw error(400,'Switch your own off from My account');const u=store.db.prepare('SELECT * FROM users WHERE id=?').get(r2[1]);if(!u)throw error(404,'User not found');totp.disable(store,u.id);store.db.prepare('DELETE FROM sessions WHERE user_id=?').run(u.id);store.audit(user,'Reset two-step sign-in for '+u.email,u.id);return json(res,200,{ok:true});}}
+  // Profile picture for the signed-in user (a small JPEG/PNG/WebP, resized in the browser first).
+  if(route==='/api/me/avatar'){if(method==='GET'){const v=store.setting('avatar:'+user.id);if(!v)throw error(404,'No picture');const m=/^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(v);if(!m)throw error(404,'No picture');res.writeHead(200,{'Content-Type':m[1],'Cache-Control':'private, no-cache'});return res.end(Buffer.from(m[2],'base64'));}
+   if(method==='PUT'){const v=(await body(req,400000)).image;if(v===''||v===null){store.setting('avatar:'+user.id,null);return json(res,200,{ok:true,avatar:false});}const s2=String(v||'');if(!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s2)||s2.length>300000)throw error(400,'Choose a JPG, PNG or WebP picture (it is resized to 256 px)');store.setting('avatar:'+user.id,s2);store.audit(user,'Changed profile picture',user.id);return json(res,200,{ok:true,avatar:true});}
+   throw error(405,'Method not allowed');}
   if(route==='/api/me/password'&&method==='POST'){const input=await body(req);if(!checkPassword(String(input.current||'').slice(0,257),user.password))throw error(400,'Your current password is not right');
    const next=password(input.next);if(next===input.current)throw error(400,'Choose a password different from the current one');
    store.transaction(()=>{store.db.prepare('UPDATE users SET password=? WHERE id=?').run(hashPassword(next),user.id);store.db.prepare('DELETE FROM sessions WHERE user_id=? AND token<>?').run(user.id,user.token);store.audit(user,'Changed own password',user.id);});
