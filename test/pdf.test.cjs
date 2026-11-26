@@ -7,7 +7,7 @@ test('invoice PDF: valid structure, totals with tax and payments, and long invoi
  const items=JSON.stringify([{d:'Installation',q:1,p:1500},{d:'Router',q:2,p:2500}]);
  const b=pdf.invoice({name:'INV-1',customer:'Jane (Kamau) \\ test',amount:7540,taxRate:16,items,status:'Unpaid',due:'2026-12-01'},{ws:{name:'Kade Networks',currency:'KES'},payments:[{amount:1000,reference:'TKA1'}]});
  const s=xrefOk(b);assert.ok(s.startsWith('%PDF-1.4'));assert.match(s,/\(INVOICE\) Tj/);assert.match(s,/Jane \\\(Kamau\\\) \\\\ test/,'brackets and backslashes escaped');
- assert.match(s,/KES 6,500\.00/);assert.match(s,/Tax \(16%\)|Tax \\\(16%\\\)/);assert.match(s,/KES 6,540\.00/,'balance due = total − paid');assert.match(s,/\/Count 1/);
+ assert.match(s,/KES 6,500(?!\.)/);assert.match(s,/Tax \(16%\)|Tax \\\(16%\\\)/);assert.match(s,/KES 6,540(?!\.)/,'balance due = total − paid');assert.match(s,/\/Count 1/);
  const many=JSON.stringify(Array.from({length:70},(_,i)=>({d:'Line '+i,q:1,p:10})));const m=xrefOk(pdf.invoice({name:'INV-2',customer:'Big',amount:700,items:many},{ws:{}}));
  assert.match(m,/\/Count [3-9]/);assert.match(m,/Page 1 of/);
  {const max=pdf.width('one two',10),lines=pdf.wrap('one two three four',max,10);assert.ok(lines.length>=2);for(const l of lines)assert.ok(pdf.width(l,10)<=max,'every wrapped line fits');}
