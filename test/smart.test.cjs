@@ -85,3 +85,13 @@ test('2b. diagnosis ignores old and informational alerts: a customer who just lo
  store.put('alerts',{title:'Kade Cloud RADIUS not responding: new customer logins fail',deviceId:r.id,severity:'critical',status:'Open'});
  store.put('radiusSessions',{username:'kne-edtyfk',mac:'36:76:84:F5:96:82',startedAt:now-4*60000,updatedAt:now,nasName:'hEX S',stoppedAt:now-1000});
  assert.equal(SM.diagnose(store,s,now+1000).level,'bad','a fresh RADIUS alert still shows when the customer is not connected');}));
+
+test('bandwidth resale flag: heavy all-day upload is flagged, a normal heavy downloader is not; block job script',()=>{
+ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{Store}=require('../lib/store.cjs'),SM=require('../lib/smart.cjs'),J=require('../lib/jobs.cjs');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'rs-')),st=new Store(dir);try{const now=Date.now(),GB=1073741824;
+  st.put('subscribers',{name:'Box',username:'kne-box1',service:'pppoe',status:'active'});st.put('subscribers',{name:'Netflix',username:'kne-tv1',service:'pppoe',status:'active'});
+  st.put('radiusSessions',{username:'kne-box1',startedAt:now-23*3600e3,updatedAt:now,uploadBytes:6*GB,downloadBytes:7*GB});
+  st.put('radiusSessions',{username:'kne-tv1',startedAt:now-23*3600e3,updatedAt:now,uploadBytes:0.5*GB,downloadBytes:20*GB});
+  const f=SM.fraud(st,now).filter(x=>x.type==='resale');assert.equal(f.length,1);assert.match(f[0].text,/KNE-BOX1 uploaded 6\.0 GB/);
+  const sc=J.TYPES['proxyware-block'].script({});assert.match(sc,/tls-host=\("\*"\.\$d\)/);assert.match(sc,/honeygain\.com/);assert.match(sc,/place-before=\[:pick \$first 0\]/);assert.match(J.TYPES['proxyware-unblock'].script({}),/remove \[find where comment~"\^kade-proxyware: "\]/);
+ }finally{st.close();fs.rmSync(dir,{recursive:true,force:true});}});
