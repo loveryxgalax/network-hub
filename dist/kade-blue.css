@@ -1577,3 +1577,8 @@ tr.row-link{cursor:pointer}tr.row-link:hover td{background:#f3f6ff}
 .kc-type .kc-msg{white-space:pre-line}.kc-type .kc-red{color:#c2410c;font-weight:700;margin:6px 0 0}.kc-type .kc-ty{margin:12px 0 8px}
 .kc-type .kc-in{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;font:inherit}
 .kc-type .kc-ok:disabled{opacity:.45;cursor:not-allowed}
+/* Router jobs: runner cards wide enough for their buttons; the buttons wrap instead of spilling into the next card */
+.rh-chips.rj-chips{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))!important;gap:12px!important}
+.rj-chips .rh-chip{display:flex;flex-direction:column;min-width:0}
+.rj-chips .row-actions.ra{display:flex!important;flex-wrap:wrap!important;gap:8px!important;white-space:normal;margin-top:auto!important;padding-top:10px}
+.rj-chips .row-actions.ra .ra-btn{flex:0 0 auto}.rj-chips .row-actions.ra .ra-danger{order:9;margin-left:auto}
