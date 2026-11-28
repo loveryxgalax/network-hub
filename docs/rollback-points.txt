@@ -1,0 +1,3 @@
+# name  commit  (what it restores). Used by scripts/rollback.sh <name>. Add a line before risky testing.
+before-tonight 943b3414721c802f2c26adeb8d978379231c7eaf Everything exactly as it was before tonight's testing and changes
+before-portal-redesign 4e9aff4 The admin as it was before the new portal designs (language dropdown, header, account page, chat, situation views, phone check)

@@ -30,4 +30,6 @@ Readings are dBm numbers or omitted. `online` on each ONU must be a boolean. Res
 
 The gateway must durably deduplicate `idempotencyKey`, apply the intended vendor operation and verify the resulting serial/port/service state. Only then return `{"authorized":true,"serial":"NEW_SERIAL"}`. Timeout, malformed response, wrong serial, or lack of positive verification produces an unresolved provisioning alert and blocks a second attempt for that serial. An operator must check equipment and reconcile that alert before retrying.
 
+`POST /v1/devices/{externalId}/onus/{serial}/{action}` with `action` one of `reboot`, `disable`, `enable`, `deauthorize` receives `{"pon":"1/2","idempotencyKey":"server-generated-operation-id"}`. The gateway must deduplicate the key, apply the vendor operation, verify it, and only then return `{"done":true,"serial":"…","action":"…"}`. Anything else leaves an unresolved `onu-operation` alert that blocks another operation on that ONU until an operator reconciles it. Removing (`deauthorize`) needs the ONU serial typed by an admin, manager or technician.
+
 The built-in integration tests use a local HTTP protocol fixture to verify this boundary. They do not verify a physical OLT or any vendor command implementation.

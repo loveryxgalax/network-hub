@@ -1,0 +1,25 @@
+# Opt-in overlay, used together with the repository-root docker-compose.yml.
+# Nothing is published or enabled by the existing autodeploy command.
+services:
+  acs-https:
+    profiles: [acs-https]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      # Empty defaults avoid breaking existing Compose commands when this profile is off.
+      # Both must be set before starting acs-https; empty values fail Caddy validation.
+      ACS_TLS_HOST: ${ACS_TLS_HOST:-}
+      ACS_TLS_EMAIL: ${ACS_TLS_EMAIL:-}
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+    volumes:
+      - ./deployment/acs/Caddyfile:/etc/caddy/Caddyfile:ro
+      - acs-tls-data:/data
+      - acs-tls-config:/config
+    networks: [internal]
+
+volumes:
+  acs-tls-data:
+  acs-tls-config:

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head><script src="/portal/eat.js?v=1"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kade Networks Wi-Fi</title>
+<meta name="theme-color" content="#0032fd">
+<link rel="icon" type="image/png" href="/img/favicon.png">
+<link rel="stylesheet" href="/portal/wifi.css?v=20261123g">
+<link rel="stylesheet" href="/portal/wifi-themes.css?v=20261123g">
+<script src="/portal/chatbox.js?v=2" defer></script><script src="/portal/popup.js?v=2" defer></script><script src="/portal/wifi.js?v=20261127f" defer></script>
+</head>
+<body>
+<div id="boot" class="boot" role="status"><div class="boot-spin" aria-hidden="true"></div><p><!--loading-text--></p></div>
+<header class="top">
+  <div class="top-in">
+    <img class="logo" id="logo" alt="" hidden>
+    <div class="brand">
+      <b id="brand">Kade Networks</b>
+      <div class="help"><span data-t="needHelp">Need help?</span> <a id="call" hidden></a> <a id="wa" hidden></a></div>
+    </div>
+    <span class="acct" id="acct"></span>
+  </div>
+</header>
+<main class="wrap">
+  <div id="alert" class="alert" role="alert" hidden></div>
+  <div id="notice" class="notice" hidden></div>
+  <section id="loyalty" class="loy" hidden>
+    <span class="loy-ic"><svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg></span>
+    <div class="loy-t"><small data-t="loyalty">Loyalty Points Balance</small><b><span id="pts">0</span> <i data-t="pts">pts</i></b></div>
+    <button type="button" class="pill" id="redeem"><svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zm0 0h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg><span data-t="redeem">Redeem</span></button>
+  </section>
+  <section id="active" class="active" hidden></section>
+  <section id="hotspot">
+    <div class="welcome"><p data-t="welcome">Welcome to our Hotspot Service!</p><p class="info"><span class="i">i</span><span data-t="paidHint">If you already paid just click the package paid for to auto connect.</span></p></div>
+    <div class="two" id="actions">
+      <button type="button" class="outline" id="voucher" data-t="useVoucher">Use Voucher</button>
+      <button type="button" class="outline" id="mcode" data-t="mpesaCode">Connect with M-PESA code.</button>
+    </div>
+    <div id="free"></div>
+    <div class="grid" id="hotspotPkgs"></div>
+  </section>
+  <section id="home" hidden>
+    <div class="welcome"><p data-t="homeWelcome">Home Internet</p><p class="info"><span class="i">i</span><span data-t="homeHint">Enter your account number or phone number to see your account and pay.</span></p></div>
+  </section>
+  <section id="find" class="card find">
+    <h3 data-t="findTitle">Find my account</h3>
+    <form id="find-form"><input name="q" required maxlength="80" autocomplete="username" data-ph="findPh" placeholder="Account number or phone"><button class="btn" data-t="find">Find</button></form>
+    <div id="find-out"></div>
+  </section>
+  <section id="homePkgsWrap" hidden><h3 class="sec" data-t="homePkgs">Home internet packages</h3><div class="grid" id="pppoePkgs"></div></section>
+  <button type="button" id="usage" class="usage" hidden>
+    <span class="loy-ic"><svg viewBox="0 0 24 24"><path d="M5 20V12M12 20V5M19 20v-9"/></svg></span>
+    <span class="loy-t"><b data-t="myUsage">My Usage</b><small data-t="myUsageSub">Data used, payments and subscription history.</small></span>
+    <svg class="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+  </button>
+</main>
+<footer class="foot"><div class="foot-in"><span id="copy"></span><span class="sp"></span><a href="#" id="terms" hidden data-t="terms">Terms</a><span class="langs"><button type="button" data-lang="sw">Kiswahili</button><button type="button" data-lang="en">English</button></span></div></footer>
+<button type="button" class="chat" id="chat" aria-label="Message us" hidden><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/><circle cx="8.5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="15.5" cy="12" r="1"/></svg></button>
+<div id="sheet" class="sheet" hidden><div class="sheet-card" role="dialog" aria-modal="true"><button type="button" class="x" id="sheet-x" aria-label="Close">&times;</button><div id="sheet-body"></div></div></div>
+<!-- The previous portal is kept for reference at /portal/legacy/index.html -->
+</body>
+</html>
