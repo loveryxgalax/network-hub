@@ -38,3 +38,9 @@ test('simulated stations: devices are shared between simulated APs and move betw
  const both=[...m1.keys()].filter(k=>m2.has(k));assert.ok(both.length>5);assert.ok(both.some(k=>m1.get(k)!==m2.get(k)),'some devices roam');
  for(const a of aps){const s=A.simulate(a,t);assert.equal(s.clients,s.stations.length);}
 });
+test('simulated APs never raise alerts and close any they raised before',()=>{const {dir,store}=tmp();try{
+ const ap=store.put('devices',{name:'Simulated AP – Hall',type:'ap',driver:'ap-sim',apCapacity:50}),busy={clients:54,radios:[{utilization:90}]};
+ const old=store.put('alerts',{title:'Simulated AP – Hall is congested',deviceId:ap.id,source:'ap-capacity',severity:'warning',status:'Open'});
+ const open=()=>store.list('alerts').filter(a=>a.deviceId===ap.id&&a.status!=='Resolved');
+ for(let i=0;i<5;i++)A.alerts(store,ap,busy);assert.equal(open().length,0);assert.equal(store.get('alerts',old.id).status,'Resolved');
+}finally{store.close();fs.rmSync(dir,{recursive:true,force:true});}});
