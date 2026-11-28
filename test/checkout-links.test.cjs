@@ -58,3 +58,10 @@ test('QR codes decode back to the text (structure check)',()=>{const {make}=requ
   for(const [x,y] of [[0,0],[q.size-1,0],[0,q.size-1]])assert.equal(q.dark(x,y),true,'finder corners are dark');assert.equal(q.dark(8,q.size-8),true,'dark module');}
  assert.throws(()=>make('x'.repeat(400)),/too long/);
 });
+test('FastTrack audit: a successful fix job newer than the backup clears the warning',()=>{const st=mk(),{audit}=require('../lib/audit-routers.cjs'),now=Date.now();
+ const r=st.put('devices',{type:'router',name:'LAB-HEX'});
+ st.setting('routerBackups:'+r.id,{items:[{time:now-3600e3,checked:now-3600e3,text:'/ip firewall filter\nadd action=fasttrack-connection chain=forward\n'}]});
+ const ft=()=>audit(st,now)[0].checks.find(c=>c.key==='fasttrack');assert.equal(ft().ok,false);assert.match(ft().detail,/config backup/);
+ st.put('routerJobs',{routerId:r.id,type:'fasttrack-off',status:'failed',finishedAt:now-60e3});assert.equal(ft().ok,false,'a failed job changes nothing');
+ st.put('routerJobs',{routerId:r.id,type:'fasttrack-off',status:'succeeded',finishedAt:now-60e3});assert.equal(ft().ok,true);
+ st.setting('routerBackups:'+r.id,{items:[{time:now-1e3,checked:now-1e3,text:'/ip firewall filter\nadd action=fasttrack-connection chain=forward\n'}]});assert.equal(ft().ok,false,'a newer backup showing it on wins');});

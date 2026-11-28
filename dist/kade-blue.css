@@ -1568,3 +1568,12 @@ tr.row-link{cursor:pointer}tr.row-link:hover td{background:#f3f6ff}
 .me-page table th:first-child,.me-page table td:first-child{padding-left:20px}.me-page .table-wrap,.me-page .kt-card{margin:0 12px 12px}
 /* Top bar: the search box never runs under the Billing button */
 .topbar .search-trigger{min-width:0;flex:1 1 auto;max-width:420px;overflow:hidden}.topbar .wallet-button{flex:none;position:relative;z-index:1;margin-left:10px}
+/* Type-to-confirm: the word to type as a chip with a copy button */
+.kc-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 6px 3px 10px;margin:0 3px;border-radius:8px;background:#eef1f6;color:#1f2937;font-weight:600;font-family:inherit;cursor:pointer;user-select:all;vertical-align:middle;line-height:1.4;border:1px solid #dde3ec;max-width:100%;word-break:break-all}
+.kc-chip i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;color:#64748b;font-style:normal;flex:none}
+.kc-chip:hover i,.kc-chip:focus-visible i{background:#dfe5ee;color:#1747e6}.kc-chip:focus-visible{outline:2px solid #1747e6;outline-offset:1px}
+.kc-chip.done{background:#e7f8ee;border-color:#bfe9cf}.kc-chip.done i{color:#16a34a}
+[data-theme=dark] .kc-chip{background:#1f2a3d;color:#e5e7eb;border-color:#2c3a52}[data-theme=dark] .kc-chip i{color:#9aa7bd}
+.kc-type .kc-msg{white-space:pre-line}.kc-type .kc-red{color:#c2410c;font-weight:700;margin:6px 0 0}.kc-type .kc-ty{margin:12px 0 8px}
+.kc-type .kc-in{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;font:inherit}
+.kc-type .kc-ok:disabled{opacity:.45;cursor:not-allowed}
