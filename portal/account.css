@@ -128,3 +128,4 @@ html{font-size:90%}
 /* The chat sheet never scrolls and the message box does not resize. */
 .sheet:has(#ctext){overflow:hidden;max-height:none}
 .sheet textarea{resize:none}
+.note.note-on{background:#16a34a;color:#fff;font-weight:600}
